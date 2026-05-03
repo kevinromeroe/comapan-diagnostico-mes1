@@ -1,0 +1,992 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Comapan · Diagnóstico de Redes Sociales</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@300;400;500;600;700;800&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --comapan-red: #DB0632;
+    --comapan-red-soft: #F8E0E5;
+    --comapan-yellow: #F5DA6C;
+    --comapan-orange: #FFBC7D;
+    --comapan-green: #5BAC47;
+    --comapan-turquoise: #19AAB2;
+    --ink: #1a1a1a;
+    --ink-soft: #4a4a4a;
+    --muted: #8a8a8a;
+    --line: #ececec;
+    --bg: #ffffff;
+    --bg-soft: #F2E8D5;
+    --bg-soft-2: #FBF4E4;
+    --ig: #e1306c; --fb: #1877f2; --tt: #000000; --li: #0a66c2;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Roboto', -apple-system, sans-serif;
+    background: var(--bg); color: var(--ink);
+    line-height: 1.55; font-size: 15px; -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4, .display { font-family: 'Roboto Slab', serif; font-weight: 700; }
+
+  /* Top bar */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 56px; border-bottom: 1px solid var(--line); background: var(--bg);
+    position: sticky; top: 0; z-index: 50; gap: 32px;
+  }
+  .topbar .brand { display: flex; align-items: center; gap: 24px; flex: 1; }
+  .agency-box { background: #1a1a1a; padding: 10px 16px; border-radius: 6px; display: flex; align-items: center; }
+  .agency-box img { height: 22px; display: block; }
+  .topbar .title-block { display: flex; flex-direction: column; gap: 2px; }
+  .topbar .title-block .eyebrow {
+    font-size: 10px; color: var(--comapan-red); text-transform: uppercase;
+    letter-spacing: 1.6px; font-weight: 700;
+  }
+  .topbar .title-block .title {
+    font-family: 'Roboto Slab', serif; font-size: 22px; font-weight: 700;
+    line-height: 1.1; color: var(--ink);
+  }
+  .topbar .title-block .title em { color: var(--comapan-red); font-style: normal; }
+  .topbar .divider { width: 1px; height: 36px; background: var(--line); }
+  .topbar .logo-comapan { height: 32px; opacity: 0.9; }
+  .topbar .meta { text-align: right; font-size: 12px; color: var(--muted); white-space: nowrap; }
+  .topbar .meta strong { color: var(--comapan-red); display: block; font-size: 13px;
+    font-family: 'Roboto Slab', serif; font-weight: 700; letter-spacing: 0.3px; }
+
+  /* Nav */
+  nav.tabs {
+    display: flex; gap: 0; padding: 0 56px; border-bottom: 1px solid var(--line);
+    background: var(--bg); overflow-x: auto; position: sticky; top: 77px; z-index: 49;
+  }
+  nav.tabs button {
+    background: transparent; border: 0; color: var(--muted); cursor: pointer;
+    padding: 14px 22px; font-size: 13px; font-weight: 500;
+    border-bottom: 3px solid transparent; white-space: nowrap;
+    font-family: 'Roboto', sans-serif; letter-spacing: 0.2px;
+  }
+  nav.tabs button.active { color: var(--comapan-red); border-bottom-color: var(--comapan-red); font-weight: 700; }
+  nav.tabs button:hover { color: var(--ink); }
+
+  main { max-width: 1280px; margin: 0 auto; padding: 0 56px; }
+  .tab { display: none; padding: 48px 0; }
+  .tab.active { display: block; }
+
+  /* HERO */
+  .hero { padding: 80px 0 64px; border-bottom: 1px solid var(--line); }
+  .hero .eyebrow { font-size: 12px; color: var(--comapan-red); font-weight: 700;
+    text-transform: uppercase; letter-spacing: 2px; margin-bottom: 16px; }
+  .hero h1 { font-size: 56px; line-height: 1.05; margin: 0 0 24px; max-width: 900px; letter-spacing: -1px; }
+  .hero h1 em { color: var(--comapan-red); font-style: normal; }
+  .hero .lead { font-size: 19px; color: var(--ink-soft); max-width: 720px; margin: 0 0 48px; line-height: 1.5; }
+
+  /* KPI grid */
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0;
+    border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+  .kpi { padding: 28px 24px; border-right: 1px solid var(--line); position: relative; }
+  .kpi:last-child { border-right: 0; }
+  .kpi .label { font-size: 11px; color: var(--muted); text-transform: uppercase;
+    letter-spacing: 1px; font-weight: 600; margin-bottom: 12px; }
+  .kpi .value { font-family: 'Roboto Slab', serif; font-size: 38px; font-weight: 800;
+    color: var(--ink); line-height: 1; }
+  .kpi .sub { font-size: 12px; color: var(--muted); margin-top: 8px; }
+  .kpi.accent { background: var(--comapan-red); color: white; }
+  .kpi.accent .label, .kpi.accent .sub { color: rgba(255,255,255,0.7); }
+  .kpi.accent .value { color: white; }
+
+  /* Sections */
+  .section-head { margin: 64px 0 32px; }
+  .section-head .num { font-family: 'Roboto Slab', serif; font-weight: 300;
+    font-size: 14px; color: var(--comapan-red); letter-spacing: 2px;
+    text-transform: uppercase; margin-bottom: 8px; }
+  .section-head h2 { font-size: 36px; margin: 0 0 12px; letter-spacing: -0.5px; }
+  .section-head .desc { color: var(--ink-soft); font-size: 16px; max-width: 720px; }
+
+  .verdict { background: var(--bg-soft); border-left: 4px solid var(--comapan-red);
+    padding: 24px 28px; margin: 32px 0; border-radius: 0 4px 4px 0; }
+  .verdict .label { font-size: 11px; color: var(--comapan-red); font-weight: 700;
+    text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px; }
+  .verdict p { margin: 0; font-size: 17px; line-height: 1.6; color: var(--ink); }
+
+  /* Network ranking cards */
+  .ranking { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin: 24px 0; }
+  .net-card { padding: 24px; border: 1px solid var(--line); border-radius: 6px;
+    background: var(--bg); position: relative; transition: transform 0.15s; }
+  .net-card:hover { transform: translateY(-2px); border-color: var(--comapan-red); }
+  .net-card .rank { position: absolute; top: 16px; right: 20px; font-family: 'Roboto Slab', serif;
+    font-size: 36px; font-weight: 800; color: var(--line); line-height: 1; }
+  .net-card .net-name { font-weight: 700; font-size: 16px; margin-bottom: 12px; }
+  .net-card .net-name .dot { display: inline-block; width: 8px; height: 8px;
+    border-radius: 50%; margin-right: 8px; vertical-align: middle; }
+  .net-card .stat { font-family: 'Roboto Slab', serif; font-size: 28px;
+    font-weight: 700; line-height: 1; margin: 8px 0; }
+  .net-card .stat-label { font-size: 11px; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.5px; }
+  .net-card .row { display: flex; justify-content: space-between; padding: 8px 0;
+    border-top: 1px solid var(--line); font-size: 13px; }
+  .net-card .row .k { color: var(--muted); }
+  .net-card .row .v { font-weight: 600; }
+
+  /* Charts */
+  .chart-grid { display: grid; gap: 20px; }
+  .chart-grid.cols-2 { grid-template-columns: 1fr 1fr; }
+  .chart-card { padding: 24px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); }
+  .chart-card h3 { margin: 0 0 16px; font-size: 13px; color: var(--ink-soft);
+    text-transform: uppercase; letter-spacing: 1px; font-family: 'Roboto', sans-serif; font-weight: 600; }
+  .chart-wrap { position: relative; height: 280px; }
+  .learn { margin-top: 16px; padding: 14px 18px; background: var(--bg-soft-2);
+    border-left: 3px solid var(--comapan-red); border-radius: 0 4px 4px 0; }
+  .learn p { margin: 0; font-size: 13px; line-height: 1.55; color: var(--ink); }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table th { text-align: left; padding: 12px 14px; font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted);
+    font-weight: 600; border-bottom: 2px solid var(--line); }
+  table td { padding: 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table tr:hover td { background: var(--bg-soft); }
+  table a { color: var(--comapan-red); text-decoration: none; font-weight: 500; }
+  table a:hover { text-decoration: underline; }
+  .pill { display: inline-block; padding: 3px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 600; background: var(--line); color: var(--ink-soft); }
+  .post-thumb { width: 56px; height: 56px; object-fit: cover; border-radius: 6px;
+    background: var(--bg-soft); display: block; flex-shrink: 0; }
+  .post-thumb-placeholder { width: 56px; height: 56px; border-radius: 6px;
+    background: var(--bg-soft); display: flex; align-items: center; justify-content: center;
+    color: var(--muted); font-size: 22px; flex-shrink: 0; }
+  td .thumb-cell { display: flex; align-items: center; }
+
+  .platform-header { display: flex; align-items: center; gap: 16px; margin-bottom: 8px; }
+  .platform-dot { width: 12px; height: 12px; border-radius: 50%; }
+  .platform-header .meta { color: var(--muted); font-size: 14px; }
+
+  /* Findings */
+  .finding { display: flex; gap: 24px; padding: 28px 0; border-bottom: 1px solid var(--line); }
+  .finding:last-child { border-bottom: 0; }
+  .finding .num { font-family: 'Roboto Slab', serif; font-size: 48px; font-weight: 300;
+    color: var(--comapan-red); line-height: 1; min-width: 60px; }
+  .finding .body h4 { margin: 0 0 8px; font-size: 18px; font-family: 'Roboto Slab', serif; }
+  .finding .body p { margin: 0; color: var(--ink-soft); font-size: 15px; }
+  .finding .impact { display: inline-block; padding: 3px 10px; border-radius: 4px;
+    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; margin-top: 8px; }
+  .impact.alto { background: var(--comapan-red); color: white; }
+  .impact.medio { background: var(--comapan-yellow); color: var(--ink); }
+  .impact.bajo { background: var(--line); color: var(--ink-soft); }
+
+  /* Recommendations */
+  .reco { display: grid; grid-template-columns: 60px 1fr; gap: 24px; padding: 24px;
+    background: var(--bg-soft); border-radius: 6px; margin: 16px 0;
+    border-left: 4px solid var(--comapan-red); }
+  .reco .num { font-family: 'Roboto Slab', serif; font-size: 36px; font-weight: 700;
+    color: var(--comapan-red); }
+  .reco h4 { margin: 0 0 8px; font-size: 18px; }
+  .reco p { margin: 0; color: var(--ink-soft); }
+  .reco .tags { margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .reco .tag { padding: 4px 10px; background: white; border: 1px solid var(--line);
+    border-radius: 20px; font-size: 11px; color: var(--ink-soft); }
+
+  /* Hashtags */
+  .hashtags { display: flex; flex-wrap: wrap; gap: 8px; }
+  .hashtags .ht { padding: 6px 14px; background: var(--bg-soft); border: 1px solid var(--line);
+    border-radius: 20px; font-size: 13px; }
+  .hashtags .ht strong { color: var(--comapan-red); margin-left: 6px; }
+
+  /* Notice / warn */
+  .notice { padding: 14px 20px; background: #FFF8E5; border: 1px solid var(--comapan-yellow);
+    border-radius: 4px; font-size: 13px; color: #6e5a1a; margin: 16px 0; }
+
+  /* Footer */
+  footer { margin-top: 80px; padding: 40px 56px; border-top: 1px solid var(--line);
+    background: var(--bg-soft); }
+  footer .footer-grid { max-width: 1280px; margin: 0 auto;
+    display: flex; justify-content: space-between; align-items: center; gap: 24px; flex-wrap: wrap; }
+  footer .powered { font-size: 13px; color: var(--ink-soft); }
+  footer .powered strong { color: var(--ink); font-weight: 700; }
+  footer .logos { display: flex; align-items: center; gap: 24px; }
+  footer .logos img { height: 28px; opacity: 0.85; }
+  footer .legal { font-size: 11px; color: var(--muted); margin-top: 8px; }
+
+  @media (max-width: 1000px) {
+    .kpi-grid, .ranking, .chart-grid.cols-2 { grid-template-columns: 1fr 1fr; }
+    .hero h1 { font-size: 38px; }
+    main, .topbar, nav.tabs, footer { padding-left: 24px; padding-right: 24px; }
+  }
+  @media (max-width: 600px) {
+    .kpi-grid, .ranking { grid-template-columns: 1fr; }
+    .chart-grid.cols-2 { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 32px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="agency-box"><img src="assets/logo-14dias.svg" alt="Catorce Días"></div>
+    <div class="title-block">
+      <span class="eyebrow">Inteligencia de redes</span>
+      <span class="title">Diagnóstico <em>Comapan</em></span>
+    </div>
+    <div class="divider"></div>
+    <img class="logo-comapan" src="assets/logo-comapan.svg" alt="Comapan" onerror="this.src='assets/logo-comapan.png'">
+  </div>
+  <div class="meta">
+    <strong>Lectura ejecutiva</strong>
+    <span id="meta-window"></span>
+  </div>
+</div>
+
+<nav class="tabs">
+  <button class="active" data-tab="resumen">Resumen ejecutivo</button>
+  <button data-tab="ranking">Ranking de redes</button>
+  <button data-tab="instagram">Instagram</button>
+  <button data-tab="facebook">Facebook</button>
+  <button data-tab="tiktok">TikTok</button>
+  <button data-tab="linkedin">LinkedIn</button>
+  <button data-tab="hallazgos">Hallazgos</button>
+  <button data-tab="recomendaciones">Recomendaciones</button>
+</nav>
+
+<main>
+
+<!-- ============ RESUMEN EJECUTIVO ============ -->
+<section class="tab active" id="tab-resumen">
+  <div class="hero">
+    <div class="eyebrow">Diagnóstico de redes sociales · Últimos 90 días</div>
+    <h1>Cómo se comporta <em>Comapan</em> en redes hoy.</h1>
+    <p class="lead">Una lectura descriptiva de la actividad y desempeño de las cuentas oficiales en Instagram, Facebook, TikTok y LinkedIn — basada únicamente en datos públicos.</p>
+
+    <div class="kpi-grid" id="kpi-hero"></div>
+  </div>
+
+  <div class="section-head">
+    <div class="num">01 · Audiencia digital actual</div>
+    <h2>El tamaño de la huella en cada red</h2>
+    <div class="desc">Snapshot de hoy. Cada red se mide con su métrica nativa — los seguidores de Instagram no equivalen a los likes de página de Facebook, ni se suman entre sí.</div>
+  </div>
+  <div class="ranking" id="audiencia-cards"></div>
+
+  <div class="section-head">
+    <div class="num">02 · El veredicto</div>
+    <h2>Lectura general de la cuenta</h2>
+    <div class="desc">Síntesis ejecutiva del estado actual antes de profundizar por red.</div>
+  </div>
+
+  <div class="verdict">
+    <div class="label">Veredicto en una frase</div>
+    <p id="verdict-text"></p>
+  </div>
+
+  <div class="section-head">
+    <div class="num">03 · Distribución del esfuerzo</div>
+    <h2>¿Dónde está hablando Comapan?</h2>
+    <div class="desc">Volumen de publicaciones y engagement por red en los últimos 90 días.</div>
+  </div>
+
+  <div class="chart-grid cols-2">
+    <div class="chart-card"><h3>Posts publicados por red</h3><div class="chart-wrap"><canvas id="c-posts-red"></canvas></div><div class="learn" id="l-posts-red"></div></div>
+    <div class="chart-card"><h3>Engagement total por red</h3><div class="chart-wrap"><canvas id="c-eng-red"></canvas></div><div class="learn" id="l-eng-red"></div></div>
+  </div>
+
+  <div class="section-head">
+    <div class="num">04 · Evolución</div>
+    <h2>Cómo se movió el engagement semana a semana</h2>
+    <div class="desc">Engagement total semanal por red en los últimos 90 días. Es el indicador más honesto de momentum cuando no hay histórico retroactivo de seguidores.</div>
+  </div>
+  <div class="chart-card">
+    <h3>Engagement semanal por red</h3>
+    <div class="chart-wrap" style="height:340px"><canvas id="c-eng-evolution"></canvas></div>
+    <div class="learn" id="l-eng-evolution"></div>
+  </div>
+</section>
+
+<!-- ============ RANKING ============ -->
+<section class="tab" id="tab-ranking">
+  <div class="section-head">
+    <div class="num">03 · Ranking</div>
+    <h2>Cómo rinde cada red, ordenada por desempeño.</h2>
+    <div class="desc">Las redes están ordenadas por engagement total. La cifra grande corresponde al engagement por publicación promedio — el indicador más importante para entender eficiencia.</div>
+  </div>
+  <div class="ranking" id="ranking-cards"></div>
+
+  <div class="section-head">
+    <div class="num">04 · Vista comparada</div>
+    <h2>Las cuatro cuentas en una sola tabla</h2>
+  </div>
+  <div class="chart-card" style="padding:0">
+    <table>
+      <thead><tr>
+        <th>Red</th><th>Cuenta</th><th>Audiencia</th><th>Posts (90d)</th>
+        <th>Engagement total</th><th>Eng./post</th><th>Top post</th>
+      </tr></thead>
+      <tbody id="t-accounts"></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============ INSTAGRAM ============ -->
+<section class="tab" id="tab-instagram">
+  <div class="platform-header">
+    <span class="platform-dot" style="background:var(--ig)"></span>
+    <h2 style="margin:0">Instagram</h2>
+    <span class="meta">@<span id="ig-user">comapan_co</span></span>
+  </div>
+  <div class="kpi-grid" id="kpi-ig" style="margin-top:24px"></div>
+  <div class="chart-grid cols-2" style="margin-top:32px">
+    <div class="chart-card"><h3>Volumen semanal de publicación</h3><div class="chart-wrap"><canvas id="c-ig-week"></canvas></div><div class="learn" id="l-ig-week"></div></div>
+    <div class="chart-card"><h3>Engagement promedio por tipo de contenido</h3><div class="chart-wrap"><canvas id="c-ig-type"></canvas></div><div class="learn" id="l-ig-type"></div></div>
+    <div class="chart-card"><h3>Mejor día de la semana (eng. promedio)</h3><div class="chart-wrap"><canvas id="c-ig-dow"></canvas></div><div class="learn" id="l-ig-dow"></div></div>
+    <div class="chart-card"><h3>Distribución por hora del día</h3><div class="chart-wrap"><canvas id="c-ig-hour"></canvas></div><div class="learn" id="l-ig-hour"></div></div>
+  </div>
+  <h2 style="margin-top:48px">Top 5 publicaciones</h2>
+  <div class="chart-card" style="padding:0">
+    <table id="t-ig-top"><thead><tr><th></th><th>Fecha</th><th>Tipo</th><th>Caption</th><th>Likes</th><th>Coments</th><th>Engagement</th><th></th></tr></thead><tbody></tbody></table>
+    <div class="learn" id="l-ig-top" style="margin: 0; border-radius: 0 0 6px 6px"></div>
+  </div>
+  <h2 style="margin-top:48px">Hashtags más usados</h2>
+  <div class="hashtags" id="ig-hashtags"></div>
+</section>
+
+<!-- ============ FACEBOOK ============ -->
+<section class="tab" id="tab-facebook">
+  <div class="platform-header">
+    <span class="platform-dot" style="background:var(--fb)"></span>
+    <h2 style="margin:0">Facebook</h2>
+    <span class="meta">ComapanCo</span>
+  </div>
+  <div class="kpi-grid" id="kpi-fb" style="margin-top:24px"></div>
+  <div class="chart-grid cols-2" style="margin-top:32px">
+    <div class="chart-card"><h3>Engagement promedio por tipo</h3><div class="chart-wrap"><canvas id="c-fb-type"></canvas></div><div class="learn" id="l-fb-type"></div></div>
+    <div class="chart-card"><h3>Volumen semanal (posts datados)</h3><div class="chart-wrap"><canvas id="c-fb-week"></canvas></div><div class="learn" id="l-fb-week"></div></div>
+    <div class="chart-card"><h3>Mejor día de la semana</h3><div class="chart-wrap"><canvas id="c-fb-dow"></canvas></div><div class="learn" id="l-fb-dow"></div></div>
+    <div class="chart-card"><h3>Distribución por hora del día</h3><div class="chart-wrap"><canvas id="c-fb-hour"></canvas></div><div class="learn" id="l-fb-hour"></div></div>
+  </div>
+  <h2 style="margin-top:48px">Top 5 publicaciones</h2>
+  <div class="chart-card" style="padding:0">
+    <table id="t-fb-top"><thead><tr><th></th><th>Fecha</th><th>Tipo</th><th>Caption</th><th>Likes</th><th>Shares</th><th>Engagement</th><th></th></tr></thead><tbody></tbody></table>
+    <div class="learn" id="l-fb-top" style="margin: 0; border-radius: 0 0 6px 6px"></div>
+  </div>
+</section>
+
+<!-- ============ TIKTOK ============ -->
+<section class="tab" id="tab-tiktok">
+  <div class="platform-header">
+    <span class="platform-dot" style="background:var(--tt)"></span>
+    <h2 style="margin:0">TikTok</h2>
+    <span class="meta">@comapanco</span>
+  </div>
+  <div class="kpi-grid" id="kpi-tt" style="margin-top:24px"></div>
+  <div class="chart-grid cols-2" style="margin-top:32px">
+    <div class="chart-card"><h3>Volumen semanal</h3><div class="chart-wrap"><canvas id="c-tt-week"></canvas></div><div class="learn" id="l-tt-week"></div></div>
+    <div class="chart-card"><h3>Mejor día de la semana</h3><div class="chart-wrap"><canvas id="c-tt-dow"></canvas></div><div class="learn" id="l-tt-dow"></div></div>
+  </div>
+  <h2 style="margin-top:48px">Top 5 videos</h2>
+  <div class="chart-card" style="padding:0">
+    <table id="t-tt-top"><thead><tr><th></th><th>Fecha</th><th>Caption</th><th>Likes</th><th>Coments</th><th>Engagement</th><th></th></tr></thead><tbody></tbody></table>
+    <div class="learn" id="l-tt-top" style="margin: 0; border-radius: 0 0 6px 6px"></div>
+  </div>
+</section>
+
+<!-- ============ LINKEDIN ============ -->
+<section class="tab" id="tab-linkedin">
+  <div class="platform-header">
+    <span class="platform-dot" style="background:var(--li)"></span>
+    <h2 style="margin:0">LinkedIn</h2>
+    <span class="meta">Comapan S.A.</span>
+  </div>
+  <div class="kpi-grid" id="kpi-li" style="margin-top:24px"></div>
+  <div class="chart-grid cols-2" style="margin-top:32px">
+    <div class="chart-card"><h3>Volumen semanal</h3><div class="chart-wrap"><canvas id="c-li-week"></canvas></div><div class="learn" id="l-li-week"></div></div>
+    <div class="chart-card"><h3>Mejor día de la semana</h3><div class="chart-wrap"><canvas id="c-li-dow"></canvas></div><div class="learn" id="l-li-dow"></div></div>
+  </div>
+  <h2 style="margin-top:48px">Top 5 publicaciones</h2>
+  <div class="chart-card" style="padding:0">
+    <table id="t-li-top"><thead><tr><th></th><th>Fecha</th><th>Caption</th><th>Likes</th><th>Coments</th><th>Engagement</th><th></th></tr></thead><tbody></tbody></table>
+    <div class="learn" id="l-li-top" style="margin: 0; border-radius: 0 0 6px 6px"></div>
+  </div>
+</section>
+
+<!-- ============ HALLAZGOS ============ -->
+<section class="tab" id="tab-hallazgos">
+  <div class="section-head">
+    <div class="num">05 · Hallazgos</div>
+    <h2>Lo que los datos están diciendo</h2>
+    <div class="desc">Patrones, oportunidades y alertas extraídos de los últimos 90 días, ordenados por impacto.</div>
+  </div>
+  <div id="findings"></div>
+</section>
+
+<!-- ============ RECOMENDACIONES ============ -->
+<section class="tab" id="tab-recomendaciones">
+  <div class="section-head">
+    <div class="num">06 · Recomendaciones</div>
+    <h2>Tres palancas para mover la aguja en los próximos 30 días</h2>
+    <div class="desc">Acciones concretas, priorizadas por relación esfuerzo/impacto.</div>
+  </div>
+  <div id="recos"></div>
+
+  <div class="section-head" style="margin-top:64px">
+    <div class="num">07 · La siguiente capa</div>
+    <h2>Hasta dónde puede llegar el análisis</h2>
+    <div class="desc">Este diagnóstico está construido con lo que las cuentas muestran al público. La siguiente capa — comportamiento real de la audiencia, alcance específico de cada pieza, conversión hacia la web — se abre cuando se conectan los accesos analíticos de las plataformas. Es la antesala natural para profundizar en los próximos meses.</div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="footer-grid">
+    <div>
+      <div class="powered">Generado por <strong>Datalítica Colombia S.A.S.</strong> para Catorce Días Colombia</div>
+      <div class="legal">Datos de fuentes públicas · <span id="gen-date"></span></div>
+    </div>
+    <div class="logos">
+      <div class="agency-box"><img src="assets/logo-14dias.svg" alt="Catorce Días"></div>
+      <img src="assets/logo-comapan.svg" alt="Comapan" onerror="this.src='assets/logo-comapan.png'" style="height:28px;opacity:0.85">
+    </div>
+  </div>
+</footer>
+
+<script>
+const DATA = {"generated_at": "03/05/2026", "ventana": {"desde": "2026-02-03", "hasta": "2026-04-30"}, "accounts": {"Instagram": {"bio": "Comapan #ElPanDelSánduche  75 años compartiendo el sabor de una sonrisa😀 COMPRA ONLINE 👇🏽", "business_account": "True", "categoria": "None,Food & Drink", "direccion": "", "nombre": "El pan del sánduche", "page_likes": "", "plataforma": "Instagram", "posts_totales": "2225", "rating": "", "seguidores": "13422", "siguiendo": "270", "snapshot_fecha": "2026-05-03", "telefono": "", "url_externa": "https://linktr.ee/Comapan", "username": "comapan_co", "verified": "False", "views_totales_90d": "", "website": ""}, "Facebook": {"bio": "", "business_account": "", "categoria": "Page, Specialty Grocery Store", "direccion": "Carrera 42B No. 14 -18, Bogotá, Colombia, 111611", "nombre": "Comapan | Bogotá", "page_likes": "119971", "plataforma": "Facebook", "posts_totales": "", "rating": "88% recommend (89 Reviews)", "seguidores": "", "siguiendo": "", "snapshot_fecha": "2026-05-03", "telefono": "+57 322 8085210", "url_externa": "", "username": "ComapanCo", "verified": "", "views_totales_90d": "", "website": "http://www.comapan.com.co/"}, "TikTok": {"bio": "", "business_account": "", "categoria": "", "direccion": "", "nombre": "", "page_likes": "", "plataforma": "TikTok", "posts_totales": "", "rating": "", "seguidores": "", "siguiendo": "", "snapshot_fecha": "2026-05-03", "telefono": "", "url_externa": "", "username": "comapanco", "verified": "", "views_totales_90d": "82954", "website": ""}, "LinkedIn": {"bio": "", "business_account": "", "categoria": "", "direccion": "", "nombre": "Comapan S.A.", "page_likes": "", "plataforma": "LinkedIn", "posts_totales": "", "rating": "", "seguidores": "5020", "siguiendo": "", "snapshot_fecha": "2026-05-03", "telefono": "", "url_externa": "", "username": "comapan-s-a-", "verified": "", "views_totales_90d": "", "website": ""}}, "consolidated": [{"plataforma": "Instagram", "username": "comapan_co", "seguidores": "13422", "posts_90d": "79", "engagement_total_90d": "9195", "engagement_promedio_post": "116.4", "top_post_url": "https://www.instagram.com/p/DUl9fL8jw1M/", "top_post_engagement": "3246", "snapshot_fecha": "2026-05-03"}, {"plataforma": "Facebook", "username": "ComapanCo", "seguidores": "", "posts_90d": "42", "engagement_total_90d": "2751", "engagement_promedio_post": "65.5", "top_post_url": "https://www.facebook.com/reel/2843588825975724/", "top_post_engagement": "821", "snapshot_fecha": "2026-05-03"}, {"plataforma": "TikTok", "username": "comapanco", "seguidores": "", "posts_90d": "27", "engagement_total_90d": "1725", "engagement_promedio_post": "63.9", "top_post_url": "https://www.tiktok.com/@comapanco/video/7612042089769028885", "top_post_engagement": "575", "snapshot_fecha": "2026-05-03"}, {"plataforma": "LinkedIn", "username": "comapan-s-a-", "seguidores": "5020", "posts_90d": "16", "engagement_total_90d": "162", "engagement_promedio_post": "10.1", "top_post_url": "https://www.linkedin.com/posts/comapan-s-a-_y-s%C3%AD-empezamos-antes-de-que-el-pan-tajado-activity-7425194694047076353-aa9R", "top_post_engagement": "26", "snapshot_fecha": "2026-05-03"}], "instagram": {"n_posts": 79, "engagement_total": 9195, "engagement_promedio": 116.4, "engagement_mediana": 29, "by_type": {"labels": ["Image", "Sidecar", "Video"], "counts": [14, 14, 51], "engagement": [1905, 517, 6773], "engagement_promedio": [136.1, 36.9, 132.8]}, "by_day": {"labels": ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"], "counts": [10, 15, 7, 15, 10, 10, 12], "engagement_promedio": [53.1, 239.1, 32.0, 86.0, 33.7, 224.1, 82.2]}, "by_hour": {"labels": ["8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "21"], "counts": [1, 6, 1, 7, 2, 4, 3, 10, 18, 17, 6, 3, 1]}, "by_week": {"labels": ["2026-W06", "2026-W07", "2026-W08", "2026-W09", "2026-W10", "2026-W11", "2026-W12", "2026-W13", "2026-W14", "2026-W15", "2026-W16", "2026-W17", "2026-W18"], "counts": [6, 11, 6, 7, 5, 7, 6, 3, 3, 5, 5, 8, 7], "engagement": [318, 4068, 181, 2076, 142, 192, 149, 86, 540, 444, 442, 250, 307]}, "top_hashtags": [["DíaDeLaMujer", 2], ["DíaInternacionalDelPerroCaliente", 1], ["DíaInternacionalDelPanDeMasaMadre", 1], ["Mar10Day", 1], ["DíaMundialMarioBros", 1], ["MujeresComapan", 1], ["ManosEnLaMasa", 1], ["Felices85Leon", 1], ["FelizCumpleaños", 1], ["NacionalXForta", 1]], "captions_avg_len": 152.0, "top5": [{"fecha": "2026-02-10", "tipo": "Video", "url": "https://www.instagram.com/p/DUl9fL8jw1M/", "media_url": "assets/thumbs/ig-e7e53f2f95.jpg", "caption": "Antojito crocante resuelto 😌✨ Los Mini Caladitos Comapan @comapan_co son livianos, crocantes y van con todo.  Lo mejor: los encuentras fácil", "engagement": 3246, "likes": 3037, "comentarios": 209}, {"fecha": "2026-02-28", "tipo": "Image", "url": "https://www.instagram.com/p/DVTk9nqiiaR/", "media_url": "assets/thumbs/ig-5e1cc358dc.jpg", "caption": "Feliz cumple amix 🦁  Pásala muy rico, que te consientan, te den muchos regalos y que te partan la torta 🙊 si es @comapan_co mucho mejor  Te ", "engagement": 1620, "likes": 1582, "comentarios": 38}, {"fecha": "2026-02-12", "tipo": "Video", "url": "https://www.instagram.com/p/DUrV8AEDGHl/", "media_url": "assets/thumbs/ig-aedf093eda.jpg", "caption": "Oeee acuérdense que hay parchesito pa ver fútbol esta noche... vayan alistando el mecato obviamente con Comapan  🥪 @comapan_co  📺 @winsports", "engagement": 592, "likes": 589, "comentarios": 3}, {"fecha": "2026-04-05", "tipo": "Video", "url": "https://www.instagram.com/p/DWxIfXUjtTx/", "media_url": "assets/thumbs/ig-0cf7625969.jpg", "caption": "La vida se trata de esos pequeños momentos que te sacan una sonrisa sin mucha explicación. Encuentra en Comapan todo para acompañar tus mome", "engagement": 500, "likes": 473, "comentarios": 27}, {"fecha": "2026-04-09", "tipo": "Video", "url": "https://www.instagram.com/p/DW7VM3EEo_F/", "media_url": "assets/thumbs/ig-c805c2813f.jpg", "caption": "Ok ok lo del sánduche es broma, pero cuéntanos, ¿cuántos intentos fueron?", "engagement": 334, "likes": 283, "comentarios": 51}]}, "facebook": {"n_posts": 42, "engagement_total": 2751, "engagement_promedio": 65.5, "engagement_mediana": 11, "by_type": {"labels": ["Video", "Photo", "Album"], "counts": [30, 8, 4], "engagement": [2546, 165, 40], "engagement_promedio": [84.9, 20.6, 10.0]}, "by_day": {"labels": ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"], "counts": [5, 6, 2, 4, 3, 3, 6], "engagement_promedio": [13.8, 15.2, 13.0, 174.0, 14.0, 23.3, 257.8]}, "by_hour": {"labels": ["11", "12", "13", "14", "15", "16", "17", "18", "19"], "counts": [2, 2, 2, 2, 1, 4, 10, 5, 1]}, "by_week": {"labels": ["2026-W10", "2026-W11", "2026-W12", "2026-W13", "2026-W14", "2026-W15", "2026-W16", "2026-W17", "2026-W18"], "counts": [2, 3, 5, 4, 2, 4, 1, 6, 2], "engagement": [830, 83, 59, 37, 715, 691, 17, 100, 9]}, "top_hashtags": [["#DíaDeLaMujer", 2], ["#Mar10Day", 1], ["#DíaMundialMarioBros", 1], ["#MujeresComapan", 1], ["#ManosEnLaMasa", 1], ["#DíaInternacionalDelPanDeMasaMadre", 1]], "captions_avg_len": 153.0, "top5": [{"fecha": "2026-03-08", "tipo": "Video", "url": "https://www.facebook.com/reel/2843588825975724/", "media_url": "assets/thumbs/fb-1e92c5f354.jpg", "caption": "Hoy se celebra su estilo, a su ritmo y con lo que se le antoje. Que cada gustico sea parte de su celebración 💐  #DíaDeLaMujer", "engagement": 821, "likes": 809, "comentarios": 8}, {"fecha": "2026-04-05", "tipo": "Video", "url": "https://www.facebook.com/reel/1590878365529737/", "media_url": "assets/thumbs/fb-ced775dc18.jpg", "caption": "La vida se trata de esos pequeños momentos que te sacan una sonrisa sin mucha explicación. Encuentra en Comapan todo para acompañar tus mome", "engagement": 701, "likes": 684, "comentarios": 11}, {"fecha": "2026-04-09", "tipo": "Video", "url": "https://www.facebook.com/reel/1207760354582328/", "media_url": "assets/thumbs/fb-15a73a80ed.jpg", "caption": "No pudiste, tranqui… lo sabemos 😏 pero cuéntanos, ¿cuántos intentos fueron?", "engagement": 631, "likes": 548, "comentarios": 81}, {"fecha": "", "tipo": "Photo", "url": "https://www.facebook.com/ComapanCo/posts/pfbid036ALeZrhEdCn1u2ZTLbXABjVtzoXK6eAUumfLXeLVGoodJ8gvY5xtBhXqdNJYtw6al", "media_url": "assets/thumbs/fb-66cc731a2f.jpg", "caption": "La misión era la Luna… 🚀 pero lo mejor… es lo que te espera al volver.", "engagement": 68, "likes": 67, "comentarios": 1}, {"fecha": "", "tipo": "Photo", "url": "https://www.facebook.com/ComapanCo/posts/pfbid02Z7Tv7s7dowAsuzMihzTPBJPbsWzf7Eq1qBVmNa7Fhd7CxBN3vT1ebWWie37HRSKTl", "media_url": "assets/thumbs/fb-0652921076.jpg", "caption": "No tenemos dudas y tampoco podemos afirmarlo, pero quienes somos para negarlo. Ve ya por un Ponqué Tajado Comapan a tiendas y supermercados ", "engagement": 57, "likes": 56, "comentarios": 1}]}, "tiktok": {"n_posts": 27, "engagement_total": 1725, "engagement_promedio": 63.9, "engagement_mediana": 30, "by_type": {"labels": ["Video"], "counts": [27], "engagement": [1725], "engagement_promedio": [63.9]}, "by_day": {"labels": ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"], "counts": [1, 2, 5, 6, 6, 5, 2], "engagement_promedio": [22.0, 19.5, 40.2, 63.0, 54.0, 140.4, 29.5]}, "by_hour": {"labels": ["12", "16", "17", "18", "19", "20", "21"], "counts": [1, 5, 8, 7, 3, 2, 1]}, "by_week": {"labels": ["2026-W06", "2026-W07", "2026-W08", "2026-W09", "2026-W11", "2026-W12", "2026-W13", "2026-W14", "2026-W15", "2026-W16", "2026-W17", "2026-W18"], "counts": [2, 1, 2, 4, 1, 2, 4, 1, 3, 1, 4, 2], "engagement": [153, 29, 288, 702, 16, 63, 182, 20, 70, 41, 104, 57]}, "top_hashtags": [], "captions_avg_len": 166.0, "top5": [{"fecha": "2026-02-28", "tipo": "Video", "url": "https://www.tiktok.com/@comapanco/video/7612042089769028885", "media_url": "assets/thumbs/tt-629e0c53ff.jpg", "caption": "Estos rollitos de salchicha con pan tajado son fáciles, rápidos y siempre funcionan 🤤 Perfectos para lonchera, onces o cuando hay antojo y p", "engagement": 575, "likes": 358, "comentarios": 13}, {"fecha": "2026-02-19", "tipo": "Video", "url": "https://www.tiktok.com/@comapanco/video/7608722991169473813", "media_url": "assets/thumbs/tt-d1f30b48ee.jpg", "caption": "Las onces también pueden ser especiales ✨ Estos mini panes franceses son perfectos para mandarles a los niños algo rico, calientico y hecho ", "engagement": 251, "likes": 181, "comentarios": 18}, {"fecha": "2026-02-06", "tipo": "Video", "url": "https://www.tiktok.com/@comapanco/video/7603898252768988436", "media_url": "assets/thumbs/tt-0009b323ec.jpg", "caption": "Nuestro pan será lo que quieras que sea…Perfecto para solucionar esas onces rápidas de los niños en casa", "engagement": 127, "likes": 86, "comentarios": 1}, {"fecha": "2026-03-25", "tipo": "Video", "url": "https://www.tiktok.com/@comapanco/video/7621318298504006933", "media_url": "assets/thumbs/tt-4c3acc434a.jpg", "caption": "Un postre frío y cremoso que vas a disfrutar con cada cucharada 😮‍💨✨ Las mantecadas Comapan absorben todo el sabor y se convierten en algo s", "engagement": 90, "likes": 74, "comentarios": 4}, {"fecha": "2026-03-20", "tipo": "Video", "url": "https://www.tiktok.com/@comapanco/video/7619456927403183381", "media_url": "assets/thumbs/tt-5b623e1a4d.jpg", "caption": "Podríamos crear una película con estos momentos en búsqueda de la felicidad, pero se nos adelantaron.", "engagement": 49, "likes": 22, "comentarios": 8}]}, "linkedin": {"n_posts": 16, "engagement_total": 162, "engagement_promedio": 10.1, "engagement_mediana": 8, "by_type": {"labels": ["post"], "counts": [16], "engagement": [162], "engagement_promedio": [10.1]}, "by_day": {"labels": ["Lun", "Mar", "Mié", "Jue"], "counts": [3, 3, 5, 5], "engagement_promedio": [10.0, 5.0, 10.8, 12.6]}, "by_hour": {"labels": ["9", "10", "11", "12", "14", "15", "16"], "counts": [1, 3, 5, 2, 1, 3, 1]}, "by_week": {"labels": ["2026-W06", "2026-W07", "2026-W08", "2026-W09", "2026-W10", "2026-W11", "2026-W12", "2026-W14", "2026-W15", "2026-W16", "2026-W18"], "counts": [1, 2, 1, 2, 1, 1, 1, 3, 1, 1, 2], "engagement": [26, 29, 18, 13, 6, 13, 11, 15, 7, 9, 15]}, "top_hashtags": [["#DíaInternacionalDelPanDeMasaMadre", 1]], "captions_avg_len": 149.0, "top5": [{"fecha": "2026-02-05", "tipo": "post", "url": "https://www.linkedin.com/posts/comapan-s-a-_y-s%C3%AD-empezamos-antes-de-que-el-pan-tajado-activity-7425194694047076353-aa9R", "media_url": "assets/thumbs/li-6ab910384d.jpg", "caption": "Y sí, empezamos antes de que el pan tajado fuera parte de la rutina en Colombia. Lo siguiente fue crecer, evolucionar y acompañar a miles de", "engagement": 26, "likes": 25, "comentarios": 0}, {"fecha": "2026-02-11", "tipo": "post", "url": "https://www.linkedin.com/posts/comapan-s-a-_cu%C3%A1l-es-el-sabor-y-el-ritmo-que-suben-tu-ugcPost-7422397587489546240-4ayW", "media_url": "assets/thumbs/li-23fba5d175.jpg", "caption": "¿Cuál es el sabor y el ritmo que suben tu hype en la oficina?🎧", "engagement": 22, "likes": 19, "comentarios": 2}, {"fecha": "2026-02-16", "tipo": "post", "url": "https://www.linkedin.com/posts/comapan-s-a-_si-no-hay-mesas-hay-razones-tu-pr%C3%B3ximo-activity-7429217049584840704-YpI6", "media_url": "assets/thumbs/li-417c262ef2.jpg", "caption": "Si no hay mesas, hay razones 🔥🍔 Tu próximo Comapan puede estar más cerca de lo que crees.👀👇 https://lnkd.in/euEycN-A", "engagement": 18, "likes": 18, "comentarios": 0}, {"fecha": "2026-03-12", "tipo": "post", "url": "https://www.linkedin.com/posts/comapan-s-a-_en-comapan-creemos-que-los-equipos-tambi%C3%A9n-activity-7437900233482821632-C3Zr", "media_url": "assets/thumbs/li-64591bd20d.jpg", "caption": "En Comapan creemos que los equipos también se construyen en esos pequeños momentos del día.", "engagement": 13, "likes": 13, "comentarios": 0}, {"fecha": "2026-04-29", "tipo": "post", "url": "https://www.linkedin.com/posts/comapan-s-a-_hoy-pusimos-a-prueba-el-conocimiento-de-nuestros-activity-7455286054800162817-DNnT", "media_url": "assets/thumbs/li-08315a90e5.jpg", "caption": "Hoy pusimos a prueba el conocimiento de nuestros colaboradores sobre nuestros panes tajados ahora con masa madre. Dale play y descubre que t", "engagement": 11, "likes": 11, "comentarios": 0}]}, "fb_undated": 13, "fb_total": 42, "snapshots_history": [{"snapshot_date": "2026-05-03", "plataforma": "Instagram", "metrica": "followers", "valor": "13422", "posts_acumulados": "2225", "fuente": "apify"}, {"snapshot_date": "2026-05-03", "plataforma": "Facebook", "metrica": "page_likes", "valor": "119971", "posts_acumulados": "", "fuente": "apify"}, {"snapshot_date": "2026-05-03", "plataforma": "LinkedIn", "metrica": "followers", "valor": "5020", "posts_acumulados": "", "fuente": "apify"}]};
+
+// ── Config ──
+Chart.defaults.color = "#4a4a4a";
+Chart.defaults.borderColor = "#ececec";
+Chart.defaults.font.family = "Roboto, -apple-system, sans-serif";
+Chart.defaults.font.size = 12;
+
+const COLORS = {
+  red: "#DB0632", redSoft: "#F8E0E5", yellow: "#F5DA6C", orange: "#FFBC7D",
+  green: "#5BAC47", turquoise: "#19AAB2",
+  ig: "#e1306c", fb: "#1877f2", tt: "#000000", li: "#0a66c2"
+};
+
+const fmt = n => {
+  if (n === null || n === undefined || n === "") return "—";
+  const num = Number(n);
+  if (isNaN(num)) return n;
+  return new Intl.NumberFormat("es-CO").format(num);
+};
+
+const kpi = (label, value, sub, accent) =>
+  `<div class="kpi ${accent ? 'accent' : ''}"><div class="label">${label}</div><div class="value">${value}</div>${sub ? `<div class="sub">${sub}</div>` : ""}</div>`;
+
+// Header window
+function toMonthYear(iso) {
+  if (!iso) return "";
+  const [y, m] = iso.split("-");
+  const months = ["", "Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+  return `${months[parseInt(m, 10)]} ${y}`;
+}
+document.getElementById("meta-window").textContent =
+  DATA.ventana.desde && DATA.ventana.hasta
+    ? `${toMonthYear(DATA.ventana.desde)} → ${toMonthYear(DATA.ventana.hasta)}`
+    : "Últimos 90 días";
+document.getElementById("gen-date").textContent = "Generado el " + DATA.generated_at;
+
+// Tabs
+document.querySelectorAll("nav.tabs button").forEach(b => {
+  b.addEventListener("click", () => {
+    document.querySelectorAll("nav.tabs button").forEach(x => x.classList.remove("active"));
+    document.querySelectorAll(".tab").forEach(x => x.classList.remove("active"));
+    b.classList.add("active");
+    document.getElementById("tab-" + b.dataset.tab).classList.add("active");
+    window.scrollTo({top: 0, behavior: 'smooth'});
+  });
+});
+
+// ── LEARN helper ──
+function learn(id, text) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.innerHTML = `<p>${text}</p>`;
+}
+function maxIdx(arr) { return arr.indexOf(Math.max(...arr)); }
+function minIdx(arr) { return arr.indexOf(Math.min(...arr.filter(x => x > 0))); }
+
+// Traducción de nombres técnicos de formato → lenguaje publicitario
+const TYPE_LABEL = {
+  "Image": "Foto",
+  "Sidecar": "Carrusel",
+  "Video": "Reel",
+  "Photo": "Foto",
+  "Album": "Carrusel",
+  "Text": "Solo texto",
+  "post": "Publicación",
+};
+function prettyType(t) { return TYPE_LABEL[t] || t; }
+function prettyTypes(arr) { return arr.map(prettyType); }
+
+// ── HERO KPIs ──
+const totalPosts = DATA.instagram.n_posts + DATA.facebook.n_posts + DATA.tiktok.n_posts + DATA.linkedin.n_posts;
+const totalEng = DATA.instagram.engagement_total + DATA.facebook.engagement_total + DATA.tiktok.engagement_total + DATA.linkedin.engagement_total;
+
+// KPIs Hero — solo métricas globales sumables/promediables
+const tiktokViews = parseInt(DATA.accounts.TikTok?.views_totales_90d || 0);
+const postsPorSemana = (totalPosts / 13).toFixed(1);
+
+document.getElementById("kpi-hero").innerHTML =
+  kpi("Publicaciones totales", fmt(totalPosts), "en 4 redes · 90 días", true) +
+  kpi("Engagement total", fmt(totalEng), "likes + coments + shares") +
+  kpi("Engagement por post", fmt(Math.round(totalEng / totalPosts)), "promedio global") +
+  kpi("Cadencia", `${postsPorSemana}`, "posts por semana en promedio");
+
+// ── AUDIENCIA DIGITAL ACTUAL — métricas nativas por red ──
+const audienciaCards = document.getElementById("audiencia-cards");
+const audienciaConfig = [
+  { name: "Instagram", color: COLORS.ig, value: parseInt(DATA.accounts.Instagram?.seguidores || 0), label: "seguidores", note: "@" + (DATA.accounts.Instagram?.username || "comapan_co") },
+  { name: "Facebook", color: COLORS.fb, value: parseInt(DATA.accounts.Facebook?.page_likes || 0), label: "likes de página", note: "ComapanCo" },
+  { name: "TikTok", color: COLORS.tt, value: tiktokViews, label: "views (90d)", note: "@comapanco · followers pendiente de SocialBlade" },
+  { name: "LinkedIn", color: COLORS.li, value: parseInt(DATA.accounts.LinkedIn?.seguidores || 0), label: "seguidores", note: "Comapan S.A." },
+];
+audienciaConfig.forEach(c => {
+  audienciaCards.innerHTML += `
+    <div class="net-card">
+      <div class="net-name"><span class="dot" style="background:${c.color}"></span>${c.name}</div>
+      <div class="stat-label">${c.label}</div>
+      <div class="stat">${c.value ? fmt(c.value) : "n/d"}</div>
+      <div class="row" style="border-top:0; padding-top:12px"><span class="k">${c.note}</span></div>
+    </div>`;
+});
+
+// ── VEREDICTO ──
+const ig = DATA.instagram, fb = DATA.facebook, tt = DATA.tiktok, li = DATA.linkedin;
+const ratioIgFb = (ig.engagement_promedio / Math.max(fb.engagement_promedio, 1)).toFixed(1);
+
+document.getElementById("verdict-text").innerHTML =
+  `Comapan está activa en sus 4 redes y le apuesta fuerte a los reels y videos cortos. ` +
+  `<strong>Instagram es donde pasa todo</strong>: ${fmt(ig.n_posts)} publicaciones generaron ${fmt(ig.engagement_total)} interacciones de la gente — la audiencia que reacciona está ahí. ` +
+  `<strong>LinkedIn y TikTok están casi sin trabajar</strong> y son las dos oportunidades más claras del trimestre.`;
+
+// ── COMPARATIVO ──
+new Chart(document.getElementById("c-posts-red"), {
+  type: "bar",
+  data: {
+    labels: ["Instagram","Facebook","TikTok","LinkedIn"],
+    datasets: [{
+      data: [ig.n_posts, fb.n_posts, tt.n_posts, li.n_posts],
+      backgroundColor: [COLORS.ig, COLORS.fb, COLORS.tt, COLORS.li],
+      borderRadius: 4
+    }]
+  },
+  options: {
+    plugins: { legend: { display: false } },
+    maintainAspectRatio: false,
+    scales: { y: { beginAtZero: true, grid: { color: "#f0f0f0" } }, x: { grid: { display: false } } }
+  }
+});
+new Chart(document.getElementById("c-eng-red"), {
+  type: "bar",
+  data: {
+    labels: ["Instagram","Facebook","TikTok","LinkedIn"],
+    datasets: [{
+      data: [ig.engagement_total, fb.engagement_total, tt.engagement_total, li.engagement_total],
+      backgroundColor: [COLORS.ig, COLORS.fb, COLORS.tt, COLORS.li],
+      borderRadius: 4
+    }]
+  },
+  options: {
+    plugins: { legend: { display: false } },
+    maintainAspectRatio: false,
+    scales: { y: { beginAtZero: true, grid: { color: "#f0f0f0" } }, x: { grid: { display: false } } }
+  }
+});
+
+// Learns del comparativo de redes
+const networkPosts = [ig.n_posts, fb.n_posts, tt.n_posts, li.n_posts];
+const networkEng = [ig.engagement_total, fb.engagement_total, tt.engagement_total, li.engagement_total];
+const networkNames = ["Instagram", "Facebook", "TikTok", "LinkedIn"];
+const topPostNet = networkNames[maxIdx(networkPosts)];
+const topEngNet = networkNames[maxIdx(networkEng)];
+const lowEngNet = networkNames[minIdx(networkEng)];
+learn("l-posts-red",
+  `<strong>${topPostNet}</strong> concentra el mayor volumen de publicación con <strong>${fmt(Math.max(...networkPosts))} posts</strong> en 90 días. La distribución revela dónde está enfocado el esfuerzo editorial actual.`);
+learn("l-eng-red",
+  `<strong>${topEngNet}</strong> capta el grueso del engagement (${fmt(Math.max(...networkEng))} interacciones), mientras que <strong>${lowEngNet}</strong> muestra el desempeño más bajo (${fmt(Math.min(...networkEng))}). El gap entre la primera y la última red es de ${(Math.max(...networkEng)/Math.max(Math.min(...networkEng),1)).toFixed(1)}x.`);
+
+// ── EVOLUCIÓN SEMANAL DEL ENGAGEMENT (multi-línea por red) ──
+const evolutionWeeks = [...new Set([
+  ...ig.by_week.labels, ...fb.by_week.labels, ...tt.by_week.labels, ...li.by_week.labels
+])].sort();
+
+function alignToWeeks(byWeek) {
+  return evolutionWeeks.map(w => {
+    const idx = byWeek.labels.indexOf(w);
+    return idx >= 0 ? byWeek.engagement[idx] : null;
+  });
+}
+
+new Chart(document.getElementById("c-eng-evolution"), {
+  type: "line",
+  data: {
+    labels: evolutionWeeks,
+    datasets: [
+      { label: "Instagram", data: alignToWeeks(ig.by_week), borderColor: COLORS.ig, backgroundColor: COLORS.ig + "11", tension: 0.3, borderWidth: 2.5, pointRadius: 3 },
+      { label: "Facebook", data: alignToWeeks(fb.by_week), borderColor: COLORS.fb, backgroundColor: COLORS.fb + "11", tension: 0.3, borderWidth: 2.5, pointRadius: 3 },
+      { label: "TikTok", data: alignToWeeks(tt.by_week), borderColor: COLORS.tt, backgroundColor: COLORS.tt + "11", tension: 0.3, borderWidth: 2.5, pointRadius: 3 },
+      { label: "LinkedIn", data: alignToWeeks(li.by_week), borderColor: COLORS.li, backgroundColor: COLORS.li + "11", tension: 0.3, borderWidth: 2.5, pointRadius: 3 },
+    ]
+  },
+  options: {
+    plugins: { legend: { position: "bottom", labels: { boxWidth: 12, padding: 16 } } },
+    maintainAspectRatio: false,
+    interaction: { mode: "index", intersect: false },
+    scales: { y: { beginAtZero: true, grid: { color: "#f0f0f0" } }, x: { grid: { display: false } } }
+  }
+});
+
+// Learn de la evolución
+function trendOf(arr) {
+  const clean = arr.filter(v => v !== null && v !== undefined);
+  if (clean.length < 4) return "estable";
+  const half = Math.floor(clean.length / 2);
+  const first = clean.slice(0, half).reduce((a,b)=>a+b,0) / half;
+  const last = clean.slice(half).reduce((a,b)=>a+b,0) / (clean.length - half);
+  const delta = ((last - first) / Math.max(first, 1) * 100);
+  if (delta > 10) return `creciente (+${delta.toFixed(0)}%)`;
+  if (delta < -10) return `decreciente (${delta.toFixed(0)}%)`;
+  return "estable";
+}
+const trendIg = trendOf(alignToWeeks(ig.by_week));
+const trendFb = trendOf(alignToWeeks(fb.by_week));
+const trendTt = trendOf(alignToWeeks(tt.by_week));
+const trendLi = trendOf(alignToWeeks(li.by_week));
+learn("l-eng-evolution",
+  `Tendencias del engagement semanal en 90 días — IG: <strong>${trendIg}</strong>, FB: <strong>${trendFb}</strong>, TT: <strong>${trendTt}</strong>, LI: <strong>${trendLi}</strong>. La curva revela qué red está ganando o perdiendo tracción independientemente del tamaño de la audiencia.`);
+
+// ── RANKING CARDS ──
+const ordered = [
+  { name: "Instagram", color: COLORS.ig, key: "instagram", acc: DATA.accounts.Instagram },
+  { name: "Facebook", color: COLORS.fb, key: "facebook", acc: DATA.accounts.Facebook },
+  { name: "TikTok", color: COLORS.tt, key: "tiktok", acc: DATA.accounts.TikTok },
+  { name: "LinkedIn", color: COLORS.li, key: "linkedin", acc: DATA.accounts.LinkedIn }
+].sort((a,b) => DATA[b.key].engagement_total - DATA[a.key].engagement_total);
+
+const ranking = document.getElementById("ranking-cards");
+ordered.forEach((n, i) => {
+  const d = DATA[n.key];
+  // TikTok usa "Views" como métrica de alcance; el resto usa "Seguidores"
+  const alcanceLabel = n.key === "tiktok" ? "Views (90d)" : "Seguidores";
+  const alcanceValue = n.key === "tiktok"
+    ? fmt(parseInt(n.acc?.views_totales_90d || 0))
+    : fmt(n.acc?.seguidores);
+  ranking.innerHTML += `
+    <div class="net-card">
+      <div class="rank">#${i+1}</div>
+      <div class="net-name"><span class="dot" style="background:${n.color}"></span>${n.name}</div>
+      <div class="stat-label">Engagement por post</div>
+      <div class="stat">${fmt(d.engagement_promedio)}</div>
+      <div class="row"><span class="k">${alcanceLabel}</span><span class="v">${alcanceValue}</span></div>
+      <div class="row"><span class="k">Posts (90d)</span><span class="v">${fmt(d.n_posts)}</span></div>
+      <div class="row"><span class="k">Engagement total</span><span class="v">${fmt(d.engagement_total)}</span></div>
+    </div>`;
+});
+
+// Tabla de cuentas — la columna "Audiencia" muestra seguidores para IG/FB/LI y views totales para TikTok
+const tbody = document.getElementById("t-accounts");
+DATA.consolidated.forEach(c => {
+  const tr = document.createElement("tr");
+  let audiencia;
+  if (c.plataforma === "TikTok") {
+    audiencia = `${fmt(tiktokViews)} <span style="color:var(--muted);font-size:11px">views</span>`;
+  } else if (c.plataforma === "Facebook") {
+    audiencia = `<span style="color:var(--muted)">n/d</span>`;
+  } else {
+    audiencia = `${fmt(c.seguidores)} <span style="color:var(--muted);font-size:11px">seguidores</span>`;
+  }
+  tr.innerHTML = `<td><strong>${c.plataforma}</strong></td><td>${c.username || "—"}</td><td>${audiencia}</td><td>${c.posts_90d}</td><td>${fmt(c.engagement_total_90d)}</td><td>${fmt(c.engagement_promedio_post)}</td><td><a href="${c.top_post_url}" target="_blank">ver →</a></td>`;
+  tbody.appendChild(tr);
+});
+
+// ── PER PLATFORM ──
+function buildPlatform(prefix, key, color) {
+  const data = DATA[key];
+  const acc = DATA.accounts[ {ig:"Instagram",fb:"Facebook",tt:"TikTok",li:"LinkedIn"}[prefix] ] || {};
+  if (prefix === "ig") document.getElementById("ig-user").textContent = acc.username || "comapan_co";
+
+  // KPI principal varía por plataforma:
+  // - IG/FB/LI: Seguidores
+  // - TikTok: Views totales (el actor no entrega followers)
+  const kpiPrincipal = prefix === "tt"
+    ? kpi("Views totales", fmt(parseInt(acc.views_totales_90d || 0)), "últimos 90 días")
+    : kpi("Seguidores", fmt(acc.seguidores));
+  document.getElementById("kpi-" + prefix).innerHTML =
+    kpiPrincipal +
+    kpi("Posts (90d)", fmt(data.n_posts)) +
+    kpi("Engagement total", fmt(data.engagement_total)) +
+    kpi("Eng. por post", fmt(data.engagement_promedio), `mediana: ${fmt(data.engagement_mediana)}`);
+
+  // weekly
+  if (data.by_week.labels.length) {
+    new Chart(document.getElementById(`c-${prefix}-week`), {
+      type: "line",
+      data: { labels: data.by_week.labels,
+        datasets: [{ label: "Posts", data: data.by_week.counts,
+          borderColor: color, backgroundColor: color + "22", tension: 0.35, fill: true,
+          pointRadius: 3, pointBackgroundColor: color, pointBorderWidth: 0, borderWidth: 2 }] },
+      options: { plugins: { legend: { display: false } }, maintainAspectRatio: false,
+        scales: { y: { beginAtZero: true, grid: { color: "#f0f0f0" } }, x: { grid: { display: false } } } }
+    });
+    const wkCounts = data.by_week.counts;
+    const wkAvg = (wkCounts.reduce((a,b)=>a+b,0) / wkCounts.length).toFixed(1);
+    const wkMax = Math.max(...wkCounts), wkMin = Math.min(...wkCounts);
+    const wkMaxLabel = data.by_week.labels[wkCounts.indexOf(wkMax)];
+    const trend = wkCounts.length >= 4
+      ? (wkCounts.slice(-3).reduce((a,b)=>a+b,0) > wkCounts.slice(0,3).reduce((a,b)=>a+b,0) ? "creciente" : "decreciente")
+      : "estable";
+    learn(`l-${prefix}-week`,
+      `Cadencia promedio de <strong>${wkAvg} posts/semana</strong> con un pico de ${wkMax} en ${wkMaxLabel} y mínimo de ${wkMin}. Tendencia ${trend} en las últimas semanas.`);
+  }
+
+  // type
+  const cType = document.getElementById(`c-${prefix}-type`);
+  if (cType) {
+    new Chart(cType, {
+      type: "bar",
+      data: { labels: prettyTypes(data.by_type.labels),
+        datasets: [{ data: data.by_type.engagement_promedio, backgroundColor: color, borderRadius: 4 }] },
+      options: { plugins: { legend: { display: false } }, indexAxis: 'y', maintainAspectRatio: false,
+        scales: { x: { beginAtZero: true, grid: { color: "#f0f0f0" } }, y: { grid: { display: false } } } }
+    });
+    const typeAvg = data.by_type.engagement_promedio;
+    const tMaxIdx = maxIdx(typeAvg), tMinIdx = minIdx(typeAvg);
+    const ratio = typeAvg[tMinIdx] > 0
+      ? (typeAvg[tMaxIdx] / typeAvg[tMinIdx]).toFixed(1)
+      : "—";
+    const bestType = prettyType(data.by_type.labels[tMaxIdx]);
+    const worstType = prettyType(data.by_type.labels[tMinIdx]);
+    learn(`l-${prefix}-type`,
+      `Cada <strong>${bestType.toLowerCase()}</strong> consigue en promedio <strong>${fmt(typeAvg[tMaxIdx])} interacciones</strong>${ratio !== "—" && parseFloat(ratio) >= 1.3 ? `, casi <strong>${ratio} veces más</strong> que un ${worstType.toLowerCase()}` : ""}. Es la pieza que más mueve la cuenta y debería pesar más en el calendario.`);
+  }
+
+  // dow
+  const cDow = document.getElementById(`c-${prefix}-dow`);
+  if (cDow && data.by_day.labels.length) {
+    new Chart(cDow, {
+      type: "bar",
+      data: { labels: data.by_day.labels,
+        datasets: [{ data: data.by_day.engagement_promedio, backgroundColor: color, borderRadius: 4 }] },
+      options: { plugins: { legend: { display: false } }, maintainAspectRatio: false,
+        scales: { y: { beginAtZero: true, grid: { color: "#f0f0f0" } }, x: { grid: { display: false } } } }
+    });
+    const dowAvg = data.by_day.engagement_promedio;
+    const dMax = maxIdx(dowAvg), dMin = minIdx(dowAvg);
+    learn(`l-${prefix}-dow`,
+      `Los <strong>${data.by_day.labels[dMax]}</strong> son el mejor día (${fmt(dowAvg[dMax])} eng. promedio), mientras que los ${data.by_day.labels[dMin]} caen a ${fmt(dowAvg[dMin])}. Reorganizar el calendario hacia ${data.by_day.labels[dMax]} es una palanca de bajo costo.`);
+  }
+
+  // hour
+  const cHour = document.getElementById(`c-${prefix}-hour`);
+  if (cHour && data.by_hour.labels.length) {
+    new Chart(cHour, {
+      type: "bar",
+      data: { labels: data.by_hour.labels,
+        datasets: [{ data: data.by_hour.counts, backgroundColor: color + "aa", borderRadius: 2 }] },
+      options: { plugins: { legend: { display: false } }, maintainAspectRatio: false,
+        scales: { y: { beginAtZero: true, grid: { color: "#f0f0f0" } }, x: { grid: { display: false } } } }
+    });
+    const hourCounts = data.by_hour.counts;
+    const hMax = maxIdx(hourCounts);
+    const peakHour = data.by_hour.labels[hMax];
+    const peakRange = `${peakHour}:00 - ${(parseInt(peakHour)+1)%24}:00`;
+    learn(`l-${prefix}-hour`,
+      `El horario con mayor concentración de publicaciones es <strong>${peakRange}</strong> (${hourCounts[hMax]} posts). Validar contra horarios de mayor consumo de la audiencia objetivo.`);
+  }
+
+  // Learn del top 5: concentración + patrón dominante + gap
+  if (data.top5.length) {
+    const topEng = data.top5.reduce((a, b) => a + b.engagement, 0);
+    const concentration = data.engagement_total > 0
+      ? Math.round(topEng / data.engagement_total * 100)
+      : 0;
+    // Formato dominante (solo si hay tipos con prettyType útil — TikTok no aplica)
+    const types = data.top5.map(t => prettyType(t.tipo));
+    const tCounts = {};
+    types.forEach(t => tCounts[t] = (tCounts[t] || 0) + 1);
+    const dominantArr = Object.entries(tCounts).sort((a, b) => b[1] - a[1])[0];
+    const hasFormatVariation = Object.keys(tCounts).length > 1;
+    // Gap entre #1 y #5
+    const top1 = data.top5[0]?.engagement || 0;
+    const last = data.top5[data.top5.length - 1]?.engagement || 0;
+    const gap = last > 0 ? (top1 / last).toFixed(1) : null;
+
+    const parts = [];
+    if (concentration > 0) {
+      const otrasN = data.n_posts - data.top5.length;
+      const restante = 100 - concentration;
+      parts.push(`Estas <strong>${data.top5.length} publicaciones</strong> acumularon el <strong>${concentration}%</strong> de los likes y comentarios de los últimos 90 días — las otras <strong>${otrasN} publicaciones</strong> se repartieron solo el <strong>${restante}%</strong> restante`);
+    }
+    if (hasFormatVariation && dominantArr && dominantArr[1] >= 3) {
+      parts.push(`<strong>${dominantArr[1]} de las ${data.top5.length}</strong> son <strong>${dominantArr[0].toLowerCase()}s</strong>: ese formato es el que más conecta con la audiencia`);
+    }
+    if (gap && parseFloat(gap) >= 1.5) {
+      const gapNum = parseFloat(gap);
+      const gapText = gapNum >= 5
+        ? `casi <strong>${Math.round(gapNum)} veces</strong>`
+        : `<strong>${gap} veces</strong>`;
+      parts.push(`el post más fuerte tuvo ${gapText} más interacciones que el quinto — vale la pena revisar qué tuvo de especial para repetirlo`);
+    }
+    learn(`l-${prefix}-top`, parts.join(". ") + ".");
+  }
+
+  // top 5
+  const top = document.querySelector(`#t-${prefix}-top tbody`);
+  const platformIcon = { ig: "📷", fb: "📷", tt: "▶", li: "💼" }[prefix] || "▶";
+  data.top5.forEach(p => {
+    const tr = document.createElement("tr");
+    const thumb = p.media_url
+      ? `<img class="post-thumb" src="${p.media_url}" referrerpolicy="no-referrer" onerror="this.outerHTML='<div class=\\'post-thumb-placeholder\\'>${platformIcon}</div>'">`
+      : `<div class="post-thumb-placeholder">${platformIcon}</div>`;
+    const cols = prefix === "tt"
+      ? `<td style="width:72px">${thumb}</td><td>${p.fecha}</td><td>${p.caption}</td><td>${fmt(p.likes)}</td><td>${fmt(p.comentarios)}</td><td><strong>${fmt(p.engagement)}</strong></td><td><a href="${p.url}" target="_blank">ver →</a></td>`
+      : prefix === "fb"
+      ? `<td style="width:72px">${thumb}</td><td>${p.fecha || "—"}</td><td><span class="pill">${prettyType(p.tipo)}</span></td><td>${p.caption}</td><td>${fmt(p.likes)}</td><td>—</td><td><strong>${fmt(p.engagement)}</strong></td><td><a href="${p.url}" target="_blank">ver →</a></td>`
+      : prefix === "li"
+      ? `<td style="width:72px">${thumb}</td><td>${p.fecha}</td><td>${p.caption}</td><td>${fmt(p.likes)}</td><td>${fmt(p.comentarios)}</td><td><strong>${fmt(p.engagement)}</strong></td><td><a href="${p.url}" target="_blank">ver →</a></td>`
+      : `<td style="width:72px">${thumb}</td><td>${p.fecha}</td><td><span class="pill">${prettyType(p.tipo)}</span></td><td>${p.caption}</td><td>${fmt(p.likes)}</td><td>${fmt(p.comentarios)}</td><td><strong>${fmt(p.engagement)}</strong></td><td><a href="${p.url}" target="_blank">ver →</a></td>`;
+    tr.innerHTML = cols;
+    top.appendChild(tr);
+  });
+}
+
+buildPlatform("ig", "instagram", COLORS.ig);
+buildPlatform("fb", "facebook", COLORS.fb);
+buildPlatform("tt", "tiktok", COLORS.tt);
+buildPlatform("li", "linkedin", COLORS.li);
+
+// IG hashtags
+const igh = document.getElementById("ig-hashtags");
+if (DATA.instagram.top_hashtags.length === 0) {
+  igh.innerHTML = `<span style="color:var(--muted)">Comapan no usa hashtags de forma sistemática en Instagram. Esta es una palanca SEO sin explotar.</span>`;
+} else {
+  DATA.instagram.top_hashtags.forEach(([h, n]) => {
+    igh.innerHTML += `<span class="ht">${h}<strong>${n}</strong></span>`;
+  });
+}
+
+// ── HALLAZGOS ──
+const findings = [];
+
+// Hallazgo de formato en IG — lenguaje publicitario
+const igTypeAvg = ig.by_type.engagement_promedio;
+const igTypeLabels = ig.by_type.labels;
+if (igTypeAvg.length >= 2) {
+  const positives = igTypeAvg.filter(x => x > 0);
+  if (positives.length >= 2) {
+    const bestIdx = igTypeAvg.indexOf(Math.max(...positives));
+    const worstIdx = igTypeAvg.indexOf(Math.min(...positives));
+    const ratio = igTypeAvg[bestIdx] / Math.max(igTypeAvg[worstIdx], 1);
+    const best = prettyType(igTypeLabels[bestIdx]).toLowerCase();
+    const worst = prettyType(igTypeLabels[worstIdx]).toLowerCase();
+    if (ratio >= 1.3) {
+      findings.push({
+        title: `Las ${best}s mueven mucho más a la audiencia que los ${worst}s`,
+        body: `Cada <strong>${best}</strong> recibe en promedio <strong>${fmt(igTypeAvg[bestIdx])} interacciones</strong> (likes y comentarios), frente a <strong>${fmt(igTypeAvg[worstIdx])}</strong> de cada ${worst} — casi <strong>${ratio.toFixed(1)} veces más</strong>. Recomendación: bajar la frecuencia de ${worst}s y publicar más ${best}s en su lugar.`,
+        impact: "alto"
+      });
+    } else {
+      findings.push({
+        title: `El formato no es lo que decide en Instagram`,
+        body: `Fotos, carruseles y reels reciben un número parecido de interacciones (entre ${fmt(igTypeAvg[worstIdx])} y ${fmt(igTypeAvg[bestIdx])} en promedio). Lo que separa un buen post de uno regular no es el formato sino el tema, el copy y el momento — la conversación creativa debería moverse hacia ahí.`,
+        impact: "medio"
+      });
+    }
+  }
+}
+
+// LinkedIn subutilizado
+findings.push({
+  title: `LinkedIn está casi en pausa`,
+  body: `En los últimos 90 días Comapan publicó <strong>${li.n_posts} veces</strong> en LinkedIn — apenas <strong>${(li.n_posts/13).toFixed(1)} por semana</strong>. Con 75 años de marca, este es el canal natural para hablarle a empleados, distribuidores y clientes del canal HORECA. Está sin trabajar.`,
+  impact: "alto"
+});
+
+// IG vs FB
+if (ratioIgFb >= 1.5) {
+  findings.push({
+    title: `Instagram es donde está la audiencia que reacciona`,
+    body: `Aunque Facebook tiene una página enorme (${fmt(parseInt(DATA.accounts.Facebook?.page_likes||0))} likes), cada post en Instagram recibe <strong>${ratioIgFb}x más interacciones</strong> que uno en Facebook (${fmt(ig.engagement_promedio)} vs ${fmt(fb.engagement_promedio)}). La gente que consume Comapan en redes está en IG; FB se mantiene por inercia.`,
+    impact: "alto"
+  });
+}
+
+// Hashtags bajo uso
+if (ig.top_hashtags.length === 0 || (ig.top_hashtags[0] && ig.top_hashtags[0][1] < 5)) {
+  findings.push({
+    title: `Comapan casi no usa hashtags en Instagram`,
+    body: `Ningún hashtag aparece de forma sistemática en los posts del periodo. Los hashtags son la forma en que la gente descubre marcas sin pagar pauta. Una propuesta: definir 4-6 etiquetas fijas (como #ComapanEnCasa, #DesayunoColombiano, #PanchiRecomienda) y usarlas en todos los posts del mes.`,
+    impact: "medio"
+  });
+}
+
+// Mejor día IG
+if (ig.by_day.labels.length) {
+  const bestIdx = ig.by_day.engagement_promedio.indexOf(Math.max(...ig.by_day.engagement_promedio));
+  findings.push({
+    title: `Los ${ig.by_day.labels[bestIdx].toLowerCase()}s funcionan mejor que el resto de la semana`,
+    body: `Los posts de los <strong>${ig.by_day.labels[bestIdx].toLowerCase()}s</strong> reciben en promedio <strong>${fmt(ig.by_day.engagement_promedio[bestIdx])} interacciones</strong>, por encima del promedio de los demás días. Vale la pena ajustar el calendario para que las piezas más importantes salgan ese día.`,
+    impact: "medio"
+  });
+}
+
+// TikTok cadencia
+findings.push({
+  title: `Hay espacio para crecer en TikTok sin producir nuevo contenido`,
+  body: `TikTok solo recibe <strong>${(tt.n_posts/13).toFixed(1)} videos por semana</strong>, menos de la mitad que Instagram. Cada reel de IG se puede adaptar a TikTok cambiando música y duración — duplicar la frecuencia ahí sería un esfuerzo bajo de producción y abre una audiencia que IG no captura.`,
+  impact: "medio"
+});
+
+const findingsEl = document.getElementById("findings");
+findings.forEach((f, i) => {
+  const impactLabel = { alto: "Alto impacto", medio: "Medio impacto", bajo: "Bajo impacto" }[f.impact];
+  findingsEl.innerHTML += `
+    <div class="finding">
+      <div class="num">${String(i+1).padStart(2,'0')}</div>
+      <div class="body">
+        <h4>${f.title}</h4>
+        <p>${f.body}</p>
+        <span class="impact ${f.impact}">${impactLabel}</span>
+      </div>
+    </div>`;
+});
+
+// ── RECOMENDACIONES ──
+const recos = [
+  {
+    title: "Reactivar LinkedIn con un calendario fijo",
+    body: "Empezar con 2 publicaciones por semana en LinkedIn aprovechando contenido que ya se produce: hitos de los 75 años, cultura interna y productos para el canal HORECA. No requiere producción nueva, solo adaptar el copy al tono profesional de la red.",
+    tags: ["Esfuerzo bajo", "Impacto alto", "30 días"]
+  },
+  {
+    title: "Definir un sistema de hashtags para Instagram",
+    body: "Acordar 4-6 hashtags fijos para usar en todos los posts del mes (ejemplos: #ComapanEnCasa, #DesayunoColombiano, #PanchiRecomienda) y rotarlos según el tipo de pieza. Es la forma más barata de que más gente nueva descubra los posts.",
+    tags: ["Esfuerzo bajo", "Impacto medio", "30 días"]
+  },
+  {
+    title: "Llevar los reels de Instagram también a TikTok",
+    body: "Cada reel que se publica en Instagram se puede subir a TikTok cambiando el sonido y ajustando el formato — son 10 minutos extra por video. Pasar de 2 a 5 videos por semana en TikTok abre una audiencia nueva sin grabar nada adicional.",
+    tags: ["Esfuerzo medio", "Impacto medio", "30-60 días"]
+  }
+];
+const recosEl = document.getElementById("recos");
+recos.forEach((r, i) => {
+  recosEl.innerHTML += `
+    <div class="reco">
+      <div class="num">${i+1}</div>
+      <div>
+        <h4>${r.title}</h4>
+        <p>${r.body}</p>
+        <div class="tags">${r.tags.map(t => `<span class="tag">${t}</span>`).join("")}</div>
+      </div>
+    </div>`;
+});
+</script>
+
+</body>
+</html>

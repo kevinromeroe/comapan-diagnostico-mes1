@@ -1,0 +1,26 @@
+# Modelo whitelist: ignoramos TODO por defecto y solo permitimos lo que va al deploy.
+# Esto blinda accidentes — ningún JSON, CSV, ni script de Python se subirá nunca a Git.
+
+/*
+
+# Permitidos para deploy en GitHub Pages
+!/index.html
+!/CNAME
+!/robots.txt
+!/.gitignore
+!/README.md
+
+# Carpeta de assets (logos + thumbnails)
+!/assets/
+/assets/*
+!/assets/logo-comapan.svg
+!/assets/logo-comapan.png
+!/assets/logo-14dias.svg
+!/assets/panchi.webp
+!/assets/thumbs/
+/assets/thumbs/*
+!/assets/thumbs/*.jpg
+!/assets/thumbs/*.png
+
+# Sistema
+.DS_Store
