@@ -646,8 +646,8 @@
         Generado por <strong>Datalítica Colombia S.A.S.</strong> para <strong>Catorce Días, S.A. de C.V.</strong> (D14S)
       </div>
       <div class="legal-block">
-        <p>Datos de fuentes públicas · <span id="gen-date"></span></p>
-        <p>© 2026 Datalítica Colombia S.A.S. — NIT en proceso. Todos los derechos reservados. Este reporte es un entregable confidencial; el acceso, copia o distribución no autorizada está prohibida.</p>
+        <p>Datos de fuentes públicas.</p>
+        <p>© 2026 Datalítica Colombia S.A.S. — NIT 901.957.313-6. Todos los derechos reservados. Este reporte es un entregable confidencial; el acceso, copia o distribución no autorizada está prohibida.</p>
         <p>Datalítica Colombia S.A.S. trata los datos públicos analizados conforme a la <strong>Ley 1581 de 2012</strong> de protección de datos personales (Colombia). Catorce Días, S.A. de C.V., destinatario del informe, opera conforme a la <strong>Ley Federal de Protección de Datos Personales en Posesión de los Particulares</strong> (México) — política completa en <a href="https://catorcedias.com/politica-privacidad/" target="_blank" rel="noopener">catorcedias.com/politica-privacidad</a>.</p>
         <p>Para ejercer derechos de habeas data o consultas sobre el tratamiento, escribir a <a href="mailto:informacion@catorcedias.com">informacion@catorcedias.com</a>.</p>
       </div>
@@ -697,7 +697,7 @@ document.getElementById("meta-window").textContent =
   DATA.ventana.desde && DATA.ventana.hasta
     ? `${toMonthYear(DATA.ventana.desde)} → ${toMonthYear(DATA.ventana.hasta)}`
     : "Últimos 90 días";
-document.getElementById("gen-date").textContent = "Generado el " + DATA.generated_at;
+// Fecha de generación oculta en el footer por decisión editorial
 
 // Tabs (desktop) + Drawer (mobile) sincronizados
 function activateTab(tabId) {
