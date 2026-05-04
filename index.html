@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <title>Comapan · Diagnóstico de Redes Sociales</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="alternate icon" href="assets/logo-comapan.png">
+<meta name="theme-color" content="#DB0632">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@300;400;500;600;700;800&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -34,6 +37,85 @@
   }
   /* Chart.js: wrap con width controlado evita que el canvas desborde el contenedor */
   .chart-wrap, .chart-card { min-width: 0; max-width: 100%; }
+
+  /* Info icon con tooltip — explicación de métricas */
+  .info-icon {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 16px; height: 16px; border-radius: 50%; background: var(--line);
+    color: var(--ink-soft); font-size: 10px; font-weight: 700; font-style: normal;
+    cursor: help; position: relative; margin-left: 6px;
+    user-select: none; vertical-align: middle; font-family: -apple-system, sans-serif;
+  }
+  .info-icon:hover, .info-icon.active { background: var(--comapan-red); color: white; }
+  .info-icon::before {
+    content: attr(data-tip); position: absolute; bottom: calc(100% + 10px);
+    left: 50%; transform: translateX(-50%);
+    background: var(--ink); color: white; padding: 10px 14px;
+    border-radius: 6px; font-size: 12px; font-weight: 400; line-height: 1.5;
+    white-space: normal; width: max-content; max-width: 280px; text-align: left;
+    text-transform: none; letter-spacing: normal;
+    opacity: 0; pointer-events: none; transition: opacity 0.15s;
+    z-index: 60; box-shadow: 0 6px 20px rgba(0,0,0,0.18);
+  }
+  .info-icon::after {
+    content: ""; position: absolute; bottom: calc(100% + 4px); left: 50%;
+    transform: translateX(-50%); border: 6px solid transparent;
+    border-top-color: var(--ink); opacity: 0; transition: opacity 0.15s;
+  }
+  .info-icon:hover::before, .info-icon.active::before,
+  .info-icon:hover::after, .info-icon.active::after { opacity: 1; }
+  @media (max-width: 720px) {
+    .info-icon::before { width: 220px; max-width: 70vw; }
+  }
+
+  /* Hamburger + drawer (ocultos en desktop) */
+  .menu-toggle {
+    display: none; background: transparent; border: 0; cursor: pointer;
+    width: 40px; height: 40px; padding: 8px; flex-direction: column; gap: 5px;
+    justify-content: center; align-items: center;
+  }
+  .menu-toggle span {
+    display: block; width: 22px; height: 2px; background: var(--ink);
+    border-radius: 1px; transition: transform 0.2s, opacity 0.2s;
+  }
+  .menu-toggle.active span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+  .menu-toggle.active span:nth-child(2) { opacity: 0; }
+  .menu-toggle.active span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+  .menu-backdrop {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+    z-index: 99; opacity: 0; transition: opacity 0.25s;
+  }
+  .menu-backdrop.open { display: block; opacity: 1; }
+
+  .menu-drawer {
+    display: none; position: fixed; top: 0; right: 0; height: 100vh; width: 300px;
+    max-width: 88vw; background: var(--bg); z-index: 100;
+    transform: translateX(100%); transition: transform 0.28s cubic-bezier(.2,.8,.2,1);
+    box-shadow: -4px 0 24px rgba(0,0,0,0.12); flex-direction: column;
+    padding: 0; overflow-y: auto;
+  }
+  .menu-drawer.open { transform: translateX(0); }
+  .menu-drawer-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 24px; border-bottom: 1px solid var(--line);
+    font-family: 'Roboto Slab', serif; font-weight: 700; font-size: 15px;
+    text-transform: uppercase; letter-spacing: 1.2px; color: var(--comapan-red);
+  }
+  .menu-close {
+    background: transparent; border: 0; font-size: 28px; line-height: 1;
+    cursor: pointer; color: var(--ink-soft); padding: 0 8px;
+  }
+  .menu-drawer button[data-tab] {
+    background: transparent; border: 0; text-align: left; padding: 16px 24px;
+    font-size: 15px; color: var(--ink); cursor: pointer; font-family: inherit;
+    border-bottom: 1px solid var(--line); display: block; width: 100%;
+  }
+  .menu-drawer button[data-tab]:hover { background: var(--bg-soft-2); color: var(--comapan-red); }
+  .menu-drawer button[data-tab].active {
+    color: var(--comapan-red); font-weight: 700;
+    border-left: 3px solid var(--comapan-red); padding-left: 21px;
+  }
   h1, h2, h3, h4, .display { font-family: 'Roboto Slab', serif; font-weight: 700; }
 
   /* Top bar */
@@ -219,8 +301,14 @@
     main, .topbar, nav.tabs, footer { padding-left: 24px; padding-right: 24px; }
   }
   @media (max-width: 720px) {
-    /* Topbar — stack vertical en mobile */
-    .topbar { flex-direction: column; align-items: flex-start; gap: 12px; padding: 14px 16px; }
+    /* Hamburger + drawer activos en mobile */
+    .menu-toggle { display: flex; position: absolute; top: 14px; right: 16px; }
+    .menu-drawer { display: flex; }
+    nav.tabs { display: none; }
+
+    /* Topbar — stack vertical en mobile, dejando espacio para el hamburger */
+    .topbar { flex-direction: column; align-items: flex-start; gap: 12px;
+      padding: 14px 56px 14px 16px; position: relative; }
     .topbar .brand { gap: 12px; flex-wrap: wrap; }
     .topbar .title-block .title { font-size: 18px; }
     .topbar .title-block .eyebrow { font-size: 9px; letter-spacing: 1.2px; }
@@ -318,7 +406,26 @@
     <strong>Lectura ejecutiva</strong>
     <span id="meta-window"></span>
   </div>
+  <button class="menu-toggle" id="menu-toggle" aria-label="Abrir menú">
+    <span></span><span></span><span></span>
+  </button>
 </div>
+
+<div class="menu-backdrop" id="menu-backdrop"></div>
+<aside class="menu-drawer" id="menu-drawer" aria-label="Menú de secciones">
+  <div class="menu-drawer-head">
+    <span>Secciones</span>
+    <button class="menu-close" id="menu-close" aria-label="Cerrar menú">×</button>
+  </div>
+  <button data-tab="resumen">Resumen ejecutivo</button>
+  <button data-tab="ranking">Ranking de redes</button>
+  <button data-tab="instagram">Instagram</button>
+  <button data-tab="facebook">Facebook</button>
+  <button data-tab="tiktok">TikTok</button>
+  <button data-tab="linkedin">LinkedIn</button>
+  <button data-tab="hallazgos">Hallazgos</button>
+  <button data-tab="recomendaciones">Recomendaciones</button>
+</aside>
 
 <nav class="tabs">
   <button class="active" data-tab="resumen">Resumen ejecutivo</button>
@@ -368,8 +475,8 @@
   </div>
 
   <div class="chart-grid cols-2">
-    <div class="chart-card"><h3>Posts publicados por red</h3><div class="chart-wrap"><canvas id="c-posts-red"></canvas></div><div class="learn" id="l-posts-red"></div></div>
-    <div class="chart-card"><h3>Engagement total por red</h3><div class="chart-wrap"><canvas id="c-eng-red"></canvas></div><div class="learn" id="l-eng-red"></div></div>
+    <div class="chart-card"><h3>Posts publicados por red <i class="info-icon" data-tip="Total de publicaciones (fotos, carruseles, reels o videos) que cada red tuvo durante los últimos 90 días.">i</i></h3><div class="chart-wrap"><canvas id="c-posts-red"></canvas></div><div class="learn" id="l-posts-red"></div></div>
+    <div class="chart-card"><h3>Engagement total por red <i class="info-icon" data-tip="Engagement = suma de likes + comentarios + shares públicos. Es la actividad que la marca generó en sus publicaciones, sin contar quién las vio.">i</i></h3><div class="chart-wrap"><canvas id="c-eng-red"></canvas></div><div class="learn" id="l-eng-red"></div></div>
   </div>
 
   <div class="section-head">
@@ -378,7 +485,7 @@
     <div class="desc">Engagement total semanal por red en los últimos 90 días. Es el indicador más honesto de momentum cuando no hay histórico retroactivo de seguidores.</div>
   </div>
   <div class="chart-card">
-    <h3>Engagement semanal por red</h3>
+    <h3>Engagement semanal por red <i class="info-icon" data-tip="Engagement (likes + comentarios + shares) sumado por semana en cada red. La pendiente de la curva muestra si la red está ganando o perdiendo tracción.">i</i></h3>
     <div class="chart-wrap" style="height:340px"><canvas id="c-eng-evolution"></canvas></div>
     <div class="learn" id="l-eng-evolution"></div>
   </div>
@@ -417,10 +524,10 @@
   </div>
   <div class="kpi-grid" id="kpi-ig" style="margin-top:24px"></div>
   <div class="chart-grid cols-2" style="margin-top:32px">
-    <div class="chart-card"><h3>Volumen semanal de publicación</h3><div class="chart-wrap"><canvas id="c-ig-week"></canvas></div><div class="learn" id="l-ig-week"></div></div>
-    <div class="chart-card"><h3>Engagement promedio por tipo de contenido</h3><div class="chart-wrap"><canvas id="c-ig-type"></canvas></div><div class="learn" id="l-ig-type"></div></div>
-    <div class="chart-card"><h3>Mejor día de la semana (eng. promedio)</h3><div class="chart-wrap"><canvas id="c-ig-dow"></canvas></div><div class="learn" id="l-ig-dow"></div></div>
-    <div class="chart-card"><h3>Distribución por hora del día</h3><div class="chart-wrap"><canvas id="c-ig-hour"></canvas></div><div class="learn" id="l-ig-hour"></div></div>
+    <div class="chart-card"><h3>Volumen semanal de publicación <i class="info-icon" data-tip="Cantidad de publicaciones por semana. Mide el ritmo del calendario editorial — picos altos indican semanas activas, valles indican gaps de contenido.">i</i></h3><div class="chart-wrap"><canvas id="c-ig-week"></canvas></div><div class="learn" id="l-ig-week"></div></div>
+    <div class="chart-card"><h3>Engagement promedio por tipo de contenido <i class="info-icon" data-tip="Promedio de likes + comentarios que recibe cada formato (foto, carrusel, reel). Se calcula sumando el engagement de los posts del tipo y dividiendo entre cuántos hubo. Identifica el formato que más conecta.">i</i></h3><div class="chart-wrap"><canvas id="c-ig-type"></canvas></div><div class="learn" id="l-ig-type"></div></div>
+    <div class="chart-card"><h3>Mejor día de la semana <i class="info-icon" data-tip="Engagement promedio de los posts publicados ese día específico de la semana, comparado contra los demás días. Revela el día con mejor desempeño para esta cuenta.">i</i></h3><div class="chart-wrap"><canvas id="c-ig-dow"></canvas></div><div class="learn" id="l-ig-dow"></div></div>
+    <div class="chart-card"><h3>Distribución por hora del día <i class="info-icon" data-tip="Cantidad de publicaciones que se hicieron en cada franja horaria. Muestra los hábitos de publicación del equipo, no necesariamente cuándo la audiencia está más activa.">i</i></h3><div class="chart-wrap"><canvas id="c-ig-hour"></canvas></div><div class="learn" id="l-ig-hour"></div></div>
   </div>
   <h2 style="margin-top:48px">Top 5 publicaciones</h2>
   <div class="chart-card" style="padding:0">
@@ -440,10 +547,10 @@
   </div>
   <div class="kpi-grid" id="kpi-fb" style="margin-top:24px"></div>
   <div class="chart-grid cols-2" style="margin-top:32px">
-    <div class="chart-card"><h3>Engagement promedio por tipo</h3><div class="chart-wrap"><canvas id="c-fb-type"></canvas></div><div class="learn" id="l-fb-type"></div></div>
-    <div class="chart-card"><h3>Volumen semanal (posts datados)</h3><div class="chart-wrap"><canvas id="c-fb-week"></canvas></div><div class="learn" id="l-fb-week"></div></div>
-    <div class="chart-card"><h3>Mejor día de la semana</h3><div class="chart-wrap"><canvas id="c-fb-dow"></canvas></div><div class="learn" id="l-fb-dow"></div></div>
-    <div class="chart-card"><h3>Distribución por hora del día</h3><div class="chart-wrap"><canvas id="c-fb-hour"></canvas></div><div class="learn" id="l-fb-hour"></div></div>
+    <div class="chart-card"><h3>Engagement promedio por tipo <i class="info-icon" data-tip="Promedio de likes + comentarios + shares por formato (foto, carrusel, video). Identifica el tipo de pieza más eficiente.">i</i></h3><div class="chart-wrap"><canvas id="c-fb-type"></canvas></div><div class="learn" id="l-fb-type"></div></div>
+    <div class="chart-card"><h3>Volumen semanal (posts datados) <i class="info-icon" data-tip="Cantidad de posts por semana. Solo cuenta los posts que tienen fecha disponible (videos y reels). Las fotos individuales y álbumes en Facebook no exponen su fecha públicamente.">i</i></h3><div class="chart-wrap"><canvas id="c-fb-week"></canvas></div><div class="learn" id="l-fb-week"></div></div>
+    <div class="chart-card"><h3>Mejor día de la semana <i class="info-icon" data-tip="Engagement promedio agrupado por día de la semana. Indica qué día rinde más para esta cuenta.">i</i></h3><div class="chart-wrap"><canvas id="c-fb-dow"></canvas></div><div class="learn" id="l-fb-dow"></div></div>
+    <div class="chart-card"><h3>Distribución por hora del día <i class="info-icon" data-tip="Cantidad de publicaciones en cada franja horaria. Refleja el horario habitual del equipo de contenido.">i</i></h3><div class="chart-wrap"><canvas id="c-fb-hour"></canvas></div><div class="learn" id="l-fb-hour"></div></div>
   </div>
   <h2 style="margin-top:48px">Top 5 publicaciones</h2>
   <div class="chart-card" style="padding:0">
@@ -461,8 +568,8 @@
   </div>
   <div class="kpi-grid" id="kpi-tt" style="margin-top:24px"></div>
   <div class="chart-grid cols-2" style="margin-top:32px">
-    <div class="chart-card"><h3>Volumen semanal</h3><div class="chart-wrap"><canvas id="c-tt-week"></canvas></div><div class="learn" id="l-tt-week"></div></div>
-    <div class="chart-card"><h3>Mejor día de la semana</h3><div class="chart-wrap"><canvas id="c-tt-dow"></canvas></div><div class="learn" id="l-tt-dow"></div></div>
+    <div class="chart-card"><h3>Volumen semanal <i class="info-icon" data-tip="Cantidad de videos publicados por semana en TikTok.">i</i></h3><div class="chart-wrap"><canvas id="c-tt-week"></canvas></div><div class="learn" id="l-tt-week"></div></div>
+    <div class="chart-card"><h3>Mejor día de la semana <i class="info-icon" data-tip="Engagement promedio (likes + comentarios + shares) por día. En TikTok usa la suma de todas las interacciones del video.">i</i></h3><div class="chart-wrap"><canvas id="c-tt-dow"></canvas></div><div class="learn" id="l-tt-dow"></div></div>
   </div>
   <h2 style="margin-top:48px">Top 5 videos</h2>
   <div class="chart-card" style="padding:0">
@@ -480,8 +587,8 @@
   </div>
   <div class="kpi-grid" id="kpi-li" style="margin-top:24px"></div>
   <div class="chart-grid cols-2" style="margin-top:32px">
-    <div class="chart-card"><h3>Volumen semanal</h3><div class="chart-wrap"><canvas id="c-li-week"></canvas></div><div class="learn" id="l-li-week"></div></div>
-    <div class="chart-card"><h3>Mejor día de la semana</h3><div class="chart-wrap"><canvas id="c-li-dow"></canvas></div><div class="learn" id="l-li-dow"></div></div>
+    <div class="chart-card"><h3>Volumen semanal <i class="info-icon" data-tip="Cantidad de publicaciones por semana en LinkedIn.">i</i></h3><div class="chart-wrap"><canvas id="c-li-week"></canvas></div><div class="learn" id="l-li-week"></div></div>
+    <div class="chart-card"><h3>Mejor día de la semana <i class="info-icon" data-tip="Engagement promedio (likes + comentarios + shares) por día de la semana en LinkedIn.">i</i></h3><div class="chart-wrap"><canvas id="c-li-dow"></canvas></div><div class="learn" id="l-li-dow"></div></div>
   </div>
   <h2 style="margin-top:48px">Top 5 publicaciones</h2>
   <div class="chart-card" style="padding:0">
@@ -553,8 +660,10 @@ const fmt = n => {
   return new Intl.NumberFormat("es-CO").format(num);
 };
 
-const kpi = (label, value, sub, accent) =>
-  `<div class="kpi ${accent ? 'accent' : ''}"><div class="label">${label}</div><div class="value">${value}</div>${sub ? `<div class="sub">${sub}</div>` : ""}</div>`;
+const kpi = (label, value, sub, accent, tip) => {
+  const tipHtml = tip ? ` <i class="info-icon" data-tip="${tip.replace(/"/g, '&quot;')}">i</i>` : "";
+  return `<div class="kpi ${accent ? 'accent' : ''}"><div class="label">${label}${tipHtml}</div><div class="value">${value}</div>${sub ? `<div class="sub">${sub}</div>` : ""}</div>`;
+};
 
 // Header window
 function toMonthYear(iso) {
@@ -569,15 +678,61 @@ document.getElementById("meta-window").textContent =
     : "Últimos 90 días";
 document.getElementById("gen-date").textContent = "Generado el " + DATA.generated_at;
 
-// Tabs
+// Tabs (desktop) + Drawer (mobile) sincronizados
+function activateTab(tabId) {
+  document.querySelectorAll("nav.tabs button, .menu-drawer button[data-tab]").forEach(x => x.classList.remove("active"));
+  document.querySelectorAll(".tab").forEach(x => x.classList.remove("active"));
+  document.querySelectorAll(`[data-tab="${tabId}"]`).forEach(x => x.classList.add("active"));
+  const target = document.getElementById("tab-" + tabId);
+  if (target) target.classList.add("active");
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
 document.querySelectorAll("nav.tabs button").forEach(b => {
+  b.addEventListener("click", () => activateTab(b.dataset.tab));
+});
+
+// Drawer (mobile menu)
+const drawer = document.getElementById("menu-drawer");
+const backdrop = document.getElementById("menu-backdrop");
+const toggle = document.getElementById("menu-toggle");
+const closeBtn = document.getElementById("menu-close");
+function openDrawer() {
+  drawer.classList.add("open");
+  backdrop.classList.add("open");
+  toggle.classList.add("active");
+  document.body.style.overflow = "hidden";
+}
+function closeDrawer() {
+  drawer.classList.remove("open");
+  backdrop.classList.remove("open");
+  toggle.classList.remove("active");
+  document.body.style.overflow = "";
+}
+toggle.addEventListener("click", () => {
+  drawer.classList.contains("open") ? closeDrawer() : openDrawer();
+});
+backdrop.addEventListener("click", closeDrawer);
+closeBtn.addEventListener("click", closeDrawer);
+document.querySelectorAll(".menu-drawer button[data-tab]").forEach(b => {
   b.addEventListener("click", () => {
-    document.querySelectorAll("nav.tabs button").forEach(x => x.classList.remove("active"));
-    document.querySelectorAll(".tab").forEach(x => x.classList.remove("active"));
-    b.classList.add("active");
-    document.getElementById("tab-" + b.dataset.tab).classList.add("active");
-    window.scrollTo({top: 0, behavior: 'smooth'});
+    activateTab(b.dataset.tab);
+    closeDrawer();
   });
+});
+// Marcar la tab activa inicial también en el drawer
+document.querySelector(`.menu-drawer button[data-tab="resumen"]`)?.classList.add("active");
+
+// Info tooltips — tap en mobile, hover en desktop
+document.addEventListener("click", e => {
+  const icon = e.target.closest(".info-icon");
+  if (icon) {
+    e.preventDefault();
+    e.stopPropagation();
+    document.querySelectorAll(".info-icon.active").forEach(x => { if (x !== icon) x.classList.remove("active"); });
+    icon.classList.toggle("active");
+  } else {
+    document.querySelectorAll(".info-icon.active").forEach(x => x.classList.remove("active"));
+  }
 });
 
 // ── LEARN helper ──
@@ -586,6 +741,31 @@ function learn(id, text) {
   if (!el) return;
   el.innerHTML = `<p>${text}</p>`;
 }
+
+// ── Definiciones de métricas (glosario) ──
+const DEFINITIONS = {
+  engagement: "Engagement = la suma de likes + comentarios + shares de las publicaciones. Es la actividad pública que la marca generó en sus redes.",
+  engagement_post: "Engagement por post = engagement total dividido entre la cantidad de publicaciones. Indica qué tan eficiente fue cada pieza en promedio.",
+  engagement_week: "Engagement semanal = la misma suma de likes + comentarios + shares, pero agrupada semana a semana. Permite ver si la cuenta gana o pierde tracción.",
+  cadencia: "Cadencia = posts publicados por semana en promedio durante los últimos 90 días.",
+  volumen: "Volumen semanal = cantidad de publicaciones por semana en esta red. Refleja el ritmo editorial.",
+  formato: "Engagement promedio por tipo de contenido = el promedio de likes + comentarios que recibe cada formato (foto, carrusel, reel). Permite identificar qué tipo de pieza conecta más.",
+  mejor_dia: "Mejor día de la semana = el promedio de interacciones de los posts publicados ese día específico de la semana, comparado contra los otros días.",
+  distribucion_hora: "Distribución por hora del día = la cantidad de publicaciones que se hicieron en cada franja horaria. Muestra los hábitos de publicación del equipo.",
+  audiencia: "Audiencia digital = cantidad de seguidores (Instagram, LinkedIn) o de likes de página (Facebook). En TikTok se muestran las views totales del periodo porque la API pública no entrega seguidores.",
+  followers: "Seguidores = personas que siguen la cuenta y reciben sus publicaciones en su feed.",
+  views_tiktok: "Views = reproducciones acumuladas de los videos publicados en los últimos 90 días.",
+  posts_90d: "Posts (90d) = número de publicaciones realizadas en los últimos 90 días.",
+  top: "Top 5 = las 5 publicaciones que más interacciones recibieron en el periodo.",
+  hashtags: "Hashtags = las etiquetas (#palabra) que aparecen con mayor frecuencia en los captions del periodo. Solo se cuentan las que la marca usa, no las que aparecen en comentarios.",
+};
+function info(key) {
+  const d = DEFINITIONS[key];
+  if (!d) return "";
+  return ` <i class="info-icon" data-tip="${d.replace(/"/g, '&quot;')}">i</i>`;
+}
+function maxIdx(arr) { return arr.indexOf(Math.max(...arr)); }
+function minIdx(arr) { return arr.indexOf(Math.min(...arr.filter(x => x > 0))); }
 function maxIdx(arr) { return arr.indexOf(Math.max(...arr)); }
 function minIdx(arr) { return arr.indexOf(Math.min(...arr.filter(x => x > 0))); }
 
@@ -611,24 +791,28 @@ const tiktokViews = parseInt(DATA.accounts.TikTok?.views_totales_90d || 0);
 const postsPorSemana = (totalPosts / 13).toFixed(1);
 
 document.getElementById("kpi-hero").innerHTML =
-  kpi("Publicaciones totales", fmt(totalPosts), "en 4 redes · 90 días", true) +
-  kpi("Engagement total", fmt(totalEng), "likes + coments + shares") +
-  kpi("Engagement por post", fmt(Math.round(totalEng / totalPosts)), "promedio global") +
-  kpi("Cadencia", `${postsPorSemana}`, "posts por semana en promedio");
+  kpi("Publicaciones totales", fmt(totalPosts), "en 4 redes · 90 días", true,
+    "Suma de todas las publicaciones (posts, reels, videos) en Instagram, Facebook, TikTok y LinkedIn durante los últimos 90 días.") +
+  kpi("Engagement total", fmt(totalEng), "likes + coments + shares", false,
+    "Engagement = la suma de likes + comentarios + shares públicos de todas las publicaciones del periodo en las 4 redes.") +
+  kpi("Engagement por post", fmt(Math.round(totalEng / totalPosts)), "promedio global", false,
+    "Engagement total dividido entre el número de publicaciones. Indica qué tan eficiente fue cada pieza en promedio.") +
+  kpi("Cadencia", `${postsPorSemana}`, "posts por semana en promedio", false,
+    "Posts por semana en promedio durante los últimos 90 días. Refleja el ritmo del calendario editorial.");
 
 // ── AUDIENCIA DIGITAL ACTUAL — métricas nativas por red ──
 const audienciaCards = document.getElementById("audiencia-cards");
 const audienciaConfig = [
-  { name: "Instagram", color: COLORS.ig, value: parseInt(DATA.accounts.Instagram?.seguidores || 0), label: "seguidores", note: "@" + (DATA.accounts.Instagram?.username || "comapan_co") },
-  { name: "Facebook", color: COLORS.fb, value: parseInt(DATA.accounts.Facebook?.page_likes || 0), label: "likes de página", note: "ComapanCo" },
-  { name: "TikTok", color: COLORS.tt, value: tiktokViews, label: "views (90d)", note: "@comapanco · followers pendiente de SocialBlade" },
-  { name: "LinkedIn", color: COLORS.li, value: parseInt(DATA.accounts.LinkedIn?.seguidores || 0), label: "seguidores", note: "Comapan S.A." },
+  { name: "Instagram", color: COLORS.ig, value: parseInt(DATA.accounts.Instagram?.seguidores || 0), label: "seguidores", note: "@" + (DATA.accounts.Instagram?.username || "comapan_co"), tip: "Seguidores = personas que siguen la cuenta y ven sus posts en su feed de Instagram." },
+  { name: "Facebook", color: COLORS.fb, value: parseInt(DATA.accounts.Facebook?.page_likes || 0), label: "likes de página", note: "ComapanCo", tip: "Likes de página = personas que dieron 'me gusta' a la página de Comapan en Facebook. Históricamente equivale al concepto de seguidores." },
+  { name: "TikTok", color: COLORS.tt, value: tiktokViews, label: "views (90d)", note: "@comapanco", tip: "Views = reproducciones acumuladas de los videos publicados en TikTok durante los últimos 90 días. Se usa como métrica de alcance porque la API pública de TikTok no entrega seguidores." },
+  { name: "LinkedIn", color: COLORS.li, value: parseInt(DATA.accounts.LinkedIn?.seguidores || 0), label: "seguidores", note: "Comapan S.A.", tip: "Seguidores = personas y empresas que siguen la página corporativa de Comapan en LinkedIn." },
 ];
 audienciaConfig.forEach(c => {
   audienciaCards.innerHTML += `
     <div class="net-card">
       <div class="net-name"><span class="dot" style="background:${c.color}"></span>${c.name}</div>
-      <div class="stat-label">${c.label}</div>
+      <div class="stat-label">${c.label} <i class="info-icon" data-tip="${c.tip.replace(/"/g, '&quot;')}">i</i></div>
       <div class="stat">${c.value ? fmt(c.value) : "n/d"}</div>
       <div class="row" style="border-top:0; padding-top:12px"><span class="k">${c.note}</span></div>
     </div>`;
@@ -793,13 +977,21 @@ function buildPlatform(prefix, key, color) {
   // - IG/FB/LI: Seguidores
   // - TikTok: Views totales (el actor no entrega followers)
   const kpiPrincipal = prefix === "tt"
-    ? kpi("Views totales", fmt(parseInt(acc.views_totales_90d || 0)), "últimos 90 días")
-    : kpi("Seguidores", fmt(acc.seguidores));
+    ? kpi("Views totales", fmt(parseInt(acc.views_totales_90d || 0)), "últimos 90 días", false,
+        "Reproducciones acumuladas de los videos publicados en TikTok durante los últimos 90 días.")
+    : prefix === "fb"
+    ? kpi("Likes de página", fmt(acc.page_likes), "audiencia FB", false,
+        "Personas que dieron 'me gusta' a la página de Facebook. Históricamente equivale al concepto de seguidores.")
+    : kpi("Seguidores", fmt(acc.seguidores), "", false,
+        "Personas que siguen la cuenta y reciben sus publicaciones en su feed.");
   document.getElementById("kpi-" + prefix).innerHTML =
     kpiPrincipal +
-    kpi("Posts (90d)", fmt(data.n_posts)) +
-    kpi("Engagement total", fmt(data.engagement_total)) +
-    kpi("Eng. por post", fmt(data.engagement_promedio), `mediana: ${fmt(data.engagement_mediana)}`);
+    kpi("Posts (90d)", fmt(data.n_posts), "", false,
+      "Cantidad de publicaciones realizadas en los últimos 90 días en esta red.") +
+    kpi("Engagement total", fmt(data.engagement_total), "", false,
+      "Suma de likes + comentarios + shares de todos los posts del periodo en esta red.") +
+    kpi("Eng. por post", fmt(data.engagement_promedio), `mediana: ${fmt(data.engagement_mediana)}`, false,
+      "Engagement total dividido entre la cantidad de posts. La mediana muestra el valor del post 'del medio' — útil cuando hay posts virales que distorsionan el promedio.");
 
   // weekly
   if (data.by_week.labels.length) {
