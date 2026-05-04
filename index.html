@@ -298,12 +298,28 @@
     background: var(--bg-soft); }
   footer .footer-grid { max-width: 1280px; margin: 0 auto;
     display: flex; justify-content: space-between; align-items: flex-start; gap: 32px; flex-wrap: wrap; }
-  footer .powered { font-size: 13px; color: var(--ink-soft); line-height: 1.6; }
+  footer .powered { font-size: 12px; color: var(--ink-soft); line-height: 1.6; }
   footer .powered strong { color: var(--ink); font-weight: 700; }
-  footer .legal-block { font-size: 11px; color: var(--muted); line-height: 1.7; max-width: 720px; margin-top: 12px; }
-  footer .legal-block p { margin: 0 0 6px; }
-  footer .legal-block a { color: var(--comapan-red); text-decoration: none; }
-  footer .legal-block a:hover { text-decoration: underline; }
+  footer details.legal-details { margin-top: 4px; font-size: 11px; color: var(--muted); }
+  footer details.legal-details summary {
+    cursor: pointer; display: inline-block; padding: 2px 0;
+    color: var(--ink-soft); font-size: 11px; user-select: none;
+    list-style: none; transition: color 0.15s;
+  }
+  footer details.legal-details summary::-webkit-details-marker { display: none; }
+  footer details.legal-details summary::before {
+    content: "▸"; display: inline-block; margin-right: 6px;
+    transition: transform 0.2s; color: var(--muted);
+  }
+  footer details.legal-details[open] summary::before { transform: rotate(90deg); }
+  footer details.legal-details summary:hover { color: var(--comapan-red); }
+  footer .legal-content {
+    margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line);
+    line-height: 1.6; max-width: 720px;
+  }
+  footer .legal-content p { margin: 0 0 8px; }
+  footer .legal-content a { color: var(--comapan-red); text-decoration: none; }
+  footer .legal-content a:hover { text-decoration: underline; }
   footer .logos { display: flex; align-items: center; gap: 20px; }
   footer .logos .agency-box { padding: 5px 10px; }
   footer .logos .agency-box img { height: 20px; }
@@ -643,14 +659,16 @@
   <div class="footer-grid">
     <div style="flex:1; min-width:280px">
       <div class="powered">
-        Generado por <strong>Datalítica Colombia S.A.S.</strong> para <strong>Catorce Días, S.A. de C.V.</strong> (D14S)
+        © 2026 <strong>Datalítica Colombia S.A.S.</strong> (NIT 901.957.313-6) · Entregable confidencial para <strong>Catorce Días</strong> (D14S) · Datos de fuentes públicas
       </div>
-      <div class="legal-block">
-        <p>Datos de fuentes públicas.</p>
-        <p>© 2026 Datalítica Colombia S.A.S. — NIT 901.957.313-6. Todos los derechos reservados. Este reporte es un entregable confidencial; el acceso, copia o distribución no autorizada está prohibida.</p>
-        <p>Datalítica Colombia S.A.S. trata los datos públicos analizados conforme a la <strong>Ley 1581 de 2012</strong> de protección de datos personales (Colombia). Catorce Días, S.A. de C.V., destinatario del informe, opera conforme a la <strong>Ley Federal de Protección de Datos Personales en Posesión de los Particulares</strong> (México) — política completa en <a href="https://catorcedias.com/politica-privacidad/" target="_blank" rel="noopener">catorcedias.com/politica-privacidad</a>.</p>
-        <p>Para ejercer derechos de habeas data o consultas sobre el tratamiento, escribir a <a href="mailto:informacion@catorcedias.com">informacion@catorcedias.com</a>.</p>
-      </div>
+      <details class="legal-details">
+        <summary>Aviso legal y tratamiento de datos</summary>
+        <div class="legal-content">
+          <p>Reporte confidencial; el acceso, copia o distribución no autorizada está prohibida.</p>
+          <p>Datalítica Colombia S.A.S. trata los datos públicos analizados conforme a la <strong>Ley 1581 de 2012</strong> (Colombia). Catorce Días, S.A. de C.V., destinatario del informe, opera conforme a la <strong>LFPDPPP</strong> (México) — política en <a href="https://catorcedias.com/politica-privacidad/" target="_blank" rel="noopener">catorcedias.com/politica-privacidad</a>.</p>
+          <p>Habeas data y consultas sobre tratamiento: <a href="mailto:informacion@catorcedias.com">informacion@catorcedias.com</a>.</p>
+        </div>
+      </details>
     </div>
     <div class="logos">
       <div class="agency-box"><img src="assets/logo-14dias.svg" alt="Catorce Días"></div>
