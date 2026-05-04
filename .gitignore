@@ -10,13 +10,16 @@
 !/.gitignore
 !/README.md
 
-# Carpeta de assets (logos + thumbnails)
+# Carpeta de assets (logos + thumbnails + favicons)
 !/assets/
 /assets/*
 !/assets/logo-comapan.svg
 !/assets/logo-comapan.png
 !/assets/logo-14dias.svg
 !/assets/panchi.webp
+!/assets/favicon-16.png
+!/assets/favicon-32.png
+!/assets/apple-touch-icon.png
 !/assets/thumbs/
 /assets/thumbs/*
 !/assets/thumbs/*.jpg
