@@ -216,10 +216,87 @@
     .hero h1 { font-size: 38px; }
     main, .topbar, nav.tabs, footer { padding-left: 24px; padding-right: 24px; }
   }
-  @media (max-width: 600px) {
-    .kpi-grid, .ranking { grid-template-columns: 1fr; }
-    .chart-grid.cols-2 { grid-template-columns: 1fr; }
-    .hero h1 { font-size: 32px; }
+  @media (max-width: 720px) {
+    /* Topbar — stack vertical en mobile */
+    .topbar { flex-direction: column; align-items: flex-start; gap: 12px; padding: 14px 16px; }
+    .topbar .brand { gap: 12px; flex-wrap: wrap; }
+    .topbar .title-block .title { font-size: 18px; }
+    .topbar .title-block .eyebrow { font-size: 9px; letter-spacing: 1.2px; }
+    .topbar .divider { display: none; }
+    .topbar .logo-comapan { height: 24px; }
+    .agency-box { padding: 7px 11px; }
+    .agency-box img { height: 18px; }
+    .topbar .meta { text-align: left; font-size: 11px; }
+    .topbar .meta strong { font-size: 12px; }
+
+    /* Nav tabs */
+    nav.tabs { padding: 0 16px; top: auto; position: relative; }
+    nav.tabs button { padding: 12px 14px; font-size: 12px; }
+
+    main { padding: 0 16px; }
+    .tab { padding: 24px 0; }
+
+    /* Hero */
+    .hero { padding: 40px 0 32px; }
+    .hero .eyebrow { font-size: 10px; letter-spacing: 1.5px; }
+    .hero h1 { font-size: 26px; line-height: 1.15; letter-spacing: -0.5px; }
+    .hero .lead { font-size: 15px; margin-bottom: 28px; }
+
+    /* Section heads */
+    .section-head { margin: 36px 0 20px; }
+    .section-head h2 { font-size: 22px; }
+    .section-head .desc { font-size: 14px; }
+    .section-head .num { font-size: 11px; }
+
+    /* KPI grid — 1 col en mobile */
+    .kpi-grid { grid-template-columns: 1fr; }
+    .kpi { padding: 18px 20px; border-right: 0; border-bottom: 1px solid var(--line); }
+    .kpi:last-child { border-bottom: 0; }
+    .kpi .value { font-size: 30px; }
+
+    /* Ranking cards y comparativos — 1 col */
+    .ranking, .chart-grid.cols-2 { grid-template-columns: 1fr; gap: 12px; }
+    .net-card .stat { font-size: 24px; }
+    .net-card .rank { font-size: 28px; top: 12px; right: 14px; }
+
+    /* Cards y charts */
+    .chart-card { padding: 16px; }
+    .chart-card h3 { font-size: 12px; }
+    .chart-wrap { height: 240px !important; }
+
+    /* Verdict */
+    .verdict { padding: 18px 20px; }
+    .verdict p { font-size: 15px; }
+
+    /* Tablas Top 5 — scroll horizontal con touch */
+    .tab table { display: block; overflow-x: auto; white-space: nowrap;
+      -webkit-overflow-scrolling: touch; }
+    .tab table thead, .tab table tbody { display: table; min-width: 640px; width: 100%; }
+    .tab table th, .tab table td { padding: 10px 8px; font-size: 12px; }
+    .post-thumb, .post-thumb-placeholder { width: 44px; height: 44px; }
+
+    /* Findings */
+    .finding { padding: 20px 0; gap: 14px; }
+    .finding .num { font-size: 32px; min-width: 36px; }
+    .finding .body h4 { font-size: 16px; }
+    .finding .body p { font-size: 14px; }
+
+    /* Recos */
+    .reco { grid-template-columns: 40px 1fr; gap: 14px; padding: 18px; }
+    .reco .num { font-size: 26px; }
+    .reco h4 { font-size: 16px; }
+
+    /* Footer */
+    footer { padding: 24px 16px; }
+    footer .footer-grid { flex-direction: column; align-items: flex-start; gap: 16px; }
+    footer .legal { font-size: 10px; }
+
+    /* Hashtags */
+    .hashtags .ht { font-size: 12px; padding: 4px 10px; }
+
+    /* Platform header en cada tab */
+    .platform-header { flex-wrap: wrap; gap: 8px; }
+    .platform-header h2 { font-size: 22px; }
   }
 </style>
 </head>
