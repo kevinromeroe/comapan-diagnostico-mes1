@@ -44,29 +44,37 @@
     display: inline-flex; align-items: center; justify-content: center;
     width: 16px; height: 16px; border-radius: 50%; background: var(--line);
     color: var(--ink-soft); font-size: 10px; font-weight: 700; font-style: normal;
-    cursor: help; position: relative; margin-left: 6px;
+    cursor: help; margin-left: 6px;
     user-select: none; vertical-align: middle; font-family: -apple-system, sans-serif;
+    transition: background 0.15s, color 0.15s;
   }
   .info-icon:hover, .info-icon.active { background: var(--comapan-red); color: white; }
-  .info-icon::before {
-    content: attr(data-tip); position: absolute; bottom: calc(100% + 10px);
-    left: 50%; transform: translateX(-50%);
-    background: var(--ink); color: white; padding: 10px 14px;
-    border-radius: 6px; font-size: 12px; font-weight: 400; line-height: 1.5;
-    white-space: normal; width: max-content; max-width: 280px; text-align: left;
+
+  /* Tooltip global con position: fixed — escapa cualquier overflow:hidden */
+  .global-tooltip {
+    position: fixed; background: var(--ink); color: white;
+    padding: 10px 14px; border-radius: 6px;
+    font-size: 12px; font-weight: 400; line-height: 1.5;
+    max-width: 280px; text-align: left;
     text-transform: none; letter-spacing: normal;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.22);
     opacity: 0; pointer-events: none; transition: opacity 0.15s;
-    z-index: 60; box-shadow: 0 6px 20px rgba(0,0,0,0.18);
+    z-index: 1000; top: 0; left: 0;
   }
-  .info-icon::after {
-    content: ""; position: absolute; bottom: calc(100% + 4px); left: 50%;
-    transform: translateX(-50%); border: 6px solid transparent;
-    border-top-color: var(--ink); opacity: 0; transition: opacity 0.15s;
+  .global-tooltip.visible { opacity: 1; }
+  .global-tooltip::after {
+    content: ""; position: absolute;
+    left: var(--arrow-x, 50%); transform: translateX(-50%);
+    border: 6px solid transparent;
   }
-  .info-icon:hover::before, .info-icon.active::before,
-  .info-icon:hover::after, .info-icon.active::after { opacity: 1; }
+  .global-tooltip:not(.below)::after {
+    top: 100%; border-top-color: var(--ink);
+  }
+  .global-tooltip.below::after {
+    bottom: 100%; border-bottom-color: var(--ink);
+  }
   @media (max-width: 720px) {
-    .info-icon::before { width: 220px; max-width: 70vw; }
+    .global-tooltip { max-width: 70vw; font-size: 12px; }
   }
 
   /* Hamburger + drawer (ocultos en desktop) */
@@ -723,18 +731,92 @@ document.querySelectorAll(".menu-drawer button[data-tab]").forEach(b => {
 // Marcar la tab activa inicial también en el drawer
 document.querySelector(`.menu-drawer button[data-tab="resumen"]`)?.classList.add("active");
 
-// Info tooltips — tap en mobile, hover en desktop
+// ── Tooltips globales (position: fixed, escapan overflow:hidden) ──
+const tooltipEl = document.createElement("div");
+tooltipEl.className = "global-tooltip";
+document.body.appendChild(tooltipEl);
+
+let activeIcon = null;
+const PADDING = 8;
+
+function positionTooltip(icon) {
+  const tip = icon.dataset.tip;
+  if (!tip) return;
+  tooltipEl.textContent = tip;
+  tooltipEl.classList.add("visible");
+
+  // Medir después de poner contenido
+  const iconRect = icon.getBoundingClientRect();
+  const tipRect = tooltipEl.getBoundingClientRect();
+  const vw = window.innerWidth, vh = window.innerHeight;
+
+  // Posición horizontal centrada en el icono, ajustada al viewport
+  let left = iconRect.left + iconRect.width / 2 - tipRect.width / 2;
+  left = Math.max(PADDING, Math.min(left, vw - tipRect.width - PADDING));
+
+  // Vertical: arriba del icono por defecto, abajo si no cabe
+  let top = iconRect.top - tipRect.height - 12;
+  let below = false;
+  if (top < PADDING) {
+    top = iconRect.bottom + 12;
+    below = true;
+  }
+  tooltipEl.classList.toggle("below", below);
+
+  // Posición de la flecha (centrada en el icono respecto al tooltip)
+  const arrowX = iconRect.left + iconRect.width / 2 - left;
+  tooltipEl.style.setProperty("--arrow-x", `${Math.max(12, Math.min(arrowX, tipRect.width - 12))}px`);
+
+  tooltipEl.style.left = `${left}px`;
+  tooltipEl.style.top = `${top}px`;
+}
+
+function hideTooltip() {
+  tooltipEl.classList.remove("visible");
+  if (activeIcon) {
+    activeIcon.classList.remove("active");
+    activeIcon = null;
+  }
+}
+
+// Hover (desktop)
+document.addEventListener("mouseover", e => {
+  const icon = e.target.closest(".info-icon");
+  if (icon && !activeIcon) {
+    icon.classList.add("active");
+    positionTooltip(icon);
+  }
+});
+document.addEventListener("mouseout", e => {
+  const icon = e.target.closest(".info-icon");
+  if (icon && !activeIcon) {
+    icon.classList.remove("active");
+    tooltipEl.classList.remove("visible");
+  }
+});
+
+// Tap (mobile) — toggle persistente, click fuera lo cierra
 document.addEventListener("click", e => {
   const icon = e.target.closest(".info-icon");
   if (icon) {
     e.preventDefault();
     e.stopPropagation();
-    document.querySelectorAll(".info-icon.active").forEach(x => { if (x !== icon) x.classList.remove("active"); });
-    icon.classList.toggle("active");
+    if (activeIcon === icon) {
+      hideTooltip();
+    } else {
+      if (activeIcon) activeIcon.classList.remove("active");
+      activeIcon = icon;
+      icon.classList.add("active");
+      positionTooltip(icon);
+    }
   } else {
-    document.querySelectorAll(".info-icon.active").forEach(x => x.classList.remove("active"));
+    hideTooltip();
   }
 });
+
+// Reposicionar al hacer scroll o resize si hay tooltip activo
+window.addEventListener("scroll", () => { if (activeIcon) positionTooltip(activeIcon); }, { passive: true });
+window.addEventListener("resize", () => { if (activeIcon) positionTooltip(activeIcon); });
 
 // ── LEARN helper ──
 function learn(id, text) {
