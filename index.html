@@ -26,12 +26,14 @@
     --ig: #e1306c; --fb: #1877f2; --tt: #000000; --li: #0a66c2;
   }
   * { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; }
+  html, body { margin: 0; padding: 0; max-width: 100vw; overflow-x: hidden; }
   body {
     font-family: 'Roboto', -apple-system, sans-serif;
     background: var(--bg); color: var(--ink);
     line-height: 1.55; font-size: 15px; -webkit-font-smoothing: antialiased;
   }
+  /* Chart.js: wrap con width controlado evita que el canvas desborde el contenedor */
+  .chart-wrap, .chart-card { min-width: 0; max-width: 100%; }
   h1, h2, h3, h4, .display { font-family: 'Roboto Slab', serif; font-weight: 700; }
 
   /* Top bar */
@@ -260,9 +262,9 @@
     .net-card .rank { font-size: 28px; top: 12px; right: 14px; }
 
     /* Cards y charts */
-    .chart-card { padding: 16px; }
+    .chart-card { padding: 16px; min-width: 0; }
     .chart-card h3 { font-size: 12px; }
-    .chart-wrap { height: 240px !important; }
+    .chart-wrap { height: 240px !important; min-width: 0; max-width: 100%; overflow: hidden; }
 
     /* Verdict */
     .verdict { padding: 18px 20px; }
