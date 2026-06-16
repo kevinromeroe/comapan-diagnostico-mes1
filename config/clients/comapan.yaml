@@ -14,11 +14,11 @@ client:
     contact_phone: "+57 315 348 0363"
 
   # Cadencia del reporte
-  cycle: quincenal              # quincenal | mensual | semanal
-  cron_utc: "0 11 1,15 * *"     # día 1 y 15, 06:00 Bogotá
+  cycle: mensual                # quincenal | mensual | semanal
+  cron_utc: "0 11 1 * *"        # día 1 de cada mes, 06:00 Bogotá (reporta el mes anterior)
 
   # Ventana histórica de análisis (días hacia atrás desde la fecha del run)
-  window_days: 90
+  window_days: 30               # un mes calendario completo
 
   # Destino del deploy
   deploy:

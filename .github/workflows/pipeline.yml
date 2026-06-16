@@ -23,8 +23,9 @@ on:
         required: false
         default: ""
   schedule:
-    # Quincenal — backup en caso de que el webhook de Apify no dispare
-    - cron: "0 11 1,15 * *"
+    # Mensual — backup en caso de que el webhook de Apify no dispare
+    # Día 1 de cada mes a las 06:00 Bogotá (reporta el mes anterior cerrado)
+    - cron: "0 11 1 * *"
 
 concurrency:
   # Un solo run por cliente a la vez. Si llega otro mientras corre, se cancela.
