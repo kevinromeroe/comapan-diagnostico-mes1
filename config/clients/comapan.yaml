@@ -1,0 +1,158 @@
+# =============================================================
+# Configuración del cliente Comapan
+# Cliente que paga: Catorce Días Colombia S.A.S.
+# Cuenta analizada: Comapan
+# =============================================================
+
+client:
+  id: comapan
+  name: Comapan
+  agency:
+    name: Catorce Días Colombia S.A.S.
+    nit: "901732649-9"
+    contact_email: steph@catorcedias.com
+    contact_phone: "+57 315 348 0363"
+
+  # Cadencia del reporte
+  cycle: quincenal              # quincenal | mensual | semanal
+  cron_utc: "0 11 1,15 * *"     # día 1 y 15, 06:00 Bogotá
+
+  # Ventana histórica de análisis (días hacia atrás desde la fecha del run)
+  window_days: 90
+
+  # Destino del deploy
+  deploy:
+    repo: kevinromeroe/comapan-diagnostico-mes1
+    branch: main
+    domain: comapan.datalitica.com.co
+    # path donde se publica el HTML generado (relativo a la raíz del repo)
+    output_path: index.html
+
+# =============================================================
+# Branding (paleta de Comapan, ya validada con el cliente)
+# =============================================================
+branding:
+  primary: "#DB0632"        # rojo Comapan
+  primary_soft: "#F8E0E5"
+  yellow: "#F5DA6C"
+  orange: "#FFBC7D"
+  green: "#5BAC47"
+  turquoise: "#19AAB2"
+  ink: "#1a1a1a"
+  ink_soft: "#4a4a4a"
+  muted: "#8a8a8a"
+  line: "#ececec"
+  bg: "#ffffff"
+  bg_soft: "#F2E8D5"
+  bg_soft_2: "#FBF4E4"
+
+  # Colores por plataforma
+  platform_colors:
+    instagram: "#e1306c"
+    facebook: "#1877f2"
+    tiktok: "#000000"
+    linkedin: "#0a66c2"
+
+  fonts:
+    headings: "Roboto Slab"
+    body: "Roboto"
+
+  logos:
+    primary: assets/logo-comapan.svg
+    secondary: assets/logo-14dias.svg
+    mascot: assets/panchi.webp
+
+# =============================================================
+# Plataformas: configuración por fuente
+# Cada platforma define qué actor Apify usar, su input y los nombres canónicos
+# =============================================================
+platforms:
+
+  instagram:
+    enabled: true
+    handle: comapan_co
+    url: https://www.instagram.com/comapan_co/
+    apify:
+      actor_id: shu8hvrXbJbY3Eb9W       # apify/instagram-scraper
+      actor_name: apify/instagram-scraper
+      input:
+        directUrls: ["https://www.instagram.com/comapan_co/"]
+        resultsLimit: 100
+        addParentData: true
+        searchType: hashtag
+        searchLimit: 1
+
+  facebook:
+    enabled: true
+    handle: ComapanCo
+    url: https://www.facebook.com/ComapanCo
+    apify:
+      page:
+        actor_id: 4Hv5RhChiaDk6iwad     # apify/facebook-pages-scraper
+        actor_name: apify/facebook-pages-scraper
+        input:
+          startUrls:
+            - url: https://www.facebook.com/ComapanCo
+      posts:
+        actor_id: KoJrdxJCTtpon81KY     # apify/facebook-posts-scraper
+        actor_name: apify/facebook-posts-scraper
+        input:
+          startUrls:
+            - url: https://www.facebook.com/ComapanCo
+          resultsLimit: 100
+
+  tiktok:
+    enabled: true
+    handle: comapanco
+    url: https://www.tiktok.com/@comapanco
+    apify:
+      profile:
+        actor_id: 0FXVyOXXEmdGcV88a     # clockworks/tiktok-profile-scraper
+        actor_name: clockworks/tiktok-profile-scraper
+        input:
+          profiles: ["comapanco"]
+      posts:
+        actor_id: GdWCkxBtKWOsKjdch     # clockworks/tiktok-scraper
+        actor_name: clockworks/tiktok-scraper
+        input:
+          profiles: ["comapanco"]
+          resultsPerPage: 100
+
+  linkedin:
+    enabled: true
+    handle: comapan-s-a-
+    url: https://www.linkedin.com/company/comapan-s-a-
+    apify:
+      actor_id: WI0tj4Ieb5Kq458gB       # harvestapi/linkedin-company-posts
+      actor_name: harvestapi/linkedin-company-posts
+      input:
+        companies: ["comapan-s-a-"]
+
+  ga4:
+    enabled: false                       # se activa cuando exista el SA
+    property_id: null
+    # service_account_json se inyecta vía secret GA4_SERVICE_ACCOUNT_JSON
+
+# =============================================================
+# Reglas analíticas (sobreescriben defaults globales si aplica)
+# =============================================================
+analytics:
+  noise_threshold_pct: 5          # cambios < 5% no son hallazgo
+  significance_threshold_pct: 15  # cambios > 15% siempre son hallazgo
+  top_posts_n: 5
+  top_hashtags_n: 10
+  min_n_for_pattern: 5            # n mínimo para hablar de "patrón"
+
+# =============================================================
+# Notificaciones (cuando termina cada run)
+# =============================================================
+notifications:
+  email:
+    enabled: true
+    to:
+      - kevinromeroe@gmail.com           # Daniel/Datalítica
+      # - operaciones@catorcedias.com   # activar cuando Catorce Días confirme
+    subject_prefix: "[Comapan]"
+  slack:
+    enabled: false
+    webhook_secret_name: SLACK_WEBHOOK_URL

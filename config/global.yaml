@@ -1,0 +1,79 @@
+# =============================================================
+# Configuración global del pipeline (defaults compartidos por todos los clientes)
+# =============================================================
+
+# Versión del shape canónico DATA. Subirla obliga a refactor del transform.
+data_shape_version: "1.0.0"
+
+# Pipeline
+pipeline:
+  python_min: "3.11"
+  log_level: INFO
+  log_format: json                 # json | human
+
+  # Reintentos cuando una fuente falla
+  retries:
+    max_attempts: 3
+    backoff_seconds: [5, 15, 45]
+
+  # Timeouts (segundos)
+  timeouts:
+    apify_dataset_fetch: 60
+    thumb_download: 10
+    git_push: 30
+
+# Apify defaults
+apify:
+  api_base: https://api.apify.com/v2
+  # max items por dataset que el pipeline lee de una vez
+  max_items_per_dataset: 500
+  # respetar rate limits del plan free
+  rate_limit_rps: 5
+
+# Thumbnails
+thumbnails:
+  format: jpg
+  quality: 85
+  max_width: 720
+  hash_length: 10                  # caracteres del SHA-1 truncado
+  # naming: {platform_prefix}-{hash}.jpg → ig-e7e53f2f95.jpg
+  platform_prefix:
+    instagram: ig
+    facebook: fb
+    tiktok: tt
+    linkedin: li
+
+# Reglas analíticas (defaults; cada cliente puede sobreescribir)
+analytics:
+  noise_threshold_pct: 5
+  significance_threshold_pct: 15
+  top_posts_n: 5
+  top_hashtags_n: 10
+  min_n_for_pattern: 5
+  engagement_formula:
+    instagram: "likesCount + commentsCount"
+    facebook: "reactions + comments + shares"
+    tiktok: "diggCount + commentCount + shareCount"
+    linkedin: "reactions + comments + shares"
+
+# LLM para hallazgos
+llm:
+  enabled: true
+  provider: anthropic
+  model: claude-sonnet-4-6
+  temperature: 0
+  max_tokens: 4000
+  # Esquema JSON estricto en INSIGHTS_FRAMEWORK.md
+  schema_version: "1.0.0"
+
+# Git / deploy
+git:
+  commit_user_name: "Datalitica Bot"
+  commit_user_email: "bot@datalitica.com.co"
+  commit_message_template: "Reporte {cycle} {date_iso} — auto-generado"
+
+# Renderer
+render:
+  template_path: pipeline/render/template.html
+  output_filename: index.html
+  inject_marker: "/* DATA_INJECTION_MARKER */"

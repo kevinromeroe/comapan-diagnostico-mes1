@@ -1,16 +1,21 @@
-# Modelo whitelist: ignoramos TODO por defecto y solo permitimos lo que va al deploy.
-# Esto blinda accidentes — ningún JSON, CSV, ni script de Python se subirá nunca a Git.
+# =============================================================
+# Modelo whitelist BLINDADO — ignoramos TODO por defecto y solo
+# permitimos lo que debe versionarse. Cero filtraciones de datos.
+# =============================================================
 
 /*
 
-# Permitidos para deploy en GitHub Pages
+# -------------------------------------------------------------
+# Deploy en GitHub Pages (artefactos públicos)
+# -------------------------------------------------------------
 !/index.html
 !/CNAME
 !/robots.txt
 !/.gitignore
 !/README.md
+!/LICENSE
 
-# Carpeta de assets (logos + thumbnails + favicons)
+# Assets visuales del deploy
 !/assets/
 /assets/*
 !/assets/logo-comapan.svg
@@ -25,5 +30,87 @@
 !/assets/thumbs/*.jpg
 !/assets/thumbs/*.png
 
+# -------------------------------------------------------------
+# Código del pipeline (versionado)
+# -------------------------------------------------------------
+!/pipeline/
+!/pipeline/**
+
+!/scripts/
+!/scripts/**
+
+!/tests/
+!/tests/**
+
+!/.github/
+!/.github/**
+
+# -------------------------------------------------------------
+# Documentación
+# -------------------------------------------------------------
+!/docs/
+!/docs/**
+
+# -------------------------------------------------------------
+# Configuración no sensible
+# -------------------------------------------------------------
+!/config/
+!/config/**
+
+# Plantillas de variables de entorno (sin valores reales)
+!/.env.example
+
+# Manifestos de Python
+!/requirements.txt
+!/pyproject.toml
+!/setup.cfg
+
+# -------------------------------------------------------------
+# BLOQUEOS ABSOLUTOS — nunca commitear
+# (defensa en profundidad: aunque la whitelist se rompa, estos no pasan)
+# -------------------------------------------------------------
+**/data/
+**/raw/
+**/*.csv
+**/*.parquet
+**/*.tsv
+**/*.xlsx
+**/*.sqlite
+**/*.db
+**/.env
+**/.env.local
+**/.env.*.local
+**/secrets.*
+**/credentials.*
+**/*.pem
+**/*.key
+**/.notes-*
+**/*-secret.*
+**/__pycache__/
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+**/*.pyc
+**/*.pyo
+**/.venv/
+**/venv/
+/data/
+
+# JSONs de data (excepto fixtures explícitos)
+**/data/**/*.json
+**/raw/**/*.json
+
+# Excepción explícita: fixtures de tests sí versionados (sin datos sensibles)
+!/tests/fixtures/
+!/tests/fixtures/**
+
+# -------------------------------------------------------------
 # Sistema
+# -------------------------------------------------------------
 .DS_Store
+Thumbs.db
+*.log
+*.tmp
+*.swp
+*.swo
+*~
