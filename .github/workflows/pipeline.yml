@@ -1,0 +1,92 @@
+# =============================================================
+# Pipeline de reportería — Comapan
+# =============================================================
+# Triggers:
+#   1. repository_dispatch: disparado por webhook de Apify cuando un schedule
+#      termina (event_type: apify_run_succeeded).
+#   2. workflow_dispatch: ejecución manual desde la UI de GitHub Actions.
+#   3. schedule: backup cron (días 1 y 15 a las 11:00 UTC = 06:00 Bogotá).
+# =============================================================
+name: Pipeline Comapan
+
+on:
+  repository_dispatch:
+    types: [apify_run_succeeded]
+  workflow_dispatch:
+    inputs:
+      client:
+        description: "ID del cliente (config/clients/<id>.yaml)"
+        required: true
+        default: comapan
+      period:
+        description: "Fecha del snapshot YYYY-MM-DD (vacío = hoy)"
+        required: false
+        default: ""
+  schedule:
+    # Quincenal — backup en caso de que el webhook de Apify no dispare
+    - cron: "0 11 1,15 * *"
+
+concurrency:
+  # Un solo run por cliente a la vez. Si llega otro mientras corre, se cancela.
+  group: pipeline-${{ github.event.inputs.client || 'comapan' }}
+  cancel-in-progress: false
+
+jobs:
+  run-pipeline:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write              # necesario para push del reporte generado
+    timeout-minutes: 15
+    env:
+      CLIENT: ${{ github.event.inputs.client || 'comapan' }}
+      PERIOD: ${{ github.event.inputs.period }}
+      APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      SMTP_HOST: ${{ secrets.SMTP_HOST }}
+      SMTP_PORT: ${{ secrets.SMTP_PORT }}
+      SMTP_USER: ${{ secrets.SMTP_USER }}
+      SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+      GA4_SERVICE_ACCOUNT_JSON: ${{ secrets.GA4_SERVICE_ACCOUNT_JSON }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          # fetch-depth 1 es suficiente: el push va a main directo
+          fetch-depth: 1
+          # GITHUB_TOKEN viene con permisos contents:write para push
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Validate config
+        run: |
+          python -c "from pipeline.util.config import load_client, load_global; \
+                     load_global(); load_client('${CLIENT}'); \
+                     print('OK config válida')"
+
+      - name: Run pipeline
+        run: |
+          ARGS="--client ${CLIENT}"
+          if [ -n "${PERIOD}" ]; then ARGS="${ARGS} --period ${PERIOD}"; fi
+          echo "Running: python -m pipeline.run ${ARGS}"
+          python -m pipeline.run ${ARGS}
+
+      - name: Resumen del run
+        if: always()
+        run: |
+          echo "### Pipeline finalizado" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- Cliente: ${CLIENT}" >> $GITHUB_STEP_SUMMARY
+          echo "- Periodo: ${PERIOD:-$(date +%Y-%m-%d)}" >> $GITHUB_STEP_SUMMARY
+          echo "- Run: ${{ github.run_id }}" >> $GITHUB_STEP_SUMMARY
+          echo "- URL: https://comapan.datalitica.com.co/" >> $GITHUB_STEP_SUMMARY
