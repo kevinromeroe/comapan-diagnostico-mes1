@@ -554,7 +554,7 @@ const REPORT_META = {"current": "diagnostico", "available": [{"id": "diagnostico
 <!-- ============ RESUMEN EJECUTIVO ============ -->
 <section class="tab active" id="tab-resumen">
   <div class="hero">
-    <div class="eyebrow">Diagnóstico de redes sociales · Feb a Abr 2026</div>
+    <div class="eyebrow">Diagnóstico de redes sociales · Ene a May 2026</div>
     <h1>Cómo se comporta <em>Comapan</em> en redes hoy.</h1>
     <p class="lead">Una lectura descriptiva de la actividad y desempeño de las cuentas oficiales en Instagram, Facebook, TikTok y LinkedIn — basada únicamente en datos públicos.</p>
 
@@ -582,18 +582,18 @@ const REPORT_META = {"current": "diagnostico", "available": [{"id": "diagnostico
   <div class="section-head">
     <div class="num">03 · Distribución del esfuerzo</div>
     <h2>¿Dónde está hablando Comapan?</h2>
-    <div class="desc">Volumen de publicaciones y engagement por red en Feb-Abr 2026.</div>
+    <div class="desc">Volumen de publicaciones y engagement por red en Ene-May 2026.</div>
   </div>
 
   <div class="chart-grid cols-2">
-    <div class="chart-card"><h3>Posts publicados por red <i class="info-icon" data-tip="Total de publicaciones (fotos, carruseles, reels o videos) que cada red tuvo durante Feb-Abr 2026.">i</i></h3><div class="chart-wrap"><canvas id="c-posts-red"></canvas></div><div class="learn" id="l-posts-red"></div></div>
+    <div class="chart-card"><h3>Posts publicados por red <i class="info-icon" data-tip="Total de publicaciones (fotos, carruseles, reels o videos) que cada red tuvo durante Ene-May 2026.">i</i></h3><div class="chart-wrap"><canvas id="c-posts-red"></canvas></div><div class="learn" id="l-posts-red"></div></div>
     <div class="chart-card"><h3>Engagement total por red <i class="info-icon" data-tip="Engagement = suma de likes + comentarios + shares públicos. Es la actividad que la marca generó en sus publicaciones, sin contar quién las vio.">i</i></h3><div class="chart-wrap"><canvas id="c-eng-red"></canvas></div><div class="learn" id="l-eng-red"></div></div>
   </div>
 
   <div class="section-head">
     <div class="num">04 · Evolución</div>
     <h2>Cómo se movió el engagement semana a semana</h2>
-    <div class="desc">Engagement total semanal por red en Feb-Abr 2026. Es el indicador más honesto de momentum cuando no hay histórico retroactivo de seguidores.</div>
+    <div class="desc">Engagement total semanal por red en Ene-May 2026. Es el indicador más honesto de momentum cuando no hay histórico retroactivo de seguidores.</div>
   </div>
   <div class="chart-card">
     <h3>Engagement semanal por red <i class="info-icon" data-tip="Engagement (likes + comentarios + shares) sumado por semana en cada red. La pendiente de la curva muestra si la red está ganando o perdiendo tracción.">i</i></h3>
@@ -713,7 +713,7 @@ const REPORT_META = {"current": "diagnostico", "available": [{"id": "diagnostico
   <div class="section-head">
     <div class="num">05 · Hallazgos</div>
     <h2>Lo que los datos están diciendo</h2>
-    <div class="desc">Patrones, oportunidades y alertas extraídos de Feb-Abr 2026, ordenados por impacto.</div>
+    <div class="desc">Patrones, oportunidades y alertas extraídos de Ene-May 2026, ordenados por impacto.</div>
   </div>
   <div id="findings"></div>
 </section>
@@ -795,7 +795,7 @@ function toMonthYear(iso) {
 document.getElementById("meta-window").textContent =
   DATA.ventana.desde && DATA.ventana.hasta
     ? `${toMonthYear(DATA.ventana.desde)} → ${toMonthYear(DATA.ventana.hasta)}`
-    : "Feb a Abr 2026";
+    : "Ene a May 2026";
 // Fecha de generación oculta en el footer por decisión editorial
 
 // Tabs (desktop) + Drawer (mobile) sincronizados
@@ -941,15 +941,15 @@ const DEFINITIONS = {
   engagement: "Engagement = la suma de likes + comentarios + shares de las publicaciones. Es la actividad pública que la marca generó en sus redes.",
   engagement_post: "Engagement por post = engagement total dividido entre la cantidad de publicaciones. Indica qué tan eficiente fue cada pieza en promedio.",
   engagement_week: "Engagement semanal = la misma suma de likes + comentarios + shares, pero agrupada semana a semana. Permite ver si la cuenta gana o pierde tracción.",
-  cadencia: "Cadencia = posts publicados por semana en promedio durante Feb-Abr 2026.",
+  cadencia: "Cadencia = posts publicados por semana en promedio durante Ene-May 2026.",
   volumen: "Volumen semanal = cantidad de publicaciones por semana en esta red. Refleja el ritmo editorial.",
   formato: "Engagement promedio por tipo de contenido = el promedio de likes + comentarios que recibe cada formato (foto, carrusel, reel). Permite identificar qué tipo de pieza conecta más.",
   mejor_dia: "Mejor día de la semana = el promedio de interacciones de los posts publicados ese día específico de la semana, comparado contra los otros días.",
   distribucion_hora: "Distribución por hora del día = la cantidad de publicaciones que se hicieron en cada franja horaria. Muestra los hábitos de publicación del equipo.",
   audiencia: "Audiencia digital = cantidad de seguidores (Instagram, LinkedIn) o de seguidores (Facebook). En TikTok se muestran las views totales del periodo porque la API pública no entrega seguidores.",
   followers: "Seguidores = personas que siguen la cuenta y reciben sus publicaciones en su feed.",
-  views_tiktok: "Views = reproducciones acumuladas de los videos publicados en Feb-Abr 2026.",
-  "posts del periodo": "Posts (periodo) = número de publicaciones realizadas en Feb-Abr 2026.",
+  views_tiktok: "Views = reproducciones acumuladas de los videos publicados en Ene-May 2026.",
+  "posts del periodo": "Posts (periodo) = número de publicaciones realizadas en Ene-May 2026.",
   top: "Top 5 = las 5 publicaciones que más interacciones recibieron en el periodo.",
   hashtags: "Hashtags = las etiquetas (#palabra) que aparecen con mayor frecuencia en los captions del periodo. Solo se cuentan las que la marca usa, no las que aparecen en comentarios.",
 };
@@ -985,21 +985,21 @@ const totalEng = DATA.instagram.engagement_total + DATA.facebook.engagement_tota
 const postsPorSemana = (totalPosts / 13).toFixed(1);
 
 document.getElementById("kpi-hero").innerHTML =
-  kpi("Publicaciones totales", fmt(totalPosts), "en 4 redes · Feb-Abr 2026", true,
-    "Suma de todas las publicaciones (posts, reels, videos) en Instagram, Facebook, TikTok y LinkedIn durante Feb-Abr 2026.") +
+  kpi("Publicaciones totales", fmt(totalPosts), "en 4 redes · Ene-May 2026", true,
+    "Suma de todas las publicaciones (posts, reels, videos) en Instagram, Facebook, TikTok y LinkedIn durante Ene-May 2026.") +
   kpi("Engagement total", fmt(totalEng), "likes + coments + shares", false,
     "Engagement = la suma de likes + comentarios + shares públicos de todas las publicaciones del periodo en las 4 redes.") +
   kpi("Engagement por post", fmt(Math.round(totalEng / totalPosts)), "promedio global", false,
     "Engagement total dividido entre el número de publicaciones. Indica qué tan eficiente fue cada pieza en promedio.") +
   kpi("Cadencia", `${postsPorSemana}`, "posts por semana en promedio", false,
-    "Posts por semana en promedio durante Feb-Abr 2026. Refleja el ritmo del calendario editorial.");
+    "Posts por semana en promedio durante Ene-May 2026. Refleja el ritmo del calendario editorial.");
 
 // ── AUDIENCIA DIGITAL ACTUAL — métricas nativas por red ──
 const audienciaCards = document.getElementById("audiencia-cards");
 const audienciaConfig = [
   { name: "Instagram", color: COLORS.ig, value: parseInt(DATA.accounts.Instagram?.seguidores || 0), label: "seguidores", note: "@" + (DATA.accounts.Instagram?.username || "comapan_co"), tip: "Seguidores = personas que siguen la cuenta y ven sus posts en su feed de Instagram." },
   { name: "Facebook", color: COLORS.fb, value: parseInt(DATA.accounts.Facebook?.page_likes || 0), label: "seguidores", note: "ComapanCo", tip: "Seguidores = personas que dieron 'me gusta' a la página de Comapan en Facebook. Históricamente equivale al concepto de seguidores." },
-  { name: "TikTok", color: COLORS.tt, value: DATA.tiktok.n_posts, label: "posts publicados", note: "@comapanco · Feb-Abr", tip: "La API pública de TikTok no expone número de seguidores. Mostramos publicaciones del periodo como referencia de actividad." },
+  { name: "TikTok", color: COLORS.tt, value: DATA.tiktok.n_posts, label: "posts publicados", note: "@comapanco · Ene-May", tip: "La API pública de TikTok no expone número de seguidores. Mostramos publicaciones del periodo como referencia de actividad." },
   { name: "LinkedIn", color: COLORS.li, value: parseInt(DATA.accounts.LinkedIn?.seguidores || 0), label: "seguidores", note: "Comapan S.A.", tip: "Seguidores = personas y empresas que siguen la página corporativa de Comapan en LinkedIn." },
 ];
 audienciaConfig.forEach(c => {
@@ -1171,7 +1171,7 @@ function buildPlatform(prefix, key, color) {
   // - IG/FB/LI: Seguidores
   // - TikTok: Views totales (el actor no entrega followers)
   const kpiPrincipal = prefix === "tt"
-    ? kpi("Posts publicados", fmt(d.n_posts), "en Feb-Abr 2026", false,
+    ? kpi("Posts publicados", fmt(data.n_posts), "en Ene-May 2026", false,
         "Número de videos publicados por @comapanco en el periodo analizado. TikTok no expone seguidores en su API pública.")
     : prefix === "fb"
     ? kpi("Seguidores", fmt(acc.page_likes), "audiencia FB", false,
@@ -1181,7 +1181,7 @@ function buildPlatform(prefix, key, color) {
   document.getElementById("kpi-" + prefix).innerHTML =
     kpiPrincipal +
     kpi("Posts (periodo)", fmt(data.n_posts), "", false,
-      "Cantidad de publicaciones realizadas en Feb-Abr 2026 en esta red.") +
+      "Cantidad de publicaciones realizadas en Ene-May 2026 en esta red.") +
     kpi("Engagement total", fmt(data.engagement_total), "", false,
       "Suma de likes + comentarios + shares de todos los posts del periodo en esta red.") +
     kpi("Eng. por post", fmt(data.engagement_promedio), `mediana: ${fmt(data.engagement_mediana)}`, false,
@@ -1285,7 +1285,7 @@ function buildPlatform(prefix, key, color) {
     if (concentration > 0) {
       const otrasN = data.n_posts - data.top5.length;
       const restante = 100 - concentration;
-      parts.push(`Estas <strong>${data.top5.length} publicaciones</strong> acumularon el <strong>${concentration}%</strong> de los likes y comentarios de Feb-Abr 2026 — las otras <strong>${otrasN} publicaciones</strong> se repartieron solo el <strong>${restante}%</strong> restante`);
+      parts.push(`Estas <strong>${data.top5.length} publicaciones</strong> acumularon el <strong>${concentration}%</strong> de los likes y comentarios de Ene-May 2026 — las otras <strong>${otrasN} publicaciones</strong> se repartieron solo el <strong>${restante}%</strong> restante`);
     }
     if (hasFormatVariation && dominantArr && dominantArr[1] >= 3) {
       parts.push(`<strong>${dominantArr[1]} de las ${data.top5.length}</strong> son <strong>${dominantArr[0].toLowerCase()}s</strong>: ese formato es el que más conecta con la audiencia`);
@@ -1368,7 +1368,7 @@ if (igTypeAvg.length >= 2) {
 // LinkedIn subutilizado
 findings.push({
   title: `LinkedIn está casi en pausa`,
-  body: `En Feb-Abr 2026 Comapan publicó <strong>${li.n_posts} veces</strong> en LinkedIn — apenas <strong>${(li.n_posts/13).toFixed(1)} por semana</strong>. Con 75 años de marca, este es el canal natural para hablarle a empleados, distribuidores y clientes del canal HORECA. Está sin trabajar.`,
+  body: `En Ene-May 2026 Comapan publicó <strong>${li.n_posts} veces</strong> en LinkedIn — apenas <strong>${(li.n_posts/13).toFixed(1)} por semana</strong>. Con 75 años de marca, este es el canal natural para hablarle a empleados, distribuidores y clientes del canal HORECA. Está sin trabajar.`,
   impact: "alto"
 });
 

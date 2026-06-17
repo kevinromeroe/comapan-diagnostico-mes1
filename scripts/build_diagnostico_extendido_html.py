@@ -168,6 +168,20 @@ def main() -> int:
 
     # Escribir el nuevo archivo
     TARGET_DIR.mkdir(parents=True, exist_ok=True)
+    # Post-process: arreglar strings hardcoded del template antiguo
+    for old_s, new_s in [
+        ("Feb a Abr 2026", "Ene a May 2026"),
+        ("Feb-Abr 2026",   "Ene-May 2026"),
+        ("feb a abr 2026", "ene a may 2026"),
+        ("feb-abr 2026",   "ene-may 2026"),
+        ("Feb-Abr",        "Ene-May"),
+    ]:
+        src = src.replace(old_s, new_s)
+    # Fix bug 'd is not defined' por si vuelve a aparecer
+    src = src.replace(
+        'kpi("Posts publicados", fmt(d.n_posts)',
+        'kpi("Posts publicados", fmt(data.n_posts)'
+    )
     TARGET_HTML.write_text(src)
     print(f"\n✅ Generado: {TARGET_HTML.relative_to(ROOT)}")
     print(f"   Tamaño: {len(src):,} bytes")
