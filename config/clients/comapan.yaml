@@ -121,12 +121,23 @@ platforms:
   linkedin:
     enabled: true
     handle: comapan-s-a-
-    url: https://www.linkedin.com/company/comapan-s-a-
+    url: https://www.linkedin.com/company/comapan-s-a-/
     apify:
       actor_id: WI0tj4Ieb5Kq458gB       # harvestapi/linkedin-company-posts
       actor_name: harvestapi/linkedin-company-posts
       input:
-        companies: ["comapan-s-a-"]
+        # Formato verificado con run exitoso del 03-may-2026 (63 posts).
+        # El actor usa targetUrls con URL completa, NO 'companies' con handle.
+        targetUrls: ["https://www.linkedin.com/company/comapan-s-a-/"]
+        maxPosts: 100
+        includeQuotePosts: true
+        includeReposts: true
+        scrapeReactions: false
+        scrapeComments: false
+        maxReactions: 0
+        maxComments: 0
+        postNestedReactions: false
+        postNestedComments: false
 
   ga4:
     enabled: false                       # se activa cuando exista el SA

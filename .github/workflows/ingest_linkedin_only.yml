@@ -1,0 +1,22 @@
+name: Ingest LinkedIn ONLY (fix one-shot)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  linkedin:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      APIFY_TOKEN:           ${{ secrets.APIFY_TOKEN }}
+      SUPABASE_URL:          ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_KEY:  ${{ secrets.SUPABASE_SERVICE_KEY }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11", cache: pip }
+      - name: Install deps
+        run: pip install -r requirements.txt
+      - name: Run LinkedIn-only ingester
+        run: python scripts/ingest_linkedin_only.py
