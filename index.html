@@ -554,7 +554,7 @@ const REPORT_META = {"current": "diagnostico", "available": [{"id": "diagnostico
 <!-- ============ RESUMEN EJECUTIVO ============ -->
 <section class="tab active" id="tab-resumen">
   <div class="hero">
-    <div class="eyebrow">Diagnóstico de redes sociales · Ene a May 2026</div>
+    <div class="eyebrow">Diagnóstico de redes sociales · Feb a Abr 2026</div>
     <h1>Cómo se comporta <em>Comapan</em> en redes hoy.</h1>
     <p class="lead">Una lectura descriptiva de la actividad y desempeño de las cuentas oficiales en Instagram, Facebook, TikTok y LinkedIn — basada únicamente en datos públicos.</p>
 
@@ -795,7 +795,7 @@ function toMonthYear(iso) {
 document.getElementById("meta-window").textContent =
   DATA.ventana.desde && DATA.ventana.hasta
     ? `${toMonthYear(DATA.ventana.desde)} → ${toMonthYear(DATA.ventana.hasta)}`
-    : "Ene a May 2026";
+    : "Feb a Abr 2026";
 // Fecha de generación oculta en el footer por decisión editorial
 
 // Tabs (desktop) + Drawer (mobile) sincronizados
@@ -1153,7 +1153,7 @@ DATA.consolidated.forEach(c => {
   if (c.plataforma === "TikTok") {
     audiencia = `${fmt(DATA.tiktok.n_posts)} <span style="color:var(--muted);font-size:11px">posts</span>`;
   } else if (c.plataforma === "Facebook") {
-    audiencia = `<span style="color:var(--muted)">n/d</span>`;
+    audiencia = `${fmt(parseInt(DATA.accounts.Facebook?.page_likes || 0))} <span style="color:var(--muted);font-size:11px">likes de página</span>`;
   } else {
     audiencia = `${fmt(c.seguidores)} <span style="color:var(--muted);font-size:11px">seguidores</span>`;
   }
