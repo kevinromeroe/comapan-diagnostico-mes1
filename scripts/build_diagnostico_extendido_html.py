@@ -172,6 +172,10 @@ def main() -> int:
     TARGET_HTML.write_text(src)
     print(f"\n✅ Generado: {TARGET_HTML.relative_to(ROOT)}")
     print(f"   Tamaño: {len(src):,} bytes")
+    # También escribir como landing del root (sync automático)
+    ROOT_HTML = ROOT / "index.html"
+    ROOT_HTML.write_text(src)
+    print(f"✅ Sincronizado a landing: {ROOT_HTML.relative_to(ROOT)}")
     return 0
 
 
