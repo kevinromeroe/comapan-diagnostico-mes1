@@ -9,6 +9,7 @@ from datetime import date, datetime, timedelta, timezone
 from typing import Any
 
 from pipeline.transform import aggregate, top_posts
+from pipeline.transform.insights_llm import generate_insights
 from pipeline.util.log import get_logger
 
 log = get_logger(__name__)
@@ -46,6 +47,8 @@ def assemble(
     n_top: int = 5,
     n_hashtags: int = 10,
     snapshot_dt: datetime | None = None,
+    with_llm_insights: bool = True,
+    llm_model: str = "claude-sonnet-4-6",
 ) -> dict[str, Any]:
     """
     `normalized` viene como:
@@ -127,7 +130,7 @@ def assemble(
                 "fuente": "apify",
             })
 
-    return {
+    payload = {
         "generated_at": snapshot_dt.strftime("%d/%m/%Y"),
         "ventana": {
             "desde": window_start.date().isoformat(),
@@ -143,3 +146,9 @@ def assemble(
         "fb_total": fb_total,
         "snapshots_history": snapshots_history,
     }
+
+    # Hallazgos LLM al final — alimentamos a Claude con el payload completo
+    if with_llm_insights:
+        payload["hallazgos_llm"] = generate_insights(payload, model=llm_model)
+
+    return payload

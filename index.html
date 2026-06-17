@@ -1453,5 +1453,112 @@ recos.forEach((r, i) => {
 });
 </script>
 
+<!-- =============================================================
+     Hallazgos LLM — render condicional si DATA.hallazgos_llm tiene contenido
+     ============================================================= -->
+<style>
+  .llm-section {
+    margin: 32px auto; max-width: 1100px; padding: 20px 24px;
+    background: var(--bg-soft-2); border-left: 4px solid var(--comapan-red);
+    border-radius: 6px;
+  }
+  .llm-section h2 {
+    margin: 0 0 6px 0; font-family: 'Roboto Slab', serif; font-size: 20px;
+    color: var(--comapan-red);
+  }
+  .llm-section .llm-meta {
+    font-size: 11px; color: var(--muted); margin-bottom: 18px;
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .llm-section .llm-resumen {
+    background: white; padding: 16px 18px; border-radius: 4px;
+    margin-bottom: 20px; font-size: 14px; line-height: 1.6;
+  }
+  .llm-hallazgos { display: grid; grid-template-columns: 1fr; gap: 12px; }
+  .llm-card {
+    background: white; padding: 16px 18px; border-radius: 4px;
+    border: 1px solid var(--line);
+  }
+  .llm-card .llm-badges { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+  .llm-card .llm-badge {
+    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+    padding: 3px 9px; border-radius: 3px; background: var(--bg-soft);
+    color: var(--ink-soft);
+  }
+  .llm-card .llm-badge.cat { background: var(--comapan-red); color: white; }
+  .llm-card .llm-badge.prio-alta { background: var(--comapan-red); color: white; }
+  .llm-card .llm-badge.prio-media { background: var(--comapan-orange); color: var(--ink); }
+  .llm-card .llm-badge.prio-baja { background: var(--line); color: var(--ink-soft); }
+  .llm-card .llm-row { margin: 6px 0; font-size: 13px; }
+  .llm-card .llm-label {
+    display: inline-block; min-width: 110px; font-weight: 700; color: var(--ink-soft);
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.3px;
+  }
+  .llm-card .llm-reco {
+    margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line);
+    background: var(--bg-soft-2); padding: 12px; border-radius: 3px;
+  }
+  @media print {
+    .llm-section { page-break-before: always; background: white; border-left: 4px solid var(--comapan-red); }
+    .llm-card { page-break-inside: avoid; }
+  }
+</style>
+<script>
+(function(){
+  if (typeof DATA === "undefined") return;
+  var llm = DATA.hallazgos_llm;
+  if (!llm || !Array.isArray(llm.hallazgos_top) || llm.hallazgos_top.length === 0) return;
+
+  var CAT_LABEL = {
+    patron: "Patrón", anomalia: "Anomalía", tendencia: "Tendencia",
+    brecha: "Brecha", correlacion: "Correlación", punto_ciego: "Punto ciego"
+  };
+  var PLAT_LABEL = {
+    instagram: "Instagram", facebook: "Facebook", tiktok: "TikTok",
+    linkedin: "LinkedIn", cross: "Cross-plataforma"
+  };
+
+  function esc(s){ return String(s||"").replace(/[&<>"']/g, function(c){
+    return ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]; }); }
+
+  var html = '<section class="llm-section" id="hallazgos-llm">';
+  html += '<h2>Hallazgos automáticos del periodo</h2>';
+  var meta = llm._meta || {};
+  html += '<div class="llm-meta">Generado por '+esc(meta.model||"Claude")+' · '
+        + (meta.attempts||1) + ' intento'+((meta.attempts||1)>1?'s':'')+' · '
+        + esc((meta.generated_at||"").slice(0,10)) + '</div>';
+
+  if (llm.resumen_ejecutivo) {
+    html += '<div class="llm-resumen">' + esc(llm.resumen_ejecutivo) + '</div>';
+  }
+  html += '<div class="llm-hallazgos">';
+  llm.hallazgos_top.forEach(function(h){
+    var reco = h.recomendacion || {};
+    html += '<div class="llm-card">';
+    html +=   '<div class="llm-badges">';
+    html +=     '<span class="llm-badge cat">' + esc(CAT_LABEL[h.categoria]||h.categoria) + '</span>';
+    html +=     '<span class="llm-badge">' + esc(PLAT_LABEL[h.plataforma]||h.plataforma) + '</span>';
+    html +=   '</div>';
+    html +=   '<div class="llm-row"><span class="llm-label">Dato</span> ' + esc(h.dato) + '</div>';
+    html +=   '<div class="llm-row"><span class="llm-label">Vs</span> ' + esc(h.comparativo) + '</div>';
+    html +=   '<div class="llm-row"><span class="llm-label">Lectura</span> ' + esc(h.interpretacion) + '</div>';
+    html +=   '<div class="llm-row"><span class="llm-label">Implicación</span> ' + esc(h.implicacion) + '</div>';
+    html +=   '<div class="llm-reco">';
+    html +=     '<div class="llm-row"><span class="llm-label">Acción</span> ' + esc(reco.accion) + '</div>';
+    html +=     '<div class="llm-row">';
+    html +=       '<span class="llm-badge prio-'+esc(reco.prioridad||"")+'">Prioridad '+esc(reco.prioridad||"")+'</span> ';
+    html +=       '<span class="llm-badge">Esfuerzo '+esc(reco.esfuerzo||"")+'</span>';
+    html +=     '</div>';
+    html +=   '</div>';
+    html += '</div>';
+  });
+  html += '</div></section>';
+
+  // Insertar al final del <main>
+  var main = document.querySelector("main");
+  if (main) main.insertAdjacentHTML("beforeend", html);
+})();
+</script>
+
 </body>
 </html>
