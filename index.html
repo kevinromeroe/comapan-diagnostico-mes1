@@ -179,7 +179,7 @@
      un documento limpio con todas las secciones desplegadas.
      ============================================================ */
   @media print {
-    @page { size: A4; margin: 1.2cm; }
+    @page { size: A4 landscape; margin: 1cm; }
     html, body { background: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     body { font-size: 11px; }
     /* Ocultar todo lo navegacional */
@@ -305,9 +305,9 @@
   table a:hover { text-decoration: underline; }
   .pill { display: inline-block; padding: 3px 10px; border-radius: 20px;
     font-size: 11px; font-weight: 600; background: var(--line); color: var(--ink-soft); }
-  .post-thumb { width: 56px; height: 56px; object-fit: cover; border-radius: 6px;
+  .post-thumb { width: 120px; height: 120px; object-fit: cover; border-radius: 8px;
     background: var(--bg-soft); display: block; flex-shrink: 0; }
-  .post-thumb-placeholder { width: 56px; height: 56px; border-radius: 6px;
+  .post-thumb-placeholder { width: 120px; height: 120px; border-radius: 8px;
     background: var(--bg-soft); display: flex; align-items: center; justify-content: center;
     color: var(--muted); font-size: 22px; flex-shrink: 0; }
   td .thumb-cell { display: flex; align-items: center; }
@@ -451,7 +451,7 @@
       -webkit-overflow-scrolling: touch; }
     .tab table thead, .tab table tbody { display: table; min-width: 640px; width: 100%; }
     .tab table th, .tab table td { padding: 10px 8px; font-size: 12px; }
-    .post-thumb, .post-thumb-placeholder { width: 44px; height: 44px; }
+    .post-thumb, .post-thumb-placeholder { width: 90px; height: 90px; }
 
     /* Findings */
     .finding { padding: 20px 0; gap: 14px; }
@@ -553,6 +553,14 @@ const REPORT_META = {"current": "diagnostico", "available": [{"id": "diagnostico
 
 <!-- ============ RESUMEN EJECUTIVO ============ -->
 <section class="tab active" id="tab-resumen">
+  <div class="resumen-corp" style="margin: 0 0 32px; padding: 24px 28px; background: linear-gradient(135deg, #F8E0E5 0%, #FBF4E4 100%); border-left: 6px solid var(--comapan-red); border-radius: 6px;">
+    <div style="font-size: 11px; color: var(--comapan-red); text-transform: uppercase; letter-spacing: 1.6px; font-weight: 700; margin-bottom: 12px;">Resumen ejecutivo</div>
+    <div style="font-size: 16px; line-height: 1.6; color: var(--ink); font-family: 'Roboto', sans-serif;">
+      <p style="margin: 0 0 10px;"><strong>298 publicaciones en 4 redes</strong> entre enero y mayo 2026, con un engagement total de <strong>42.710 interacciones</strong>. Instagram lidera en volumen (125 posts) y Facebook concentra la mayor audiencia (119.567 likes de pagina).</p>
+      <p style="margin: 0 0 10px;"><strong>TikTok</strong> entrega el mejor engagement por post promedio (<strong>318 interacciones</strong>), seis veces el promedio de Instagram. Es el canal con mayor potencial de crecimiento si se sube la cadencia (hoy solo 7-8 videos por mes).</p>
+      <p style="margin: 0;"><strong>LinkedIn</strong> mantiene una cadencia baja (5 posts por mes) y un engagement marginal (10 por post). Requiere replanteo de la estrategia editorial corporativa para llegar al nivel de las otras redes.</p>
+    </div>
+  </div>
   <div class="hero">
     <div class="eyebrow">Diagnóstico de redes sociales · Ene a May 2026</div>
     <h1>Cómo se comporta <em>Comapan</em> en redes hoy.</h1>
