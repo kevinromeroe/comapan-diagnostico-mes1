@@ -147,7 +147,7 @@
   }
   .topbar .title-block .title em { color: var(--comapan-red); font-style: normal; }
   .topbar .divider { width: 1px; height: 36px; background: var(--line); }
-  .topbar .logo-comapan { height: 28px; opacity: 0.9; }
+  .topbar .logo-comapan { height: 44px; opacity: 1; }
   .topbar .meta { text-align: right; font-size: 12px; color: var(--muted); white-space: nowrap; }
   .period-selector {
     display: inline-block; margin-left: 14px; padding: 6px 28px 6px 12px;
@@ -482,13 +482,14 @@
 
 <div class="topbar">
   <div class="brand">
-    <div class="agency-box"><img src="assets/logo-14dias.svg" alt="Catorce Días"></div>
+    <img class="logo-comapan" src="assets/logo-comapan.svg" alt="Comapan" onerror="this.src='assets/logo-comapan.png'">
+    <div class="divider"></div>
     <div class="title-block">
       <span class="eyebrow">Inteligencia de redes</span>
       <span class="title">Diagnóstico <em>Comapan</em></span>
     </div>
     <div class="divider"></div>
-    <img class="logo-comapan" src="assets/logo-comapan.svg" alt="Comapan" onerror="this.src='assets/logo-comapan.png'">
+    <div class="agency-box"><img src="assets/logo-14dias.svg" alt="Catorce Días"></div>
   </div>
   <div class="meta">
     <strong>Lectura ejecutiva</strong>
