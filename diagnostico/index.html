@@ -529,24 +529,20 @@ document.addEventListener("data-ready", function(){
     <button class="menu-close" id="menu-close" aria-label="Cerrar menú">×</button>
   </div>
   <button data-tab="resumen">Resumen ejecutivo</button>
-  <button data-tab="ranking">Ranking de redes</button>
   <button data-tab="instagram">Instagram</button>
   <button data-tab="facebook">Facebook</button>
   <button data-tab="tiktok">TikTok</button>
   <button data-tab="linkedin">LinkedIn</button>
-  <button data-tab="hallazgos">Hallazgos</button>
-  <button data-tab="recomendaciones">Recomendaciones</button>
+  <button data-tab="ranking">Ranking de redes</button>
 </aside>
 
 <nav class="tabs">
   <button class="active" data-tab="resumen">Resumen ejecutivo</button>
-  <button data-tab="ranking">Ranking de redes</button>
   <button data-tab="instagram">Instagram</button>
   <button data-tab="facebook">Facebook</button>
   <button data-tab="tiktok">TikTok</button>
   <button data-tab="linkedin">LinkedIn</button>
-  <button data-tab="hallazgos">Hallazgos</button>
-  <button data-tab="recomendaciones">Recomendaciones</button>
+  <button data-tab="ranking">Ranking de redes</button>
 </nav>
 
 <main>
@@ -554,52 +550,20 @@ document.addEventListener("data-ready", function(){
 <!-- ============ RESUMEN EJECUTIVO ============ -->
 <section class="tab active" id="tab-resumen">
   <div class="hero">
-    <div class="eyebrow">Diagnóstico de redes sociales · Últimos 90 días</div>
-    <h1>Cómo se comporta <em>Comapan</em> en redes hoy.</h1>
-    <p class="lead">Una lectura descriptiva de la actividad y desempeño de las cuentas oficiales en Instagram, Facebook, TikTok y LinkedIn — basada únicamente en datos públicos.</p>
-
-    <div class="kpi-grid" id="kpi-hero"></div>
+    <div class="eyebrow" id="resumen-eyebrow">Reporte de redes sociales</div>
+    <h1>Cómo recibimos a <em>Comapan</em> este periodo.</h1>
+    <p class="lead">Una vista por red social con su lectura ejecutiva — el detalle por gráfica vive dentro de cada pestaña.</p>
   </div>
 
-  <div class="section-head">
-    <div class="num">01 · Audiencia digital actual</div>
-    <h2>El tamaño de la huella en cada red</h2>
-    <div class="desc">Snapshot de hoy. Cada red se mide con su métrica nativa — los seguidores de Instagram no equivalen a los likes de página de Facebook, ni se suman entre sí.</div>
-  </div>
-  <div class="ranking" id="audiencia-cards"></div>
-
-  <div class="section-head">
-    <div class="num">02 · El veredicto</div>
-    <h2>Lectura general de la cuenta</h2>
-    <div class="desc">Síntesis ejecutiva del estado actual antes de profundizar por red.</div>
+  <div class="section-head" style="margin-top:32px">
+    <div class="num">Snapshot por red social</div>
+    <h2>Estado de cada cuenta en el periodo</h2>
+    <div class="desc">Cuatro tarjetas, una por red, con la frase clave + métricas nativas. Profundiza en cada tab del menú.</div>
   </div>
 
-  <div class="verdict">
-    <div class="label">Veredicto en una frase</div>
-    <p id="verdict-text"></p>
-  </div>
+  <div class="ps-grid" id="platform-snapshots"></div>
 
-  <div class="section-head">
-    <div class="num">03 · Distribución del esfuerzo</div>
-    <h2>¿Dónde está hablando Comapan?</h2>
-    <div class="desc">Volumen de publicaciones y engagement por red en los últimos 90 días.</div>
-  </div>
-
-  <div class="chart-grid cols-2">
-    <div class="chart-card"><h3>Posts publicados por red <i class="info-icon" data-tip="Total de publicaciones (fotos, carruseles, reels o videos) que cada red tuvo durante los últimos 90 días.">i</i></h3><div class="chart-wrap"><canvas id="c-posts-red"></canvas></div><div class="learn" id="l-posts-red"></div></div>
-    <div class="chart-card"><h3>Engagement total por red <i class="info-icon" data-tip="Engagement = suma de likes + comentarios + shares públicos. Es la actividad que la marca generó en sus publicaciones, sin contar quién las vio.">i</i></h3><div class="chart-wrap"><canvas id="c-eng-red"></canvas></div><div class="learn" id="l-eng-red"></div></div>
-  </div>
-
-  <div class="section-head">
-    <div class="num">04 · Evolución</div>
-    <h2>Cómo se movió el engagement semana a semana</h2>
-    <div class="desc">Engagement total semanal por red en los últimos 90 días. Es el indicador más honesto de momentum cuando no hay histórico retroactivo de seguidores.</div>
-  </div>
-  <div class="chart-card">
-    <h3>Engagement semanal por red <i class="info-icon" data-tip="Engagement (likes + comentarios + shares) sumado por semana en cada red. La pendiente de la curva muestra si la red está ganando o perdiendo tracción.">i</i></h3>
-    <div class="chart-wrap" style="height:340px"><canvas id="c-eng-evolution"></canvas></div>
-    <div class="learn" id="l-eng-evolution"></div>
-  </div>
+  <div id="exec-summary" class="exec-summary"></div>
 </section>
 
 <!-- ============ RANKING ============ -->
@@ -618,11 +582,32 @@ document.addEventListener("data-ready", function(){
   <div class="chart-card" style="padding:0">
     <table>
       <thead><tr>
-        <th>Red</th><th>Cuenta</th><th>Audiencia</th><th>Posts (90d)</th>
+        <th>Red</th><th>Cuenta</th><th>Audiencia</th><th>Posts (periodo)</th>
         <th>Engagement total</th><th>Eng./post</th><th>Top post</th>
       </tr></thead>
       <tbody id="t-accounts"></tbody>
     </table>
+  </div>
+
+  <div class="section-head">
+    <div class="num">Distribución del esfuerzo</div>
+    <h2>¿Dónde está hablando Comapan?</h2>
+    <div class="desc">Volumen de publicaciones y engagement por red en el periodo.</div>
+  </div>
+  <div class="chart-grid cols-2">
+    <div class="chart-card"><h3>Posts publicados por red <i class="info-icon" data-tip="Total de publicaciones por red en el periodo.">i</i></h3><div class="chart-wrap"><canvas id="c-posts-red"></canvas></div><div class="learn" id="l-posts-red"></div></div>
+    <div class="chart-card"><h3>Engagement total por red <i class="info-icon" data-tip="Engagement = likes + comentarios + shares públicos.">i</i></h3><div class="chart-wrap"><canvas id="c-eng-red"></canvas></div><div class="learn" id="l-eng-red"></div></div>
+  </div>
+
+  <div class="section-head">
+    <div class="num">Evolución semanal</div>
+    <h2>Cómo se movió el engagement semana a semana</h2>
+    <div class="desc">Pendiente positiva = la red está ganando tracción. Pendiente negativa = está cayendo.</div>
+  </div>
+  <div class="chart-card">
+    <h3>Engagement semanal por red <i class="info-icon" data-tip="Engagement (likes+comentarios+shares) sumado por semana en cada red.">i</i></h3>
+    <div class="chart-wrap" style="height:340px"><canvas id="c-eng-evolution"></canvas></div>
+    <div class="learn" id="l-eng-evolution"></div>
   </div>
 </section>
 
@@ -711,28 +696,13 @@ document.addEventListener("data-ready", function(){
 <!-- ============ HALLAZGOS ============ -->
 <section class="tab" id="tab-hallazgos">
   <div class="section-head">
-    <div class="num">05 · Hallazgos</div>
-    <h2>Lo que los datos están diciendo</h2>
-    <div class="desc">Patrones, oportunidades y alertas extraídos de los últimos 90 días, ordenados por impacto.</div>
-  </div>
-  <div id="findings"></div>
-</section>
-
-<!-- ============ RECOMENDACIONES ============ -->
-<section class="tab" id="tab-recomendaciones">
-  <div class="section-head">
-    <div class="num">06 · Recomendaciones</div>
-    <h2>Tres palancas para mover la aguja en los próximos 30 días</h2>
-    <div class="desc">Acciones concretas, priorizadas por relación esfuerzo/impacto.</div>
-  </div>
-  <div id="recos"></div>
-
-  <div class="section-head" style="margin-top:64px">
-    <div class="num">07 · La siguiente capa</div>
-    <h2>Hasta dónde puede llegar el análisis</h2>
-    <div class="desc">Este diagnóstico está construido con lo que las cuentas muestran al público. La siguiente capa — comportamiento real de la audiencia, alcance específico de cada pieza, conversión hacia la web — se abre cuando se conectan los accesos analíticos de las plataformas. Es la antesala natural para profundizar en los próximos meses.</div>
+    <div class="num">Hallazgos (deprecated)</div>
+    <h2>Esta sección fue movida</h2>
+    <div class="desc">Los hallazgos ahora aparecen contextualmente debajo de cada gráfica en las pestañas de cada red social.</div>
   </div>
 </section>
+
+<!-- (la sección de recomendaciones fue eliminada — ahora vive como insights por gráfica) -->
 
 </main>
 
@@ -1142,46 +1112,68 @@ function prettyTypes(arr) { return arr.map(prettyType); }
 const totalPosts = DATA.instagram.n_posts + DATA.facebook.n_posts + DATA.tiktok.n_posts + DATA.linkedin.n_posts;
 const totalEng = DATA.instagram.engagement_total + DATA.facebook.engagement_total + DATA.tiktok.engagement_total + DATA.linkedin.engagement_total;
 
-// KPIs Hero — solo métricas globales sumables/promediables
-const tiktokViews = parseInt(DATA.accounts.TikTok?.views_totales_90d || 0);
-const postsPorSemana = (totalPosts / 13).toFixed(1);
+// Eyebrow del Resumen con la ventana del periodo
+const _ey = document.getElementById("resumen-eyebrow");
+if (_ey && DATA.ventana) {
+  _ey.textContent = `Reporte · ${DATA.ventana.desde} a ${DATA.ventana.hasta}`;
+}
 
-document.getElementById("kpi-hero").innerHTML =
-  kpi("Publicaciones totales", fmt(totalPosts), "en 4 redes · 90 días", true,
-    "Suma de todas las publicaciones (posts, reels, videos) en Instagram, Facebook, TikTok y LinkedIn durante los últimos 90 días.") +
-  kpi("Engagement total", fmt(totalEng), "likes + coments + shares", false,
-    "Engagement = la suma de likes + comentarios + shares públicos de todas las publicaciones del periodo en las 4 redes.") +
-  kpi("Engagement por post", fmt(Math.round(totalEng / totalPosts)), "promedio global", false,
-    "Engagement total dividido entre el número de publicaciones. Indica qué tan eficiente fue cada pieza en promedio.") +
-  kpi("Cadencia", `${postsPorSemana}`, "posts por semana en promedio", false,
-    "Posts por semana en promedio durante los últimos 90 días. Refleja el ritmo del calendario editorial.");
-
-// ── AUDIENCIA DIGITAL ACTUAL — métricas nativas por red ──
-const audienciaCards = document.getElementById("audiencia-cards");
-const audienciaConfig = [
-  { name: "Instagram", color: COLORS.ig, value: parseInt(DATA.accounts.Instagram?.seguidores || 0), label: "seguidores", note: "@" + (DATA.accounts.Instagram?.username || "comapan_co"), tip: "Seguidores = personas que siguen la cuenta y ven sus posts en su feed de Instagram." },
-  { name: "Facebook", color: COLORS.fb, value: parseInt(DATA.accounts.Facebook?.page_likes || 0), label: "likes de página", note: "ComapanCo", tip: "Likes de página = personas que dieron 'me gusta' a la página de Comapan en Facebook. Históricamente equivale al concepto de seguidores." },
-  { name: "TikTok", color: COLORS.tt, value: tiktokViews, label: "views (90d)", note: "@comapanco", tip: "Views = reproducciones acumuladas de los videos publicados en TikTok durante los últimos 90 días. Se usa como métrica de alcance porque la API pública de TikTok no entrega seguidores." },
-  { name: "LinkedIn", color: COLORS.li, value: parseInt(DATA.accounts.LinkedIn?.seguidores || 0), label: "seguidores", note: "Comapan S.A.", tip: "Seguidores = personas y empresas que siguen la página corporativa de Comapan en LinkedIn." },
+// ── PLATFORM SNAPSHOTS (4 tarjetas con storytelling) ──
+const PLAT_CFG = [
+  { key: "instagram", name: "Instagram", color: COLORS.ig, accKey: "Instagram", handlePrefix: "@",
+    audMetric: "seguidores", audLabel: "seguidores" },
+  { key: "facebook",  name: "Facebook",  color: COLORS.fb, accKey: "Facebook", handlePrefix: "",
+    audMetric: "page_likes", audLabel: "likes de página" },
+  { key: "tiktok",    name: "TikTok",    color: COLORS.tt, accKey: "TikTok",   handlePrefix: "@",
+    audMetric: "seguidores", audLabel: "seguidores" },
+  { key: "linkedin",  name: "LinkedIn",  color: COLORS.li, accKey: "LinkedIn", handlePrefix: "",
+    audMetric: "seguidores", audLabel: "seguidores" },
 ];
-audienciaConfig.forEach(c => {
-  audienciaCards.innerHTML += `
-    <div class="net-card">
-      <div class="net-name"><span class="dot" style="background:${c.color}"></span>${c.name}</div>
-      <div class="stat-label">${c.label} <i class="info-icon" data-tip="${c.tip.replace(/"/g, '&quot;')}">i</i></div>
-      <div class="stat">${c.value ? fmt(c.value) : "n/d"}</div>
-      <div class="row" style="border-top:0; padding-top:12px"><span class="k">${c.note}</span></div>
-    </div>`;
+
+const psGrid = document.getElementById("platform-snapshots");
+const headlinesByPlat = (DATA.hallazgos_llm && DATA.hallazgos_llm.headlines) || {};
+
+PLAT_CFG.forEach(p => {
+  const acc = DATA.accounts[p.accKey] || {};
+  const blk = DATA[p.key] || {};
+  const audience = parseInt(acc[p.audMetric] || 0);
+  const handle = acc.username ? p.handlePrefix + acc.username : "sin cuenta";
+  const headline = headlinesByPlat[p.key];
+
+  // Si la plataforma no tiene datos del periodo, mostrar estado vacío
+  const isEmpty = blk.n_posts === 0 && audience === 0;
+
+  let html = `<div class="ps-card" style="--plat-color:${p.color}">`;
+  html +=   `<div class="ps-header"><span class="ps-dot"></span><div>`;
+  html +=     `<div class="ps-name">${p.name}</div>`;
+  html +=     `<div class="ps-handle">${handle}</div>`;
+  html +=   `</div></div>`;
+
+  if (isEmpty) {
+    html += `<div class="ps-empty">Sin datos disponibles en el periodo. Verifica el acceso al actor de scraping.</div>`;
+  } else {
+    if (headline) {
+      html += `<div class="ps-headline">${headline}</div>`;
+    }
+    html += `<div class="ps-kpis">`;
+    html +=   `<div class="ps-kpi"><div class="ps-kpi-val">${fmt(blk.n_posts || 0)}</div><div class="ps-kpi-lbl">posts</div></div>`;
+    html +=   `<div class="ps-kpi"><div class="ps-kpi-val">${fmt(blk.engagement_total || 0)}</div><div class="ps-kpi-lbl">engagement</div></div>`;
+    html +=   `<div class="ps-kpi"><div class="ps-kpi-val">${fmt(Math.round(blk.engagement_promedio || 0))}</div><div class="ps-kpi-lbl">prom/post</div></div>`;
+    html +=   `<div class="ps-kpi"><div class="ps-kpi-val">${audience ? fmt(audience) : "n/d"}</div><div class="ps-kpi-lbl">${p.audLabel}</div></div>`;
+    html += `</div>`;
+  }
+  html += `</div>`;
+  psGrid.insertAdjacentHTML("beforeend", html);
 });
 
-// ── VEREDICTO ──
-const ig = DATA.instagram, fb = DATA.facebook, tt = DATA.tiktok, li = DATA.linkedin;
-const ratioIgFb = (ig.engagement_promedio / Math.max(fb.engagement_promedio, 1)).toFixed(1);
+// Resumen ejecutivo (storytelling general)
+const execEl = document.getElementById("exec-summary");
+if (execEl && DATA.hallazgos_llm && DATA.hallazgos_llm.resumen_ejecutivo) {
+  execEl.innerHTML = "<strong>Lectura del mes: </strong>" + DATA.hallazgos_llm.resumen_ejecutivo;
+}
 
-document.getElementById("verdict-text").innerHTML =
-  `Comapan está activa en sus 4 redes y le apuesta fuerte a los reels y videos cortos. ` +
-  `<strong>Instagram es donde pasa todo</strong>: ${fmt(ig.n_posts)} publicaciones generaron ${fmt(ig.engagement_total)} interacciones de la gente — la audiencia que reacciona está ahí. ` +
-  `<strong>LinkedIn y TikTok están casi sin trabajar</strong> y son las dos oportunidades más claras del trimestre.`;
+// Aliases necesarios para el código de charts más abajo (siguen referenciados)
+const ig = DATA.instagram, fb = DATA.facebook, tt = DATA.tiktok, li = DATA.linkedin;
 
 // ── COMPARATIVO ──
 new Chart(document.getElementById("c-posts-red"), {
@@ -1569,19 +1561,22 @@ findings.push({
   impact: "medio"
 });
 
+// Hallazgos hardcodeados ya no se renderizan (tab eliminada en favor de insights por gráfica)
 const findingsEl = document.getElementById("findings");
-findings.forEach((f, i) => {
-  const impactLabel = { alto: "Alto impacto", medio: "Medio impacto", bajo: "Bajo impacto" }[f.impact];
-  findingsEl.innerHTML += `
-    <div class="finding">
-      <div class="num">${String(i+1).padStart(2,'0')}</div>
-      <div class="body">
-        <h4>${f.title}</h4>
-        <p>${f.body}</p>
-        <span class="impact ${f.impact}">${impactLabel}</span>
-      </div>
-    </div>`;
-});
+if (findingsEl) {
+  findings.forEach((f, i) => {
+    const impactLabel = { alto: "Alto impacto", medio: "Medio impacto", bajo: "Bajo impacto" }[f.impact];
+    findingsEl.innerHTML += `
+      <div class="finding">
+        <div class="num">${String(i+1).padStart(2,'0')}</div>
+        <div class="body">
+          <h4>${f.title}</h4>
+          <p>${f.body}</p>
+          <span class="impact ${f.impact}">${impactLabel}</span>
+        </div>
+      </div>`;
+  });
+}
 
 // ── RECOMENDACIONES ──
 const recos = [
@@ -1601,17 +1596,33 @@ const recos = [
     tags: ["Esfuerzo medio", "Impacto medio", "30-60 días"]
   }
 ];
+// Recomendaciones hardcodeadas ya no se renderizan (tab eliminada)
 const recosEl = document.getElementById("recos");
-recos.forEach((r, i) => {
-  recosEl.innerHTML += `
-    <div class="reco">
-      <div class="num">${i+1}</div>
-      <div>
-        <h4>${r.title}</h4>
-        <p>${r.body}</p>
-        <div class="tags">${r.tags.map(t => `<span class="tag">${t}</span>`).join("")}</div>
-      </div>
-    </div>`;
+if (recosEl) {
+  recos.forEach((r, i) => {
+    recosEl.innerHTML += `
+      <div class="reco">
+        <div class="num">${i+1}</div>
+        <div>
+          <h4>${r.title}</h4>
+          <p>${r.body}</p>
+          <div class="tags">${r.tags.map(t => `<span class="tag">${t}</span>`).join("")}</div>
+        </div>
+      </div>`;
+  });
+}
+
+// ── INSIGHTS POR GRÁFICA ──
+// Cada chart-card tiene un <div class="learn" id="l-..."> donde se inyectan
+// los insights generados por Gemini para esa gráfica específica.
+const chartInsights = (DATA.hallazgos_llm && DATA.hallazgos_llm.chart_insights) || {};
+Object.entries(chartInsights).forEach(([chartId, insight]) => {
+  const el = document.getElementById("l-" + chartId);
+  if (!el || !insight) return;
+  let html = "";
+  if (insight.hallazgo) html += "<strong>Lectura: </strong>" + insight.hallazgo;
+  if (insight.accion) html += '<div class="learn-action">' + insight.accion + '</div>';
+  el.innerHTML = html;
 });
 
 }  // ← cierra initReport()
@@ -1647,6 +1658,57 @@ recos.forEach((r, i) => {
   }
   .llm-platform-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
   .llm-platform-count { color: var(--muted); font-weight: 400; font-size: 13px; }
+
+  /* ===== Platform Snapshot Cards (Resumen ejecutivo) ===== */
+  .ps-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr);
+    gap: 16px; margin: 24px 0;
+  }
+  @media (max-width: 720px) { .ps-grid { grid-template-columns: 1fr; } }
+  .ps-card {
+    background: white; border: 1px solid var(--line); border-radius: 8px;
+    padding: 20px 22px; border-top: 4px solid var(--plat-color, var(--ink-soft));
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .ps-header { display: flex; align-items: center; gap: 12px; }
+  .ps-dot {
+    width: 12px; height: 12px; border-radius: 50%;
+    background: var(--plat-color, var(--ink-soft)); flex-shrink: 0;
+  }
+  .ps-name { font-family: 'Roboto Slab', serif; font-size: 18px; font-weight: 700; color: var(--ink); }
+  .ps-handle { font-size: 12px; color: var(--muted); }
+  .ps-headline {
+    font-size: 14px; line-height: 1.55; color: var(--ink-soft);
+    background: var(--bg-soft-2); padding: 12px 14px; border-radius: 6px;
+    border-left: 3px solid var(--plat-color, var(--ink-soft));
+  }
+  .ps-headline em { color: var(--ink); font-style: normal; font-weight: 600; }
+  .ps-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .ps-kpi { text-align: center; padding: 8px 6px; background: var(--bg-soft); border-radius: 6px; }
+  .ps-kpi-val { font-family: 'Roboto Slab', serif; font-size: 18px; font-weight: 700; color: var(--ink); }
+  .ps-kpi-lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; margin-top: 2px; }
+  .ps-empty { color: var(--muted); font-style: italic; font-size: 13px; padding: 14px; text-align: center; background: var(--bg-soft); border-radius: 6px; }
+
+  .exec-summary {
+    margin-top: 32px; padding: 20px 24px;
+    background: var(--bg-soft-2); border-radius: 8px;
+    font-size: 14px; line-height: 1.6; color: var(--ink-soft);
+  }
+  .exec-summary:empty { display: none; }
+
+  /* Insight inline debajo de cada chart (los .learn ya existen) */
+  .learn:empty { display: none; }
+  .learn {
+    margin-top: 12px; padding: 12px 14px;
+    background: var(--bg-soft-2); border-left: 3px solid var(--comapan-red);
+    border-radius: 4px; font-size: 13px; line-height: 1.55; color: var(--ink-soft);
+  }
+  .learn strong { color: var(--ink); }
+  .learn .learn-action {
+    margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line);
+    font-size: 12px; color: var(--ink);
+  }
+  .learn .learn-action::before { content: "→ "; color: var(--comapan-red); font-weight: 700; }
   .llm-card {
     background: white; padding: 16px 18px; border-radius: 4px;
     border: 1px solid var(--line);
