@@ -58,6 +58,24 @@ jobs:
           # GITHUB_TOKEN viene con permisos contents:write para push
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Debug — qué commit estamos corriendo
+        run: |
+          echo "================================================================"
+          echo "Branch ref:    ${{ github.ref }}"
+          echo "Commit SHA:    $(git rev-parse HEAD)"
+          echo "Commit short:  $(git rev-parse --short HEAD)"
+          echo "Commit msg:    $(git log -1 --pretty=%B | head -1)"
+          echo "Commit date:   $(git log -1 --pretty=%cd)"
+          echo "================================================================"
+          echo ""
+          echo "Verificación: ¿run.py tiene la línea build_all o la build vieja?"
+          grep -n "render_build" pipeline/run.py | head -5
+          echo ""
+          echo "Si arriba ves 'render_build.build_all()' → código actualizado ✓"
+          echo "Si ves 'render_build.build(data_path=...)' → código viejo, está corriendo"
+          echo "un commit antes del hotfix 2e0c8e5. Re-trigger NO funciona, hay que"
+          echo "ir a Actions → Pipeline Comapan → Run workflow (NO Re-run)."
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
