@@ -1,0 +1,44 @@
+# =============================================================
+# Workflow ONE-SHOT para backfill inicial a Supabase
+# =============================================================
+# Carga el diagnostico.json + los datasets de Apify del 17-jun
+# a las tablas Supabase. Lo corres UNA VEZ.
+# =============================================================
+name: Ingest to Supabase (one-shot)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      APIFY_TOKEN:          ${{ secrets.APIFY_TOKEN }}
+      SUPABASE_URL:         ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run ingester
+        run: python scripts/ingest_to_supabase.py
+
+      - name: Resumen
+        if: always()
+        run: |
+          echo "### Ingest a Supabase" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- Diagnóstico: cargado en aggregates" >> $GITHUB_STEP_SUMMARY
+          echo "- Junio 2026: datasets de Apify (gratis, dataset read) + filtro calendario" >> $GITHUB_STEP_SUMMARY
+          echo "- Verificar en Supabase Table Editor: tablas accounts, posts, aggregates" >> $GITHUB_STEP_SUMMARY
