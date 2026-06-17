@@ -104,11 +104,22 @@ def main() -> int:
     # =====================  LOAD  =====================
     if not args.dry_run:
         thumbs.replace_top5_media(data)
-    data_path = json_writer.write_data(data, snap_dt.date())
+    # Para reportes mensuales el nombre del JSON es YYYY-MM (no YYYY-MM-DD),
+    # para que el build_all multi-período lo detecte como un mes.
+    cycle = client_cfg.get("client", {}).get("cycle", "mensual")
+    if cycle == "mensual":
+        period_label = date(snap_dt.year, snap_dt.month, 1)  # primer día del mes
+        period_id = snap_dt.strftime("%Y-%m")
+    else:
+        period_label = snap_dt.date()
+        period_id = snap_dt.strftime("%Y-%m-%d")
+    data_path = json_writer.write_data(data, period_id=period_id)
 
     # =====================  RENDER  =====================
+    # build_all regenera /diagnostico/, /YYYY-MM/ por cada JSON disponible,
+    # y la raíz como copia del periodo más reciente.
     if not args.dry_run:
-        render_build.build(data_path=data_path)
+        render_build.build_all()
 
     # =====================  PUBLISH  =====================
     commit_sha: str | None = None

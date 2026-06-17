@@ -165,6 +165,8 @@ def _call_llm(
 ) -> str:
     """Llama al LLM via el provider configurado. Retorna texto crudo."""
     provider_call = get_provider(provider)
+    # 8000 tokens da espacio para 5 hallazgos completos + resumen sin riesgo de
+    # truncamiento de JSON (vimos respuestas de Gemini de ~1300 tokens; 8000 es 6×).
     kwargs = {"max_tokens": max_tokens, "temperature": temperature}
     if model:
         kwargs["model"] = model
@@ -265,6 +267,7 @@ def generate_insights(
     provider: str = "gemini",
     model: str | None = None,
     max_attempts: int = 3,
+    max_tokens: int = 8000,
     skip_on_missing_key: bool = True,
 ) -> dict[str, Any]:
     """
@@ -301,7 +304,8 @@ def generate_insights(
         meta["attempts"] = attempt
         try:
             user_prompt = _build_prompt(data, attempt)
-            response = _call_llm(SYSTEM_PROMPT, user_prompt, provider=provider, model=model)
+            response = _call_llm(SYSTEM_PROMPT, user_prompt, provider=provider,
+                                 model=model, max_tokens=max_tokens)
             parsed, errors = _parse_and_validate(response)
             if not errors and parsed:
                 meta["status"] = "ok"
