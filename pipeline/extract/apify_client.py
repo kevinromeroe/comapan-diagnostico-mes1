@@ -104,6 +104,7 @@ class ApifyClient:
         actor_input: dict[str, Any],
         *,
         timeout_seconds: int = 600,
+        max_total_charge_usd: float = 1.00,
     ) -> list[dict[str, Any]]:
         """Lanza el actor con el input dado, espera a que termine y retorna los items.
 
@@ -112,15 +113,23 @@ class ApifyClient:
         2. Espera a que termine (bloqueante)
         3. Devuelve directamente el dataset
 
-        Esto permite orquestar todo desde GitHub Actions sin necesidad de
-        schedules ni webhooks separados en Apify console.
+        `max_total_charge_usd` es OBLIGATORIO para actores con pricing
+        PAY_PER_EVENT (como harvestapi/*). Sin él, Apify devuelve 403.
+        Default $1.00 = cap defensivo; para actores caros, subirlo en la
+        llamada.
         """
         import json as _json
         from urllib.error import HTTPError, URLError
         from urllib.parse import urlencode as _urlencode
         from urllib.request import Request, urlopen
 
-        params = {"token": self.token, "timeout": timeout_seconds, "format": "json", "clean": "true"}
+        params = {
+            "token": self.token,
+            "timeout": timeout_seconds,
+            "format": "json",
+            "clean": "true",
+            "maxTotalChargeUsd": max_total_charge_usd,
+        }
         url = f"{API_BASE}/acts/{actor_id}/run-sync-get-dataset-items?{_urlencode(params)}"
 
         log.info("apify_run_actor_sync_start", extra={"actor_id": actor_id})

@@ -108,8 +108,13 @@ def main() -> int:
         log.warning("delete_old_linkedin_failed", extra={"err": str(exc)})
 
     # Correr el actor con el input nuevo
+    # harvestapi/linkedin-company-posts es PAY_PER_EVENT — Apify exige cap explícito
     print("→ Lanzando actor LinkedIn con input corregido…")
-    items = apify.run_actor_sync(cfg["apify"]["actor_id"], cfg["apify"]["input"])
+    items = apify.run_actor_sync(
+        cfg["apify"]["actor_id"],
+        cfg["apify"]["input"],
+        max_total_charge_usd=0.50,   # cap = $0.50, sobrado para ~100 posts a $0.002 c/u
+    )
     print(f"  Actor retornó {len(items)} posts crudos")
 
     if not items:
