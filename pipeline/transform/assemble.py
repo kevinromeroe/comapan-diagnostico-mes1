@@ -48,7 +48,8 @@ def assemble(
     n_hashtags: int = 10,
     snapshot_dt: datetime | None = None,
     with_llm_insights: bool = True,
-    llm_model: str = "claude-sonnet-4-6",
+    llm_provider: str = "gemini",
+    llm_model: str | None = None,
 ) -> dict[str, Any]:
     """
     `normalized` viene como:
@@ -147,8 +148,10 @@ def assemble(
         "snapshots_history": snapshots_history,
     }
 
-    # Hallazgos LLM al final — alimentamos a Claude con el payload completo
+    # Hallazgos LLM al final — alimentamos al provider configurado con el payload completo
     if with_llm_insights:
-        payload["hallazgos_llm"] = generate_insights(payload, model=llm_model)
+        payload["hallazgos_llm"] = generate_insights(
+            payload, provider=llm_provider, model=llm_model,
+        )
 
     return payload

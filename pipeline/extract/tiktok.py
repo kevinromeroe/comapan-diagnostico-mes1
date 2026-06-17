@@ -1,4 +1,4 @@
-"""Extractor de TikTok — usa `clockworks/tiktok-scraper` (incluye perfil embebido)."""
+"""Extractor de TikTok — usa el actor de posts (incluye perfil embebido)."""
 from __future__ import annotations
 
 from typing import Any
@@ -11,12 +11,7 @@ log = get_logger(__name__)
 
 
 def extract(client: ApifyClient, platform_cfg: dict[str, Any]) -> dict[str, Any]:
-    # Preferimos el de posts (incluye authorMeta). El profile actor queda redundante.
-    posts_actor = platform_cfg["apify"]["posts"]["actor_id"]
-    run = client.last_succeeded_run_for_actor(posts_actor)
-    if not run:
-        log.warning("tiktok_no_recent_run", extra={"actor_id": posts_actor})
-        return {"account": {}, "posts": []}
-    items = client.dataset_items(run["defaultDatasetId"])
+    posts_cfg = platform_cfg["apify"]["posts"]
+    items = client.run_actor_sync(posts_cfg["actor_id"], posts_cfg.get("input") or {})
     log.info("tiktok_extracted", extra={"items": len(items)})
     return normalize_tiktok(items)

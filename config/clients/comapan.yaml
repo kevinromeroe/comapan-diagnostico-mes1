@@ -144,6 +144,15 @@ analytics:
   min_n_for_pattern: 5            # n mínimo para hablar de "patrón"
 
 # =============================================================
+# LLM provider para hallazgos automáticos (insights_llm.py)
+# =============================================================
+llm:
+  enabled: true
+  provider: gemini                # gemini | anthropic
+  model: gemini-2.5-flash         # gemini-2.5-flash (default) | gemini-2.5-pro
+  max_attempts: 3
+
+# =============================================================
 # Notificaciones (cuando termina cada run)
 # =============================================================
 notifications:

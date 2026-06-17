@@ -97,3 +97,63 @@ class ApifyClient:
         data = self._get(f"/acts/{actor_id}/runs", {"status": "SUCCEEDED", "desc": 1, "limit": 1})
         items = data["data"]["items"] if data else []
         return items[0] if items else None
+
+    def run_actor_sync(
+        self,
+        actor_id: str,
+        actor_input: dict[str, Any],
+        *,
+        timeout_seconds: int = 600,
+    ) -> list[dict[str, Any]]:
+        """Lanza el actor con el input dado, espera a que termine y retorna los items.
+
+        Usa el endpoint `/acts/{id}/run-sync-get-dataset-items` que hace:
+        1. Inicia un nuevo run con el input
+        2. Espera a que termine (bloqueante)
+        3. Devuelve directamente el dataset
+
+        Esto permite orquestar todo desde GitHub Actions sin necesidad de
+        schedules ni webhooks separados en Apify console.
+        """
+        import json as _json
+        from urllib.error import HTTPError, URLError
+        from urllib.parse import urlencode as _urlencode
+        from urllib.request import Request, urlopen
+
+        params = {"token": self.token, "timeout": timeout_seconds, "format": "json", "clean": "true"}
+        url = f"{API_BASE}/acts/{actor_id}/run-sync-get-dataset-items?{_urlencode(params)}"
+
+        log.info("apify_run_actor_sync_start", extra={"actor_id": actor_id})
+        for attempt in range(self.max_attempts):
+            try:
+                req = Request(
+                    url,
+                    data=_json.dumps(actor_input).encode("utf-8"),
+                    headers={
+                        "Content-Type": "application/json",
+                        "User-Agent": "datalitica-pipeline/1.0",
+                    },
+                    method="POST",
+                )
+                with urlopen(req, timeout=timeout_seconds + 10) as resp:
+                    body = resp.read().decode("utf-8")
+                    items = _json.loads(body) if body else []
+                    log.info(
+                        "apify_run_actor_sync_ok",
+                        extra={"actor_id": actor_id, "items": len(items)},
+                    )
+                    return items if isinstance(items, list) else []
+            except (HTTPError, URLError, TimeoutError) as exc:
+                if attempt + 1 < self.max_attempts:
+                    sleep_for = self.backoff[min(attempt, len(self.backoff) - 1)]
+                    log.warning(
+                        "apify_run_sync_retry",
+                        extra={"actor_id": actor_id, "attempt": attempt + 1, "error": str(exc)},
+                    )
+                    import time as _time
+                    _time.sleep(sleep_for)
+                else:
+                    raise ApifyError(
+                        f"run_actor_sync({actor_id}) falló tras {self.max_attempts} intentos: {exc}"
+                    )
+        return []

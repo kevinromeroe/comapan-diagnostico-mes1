@@ -89,8 +89,16 @@ def main() -> int:
     window_days = client_cfg.get("client", {}).get("window_days", 90)
     n_top = client_cfg.get("analytics", {}).get("top_posts_n", 5)
     n_tags = client_cfg.get("analytics", {}).get("top_hashtags_n", 10)
+    llm_cfg = client_cfg.get("llm", {})
     data = assemble(
-        normalized, window_days=window_days, n_top=n_top, n_hashtags=n_tags, snapshot_dt=snap_dt,
+        normalized,
+        window_days=window_days,
+        n_top=n_top,
+        n_hashtags=n_tags,
+        snapshot_dt=snap_dt,
+        with_llm_insights=llm_cfg.get("enabled", True),
+        llm_provider=llm_cfg.get("provider", "gemini"),
+        llm_model=llm_cfg.get("model"),
     )
 
     # =====================  LOAD  =====================

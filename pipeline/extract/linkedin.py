@@ -1,4 +1,4 @@
-"""Extractor de LinkedIn — `harvestapi/linkedin-company-posts`."""
+"""Extractor de LinkedIn — lanza el actor on-demand."""
 from __future__ import annotations
 
 from typing import Any
@@ -12,10 +12,7 @@ log = get_logger(__name__)
 
 def extract(client: ApifyClient, platform_cfg: dict[str, Any]) -> dict[str, Any]:
     actor_id = platform_cfg["apify"]["actor_id"]
-    run = client.last_succeeded_run_for_actor(actor_id)
-    if not run:
-        log.warning("linkedin_no_recent_run", extra={"actor_id": actor_id})
-        return {"account": {}, "posts": []}
-    items = client.dataset_items(run["defaultDatasetId"])
+    actor_input = platform_cfg["apify"].get("input") or {}
+    items = client.run_actor_sync(actor_id, actor_input)
     log.info("linkedin_extracted", extra={"items": len(items)})
     return normalize_linkedin(items)

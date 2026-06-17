@@ -18,6 +18,7 @@ import re
 from datetime import datetime, timezone
 from typing import Any
 
+from pipeline.transform.llm_providers import get_provider
 from pipeline.util.log import get_logger
 
 log = get_logger(__name__)
@@ -151,36 +152,23 @@ def _platform_summary(p: dict[str, Any]) -> dict[str, Any]:
 
 
 # =============================================================
-# Llamada a Claude
+# Llamada al LLM (cualquier provider)
 # =============================================================
-def _call_claude(
+def _call_llm(
     system_prompt: str,
     user_prompt: str,
     *,
-    model: str = "claude-sonnet-4-6",
+    provider: str = "gemini",
+    model: str | None = None,
     max_tokens: int = 4000,
     temperature: float = 0.0,
 ) -> str:
-    """Llama a Claude API, retorna el texto crudo. Lazy import del SDK."""
-    try:
-        from anthropic import Anthropic
-    except ImportError:
-        raise RuntimeError("Paquete 'anthropic' no instalado. pip install anthropic")
-
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
-    if not api_key:
-        raise RuntimeError("ANTHROPIC_API_KEY no definido en env vars.")
-
-    client = Anthropic(api_key=api_key)
-    msg = client.messages.create(
-        model=model,
-        max_tokens=max_tokens,
-        temperature=temperature,
-        system=system_prompt,
-        messages=[{"role": "user", "content": user_prompt}],
-    )
-    # message.content es una lista de bloques; el primero es texto
-    return msg.content[0].text
+    """Llama al LLM via el provider configurado. Retorna texto crudo."""
+    provider_call = get_provider(provider)
+    kwargs = {"max_tokens": max_tokens, "temperature": temperature}
+    if model:
+        kwargs["model"] = model
+    return provider_call(system_prompt, user_prompt, **kwargs)
 
 
 # =============================================================
@@ -274,7 +262,8 @@ def _parse_and_validate(response_text: str) -> tuple[dict[str, Any] | None, list
 def generate_insights(
     data: dict[str, Any],
     *,
-    model: str = "claude-sonnet-4-6",
+    provider: str = "gemini",
+    model: str | None = None,
     max_attempts: int = 3,
     skip_on_missing_key: bool = True,
 ) -> dict[str, Any]:
@@ -285,41 +274,52 @@ def generate_insights(
         {
           "hallazgos_top": [...],          # vacía si falló
           "resumen_ejecutivo": "...",
-          "_meta": {model, attempts, status, generated_at, error}
+          "_meta": {provider, model, attempts, status, generated_at, error}
         }
     """
     meta: dict[str, Any] = {
-        "model": model,
+        "provider": provider,
+        "model": model or ("gemini-2.5-flash" if provider == "gemini" else "claude-sonnet-4-6"),
         "attempts": 0,
         "generated_at": datetime.now(timezone.utc).isoformat(),
     }
     fallback = {"hallazgos_top": [], "resumen_ejecutivo": "", "_meta": meta}
 
-    if not os.environ.get("ANTHROPIC_API_KEY"):
+    # Check del API key del provider correcto
+    key_env = {"gemini": "GEMINI_API_KEY", "anthropic": "ANTHROPIC_API_KEY"}.get(provider)
+    if key_env and not os.environ.get(key_env):
         meta["status"] = "skipped_no_api_key"
+        meta["missing_env"] = key_env
         if skip_on_missing_key:
-            log.warning("insights_skipped_no_api_key")
+            log.warning("insights_skipped_no_api_key", extra={"provider": provider, "missing": key_env})
             return fallback
         else:
-            raise RuntimeError("ANTHROPIC_API_KEY no definido")
+            raise RuntimeError(f"{key_env} no definido")
 
     last_errors: list[str] = []
     for attempt in range(1, max_attempts + 1):
         meta["attempts"] = attempt
         try:
             user_prompt = _build_prompt(data, attempt)
-            response = _call_claude(SYSTEM_PROMPT, user_prompt, model=model)
+            response = _call_llm(SYSTEM_PROMPT, user_prompt, provider=provider, model=model)
             parsed, errors = _parse_and_validate(response)
             if not errors and parsed:
                 meta["status"] = "ok"
-                log.info("insights_generated", extra={"attempt": attempt, "n_hallazgos": len(parsed["hallazgos_top"])})
+                log.info(
+                    "insights_generated",
+                    extra={"provider": provider, "attempt": attempt,
+                           "n_hallazgos": len(parsed["hallazgos_top"])},
+                )
                 return {
                     "hallazgos_top": parsed["hallazgos_top"],
                     "resumen_ejecutivo": parsed["resumen_ejecutivo"],
                     "_meta": meta,
                 }
             last_errors = errors
-            log.warning("insights_validation_failed", extra={"attempt": attempt, "errors": errors[:5]})
+            log.warning(
+                "insights_validation_failed",
+                extra={"attempt": attempt, "errors": errors[:5]},
+            )
         except Exception as exc:
             last_errors = [str(exc)]
             log.error("insights_call_failed", extra={"attempt": attempt, "error": str(exc)})

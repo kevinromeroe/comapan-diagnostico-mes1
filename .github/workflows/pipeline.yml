@@ -2,16 +2,16 @@
 # Pipeline de reportería — Comapan
 # =============================================================
 # Triggers:
-#   1. repository_dispatch: disparado por webhook de Apify cuando un schedule
-#      termina (event_type: apify_run_succeeded).
-#   2. workflow_dispatch: ejecución manual desde la UI de GitHub Actions.
-#   3. schedule: backup cron (días 1 y 15 a las 11:00 UTC = 06:00 Bogotá).
+#   1. workflow_dispatch: ejecución manual desde la UI de GitHub Actions
+#   2. schedule: cron mensual día 1 a las 06:00 Bogotá
+#
+# El pipeline orquesta TODO desde acá: lanza los actores Apify vía API
+# (run-sync), espera resultados, transforma, llama LLM, renderiza, pushea.
+# Cero configuración requerida en Apify console aparte del token.
 # =============================================================
 name: Pipeline Comapan
 
 on:
-  repository_dispatch:
-    types: [apify_run_succeeded]
   workflow_dispatch:
     inputs:
       client:
@@ -23,8 +23,7 @@ on:
         required: false
         default: ""
   schedule:
-    # Mensual — backup en caso de que el webhook de Apify no dispare
-    # Día 1 de cada mes a las 06:00 Bogotá (reporta el mes anterior cerrado)
+    # Mensual: día 1 a las 06:00 Bogotá (reporta el mes anterior cerrado)
     - cron: "0 11 1 * *"
 
 concurrency:
@@ -42,12 +41,13 @@ jobs:
       CLIENT: ${{ github.event.inputs.client || 'comapan' }}
       PERIOD: ${{ github.event.inputs.period }}
       APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
-      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-      SMTP_HOST: ${{ secrets.SMTP_HOST }}
-      SMTP_PORT: ${{ secrets.SMTP_PORT }}
-      SMTP_USER: ${{ secrets.SMTP_USER }}
-      SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
-      GA4_SERVICE_ACCOUNT_JSON: ${{ secrets.GA4_SERVICE_ACCOUNT_JSON }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      # Opcionales (descomentar cuando estén configurados):
+      # ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      # SMTP_HOST: ${{ secrets.SMTP_HOST }}
+      # SMTP_USER: ${{ secrets.SMTP_USER }}
+      # SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+      # GA4_SERVICE_ACCOUNT_JSON: ${{ secrets.GA4_SERVICE_ACCOUNT_JSON }}
 
     steps:
       - name: Checkout repo
