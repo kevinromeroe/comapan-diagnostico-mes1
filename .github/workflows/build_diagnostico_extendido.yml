@@ -32,7 +32,7 @@ jobs:
         run: |
           git config user.email "bot@datalitica.com.co"
           git config user.name "Datalitica Bot"
-          git add diagnostico-extendido/index.html index.html
+          git add diagnostico/index.html index.html
           git diff --quiet --cached && echo "Sin cambios — nada que pushear" && exit 0
           git commit -m "Build automático: diagnóstico extendido (Ene-May 2026)"
           # Rebase sobre lo último por si alguien commiteó en paralelo

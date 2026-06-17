@@ -28,7 +28,7 @@ PERIOD_ID = "diagnostico-extendido"
 
 ROOT = Path(__file__).resolve().parent.parent
 SOURCE_HTML = ROOT / "diagnostico" / "index.html"
-TARGET_DIR  = ROOT / "diagnostico-extendido"
+TARGET_DIR  = ROOT / "diagnostico"  # ahora SOBREESCRIBE el diagnostico/
 TARGET_HTML = TARGET_DIR / "index.html"
 
 PLATFORM_CAPS = {"instagram": "Instagram", "facebook": "Facebook",
@@ -156,11 +156,10 @@ def main() -> int:
 
     # Actualizar REPORT_META.current y meter el nuevo periodo en available
     new_meta = {
-        "current": "diagnostico-extendido",
+        "current": "diagnostico",
         "available": [
-            {"id": "diagnostico-extendido", "label": "Diagnóstico ampliado (Ene-May 2026)", "url": "/diagnostico-extendido/"},
-            {"id": "diagnostico",           "label": "Diagnóstico inicial (Feb-Abr 2026)",   "url": "/diagnostico/"},
-            {"id": "2026-06",               "label": "Junio 2026",                            "url": "/2026-06/"},
+            {"id": "diagnostico", "label": "Diagnóstico (Ene-May 2026)", "url": "/diagnostico/"},
+            {"id": "2026-06",     "label": "Junio 2026",                  "url": "/2026-06/"},
         ],
     }
     meta_json = json.dumps(new_meta, ensure_ascii=False)
