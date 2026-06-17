@@ -139,9 +139,10 @@ def build_all() -> dict[str, Path]:
     template_src = TEMPLATE_PATH.read_text(encoding="utf-8")
 
     # Subrutas que mantenemos (URL semánticas) — la data la maneja Supabase.
-    routes = ["diagnostico"]
-    # Por convención, dejamos también la subruta del mes actual (a partir de Supabase)
-    # Si quieres archivado por mes, agregar acá. Por ahora dejamos solo diagnostico + raíz.
+    # Cada periodo que aparezca en Supabase necesita su URL para que el selector
+    # navegue sin 404. Por ahora hardcoded; idealmente el workflow consulta
+    # Supabase y agrega las rutas dinámicamente.
+    routes = ["diagnostico", "2026-06"]
 
     outputs: dict[str, Path] = {}
     for route in routes:

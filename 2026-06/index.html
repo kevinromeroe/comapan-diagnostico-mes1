@@ -507,19 +507,19 @@
   </button>
 </div>
 <script>
-const REPORT_META = {"current": "2026-06", "available": [{"id": "diagnostico", "label": "Diagnóstico (cierre may 2026)", "url": "/diagnostico/"}, {"id": "2026-06", "label": "Junio 2026", "url": "/2026-06/"}]};
-(function(){
-  if (typeof REPORT_META === "undefined") return;
-  var sel = document.getElementById("period-selector");
-  if (!sel) return;
-  (REPORT_META.available || []).forEach(function(p){
+// Selector de periodos — espera al evento data-ready que dispara loadDataFromSupabase
+document.addEventListener("data-ready", function(){
+  var meta = window.REPORT_META; if (!meta) return;
+  var sel = document.getElementById("period-selector"); if (!sel) return;
+  sel.innerHTML = ""; // reset por si re-render
+  (meta.available || []).forEach(function(p){
     var opt = document.createElement("option");
     opt.value = p.url;
     opt.textContent = p.label;
-    if (p.id === REPORT_META.current) opt.selected = true;
+    if (p.id === meta.current) opt.selected = true;
     sel.appendChild(opt);
   });
-})();
+});
 </script>
 
 <div class="menu-backdrop" id="menu-backdrop"></div>
@@ -759,7 +759,151 @@ const REPORT_META = {"current": "2026-06", "available": [{"id": "diagnostico", "
 </footer>
 
 <script>
-const DATA = {"generated_at": "17/06/2026", "ventana": {"desde": "2026-05-18", "hasta": "2026-06-17"}, "accounts": {"Instagram": {"plataforma": "Instagram", "username": "comapan_co", "nombre": "El pan del sánduche", "bio": "Comapan #ElPanDelSánduche \n75 años compartiendo el sabor de una sonrisa😀\nCOMPRA ONLINE 👇🏽", "categoria": "None,Food & Drink", "seguidores": "13411", "siguiendo": "269", "posts_totales": "2260", "business_account": "True", "verified": "False", "url_externa": "https://linktr.ee/Comapan", "direccion": "Carrera 42B No. 14 -18", "telefono": "", "rating": "", "page_likes": "", "website": "", "views_totales_90d": "", "snapshot_fecha": "2026-06-17"}, "Facebook": {"plataforma": "Facebook", "username": "ComapanCo", "nombre": "Comapan | Bogotá", "bio": "Comapan está entre las marcas más recordadas y queridas, en Colombia\nSíguenos en IG: @comapan_co", "categoria": "Page, Specialty Grocery Store", "seguidores": "119000", "siguiendo": "12", "posts_totales": "", "business_account": "", "verified": "", "url_externa": "http://www.comapan.com.co/", "direccion": "Carrera 42B No. 14 -18, Bogotá, Colombia, 111611", "telefono": "+57 322 8085210", "rating": "88% recommend (89 Reviews)", "page_likes": "119572", "website": "http://www.comapan.com.co/", "views_totales_90d": "", "snapshot_fecha": "2026-06-17"}, "TikTok": {}, "LinkedIn": {}}, "consolidated": [{"plataforma": "Instagram", "username": "comapan_co", "seguidores": "13411", "posts_90d": "24", "engagement_total_90d": "539", "engagement_promedio_post": "22.5", "top_post_url": "https://www.instagram.com/p/DYkzn_EJqvP/", "top_post_engagement": "67", "snapshot_fecha": "2026-06-17"}, {"plataforma": "Facebook", "username": "ComapanCo", "seguidores": "119000", "posts_90d": "21", "engagement_total_90d": "157", "engagement_promedio_post": "7.5", "top_post_url": "https://www.facebook.com/100072188111060/posts/987461007003494", "top_post_engagement": "31", "snapshot_fecha": "2026-06-17"}, {"plataforma": "TikTok", "username": "", "seguidores": "", "posts_90d": "0", "engagement_total_90d": "0", "engagement_promedio_post": "0.0", "top_post_url": "", "top_post_engagement": "", "snapshot_fecha": "2026-06-17"}, {"plataforma": "LinkedIn", "username": "", "seguidores": "", "posts_90d": "0", "engagement_total_90d": "0", "engagement_promedio_post": "0.0", "top_post_url": "", "top_post_engagement": "", "snapshot_fecha": "2026-06-17"}], "instagram": {"n_posts": 24, "engagement_total": 539, "engagement_promedio": 22.5, "engagement_mediana": 16, "by_type": {"labels": ["Image", "Sidecar", "Video"], "counts": [5, 7, 12], "engagement": [69, 86, 384], "engagement_promedio": [13.8, 12.3, 32.0]}, "by_day": {"labels": ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"], "counts": [4, 2, 4, 4, 5, 4, 1], "engagement_promedio": [16.8, 26.5, 27.8, 28.0, 15.8, 27.0, 9.0]}, "by_hour": {"labels": ["0", "1", "13", "14", "16", "18", "19", "20", "21", "22", "23"], "counts": [1, 2, 1, 2, 2, 3, 1, 5, 2, 3, 2]}, "by_week": {"labels": ["2026-S21", "2026-S22", "2026-S23", "2026-S24", "2026-S25"], "counts": [5, 7, 5, 6, 1], "engagement": [119, 152, 82, 179, 7]}, "top_hashtags": [["ContenidoPatrociando", 1], ["ContenidoPatrocinado", 1], ["ContenidoPatrocinadp", 1], ["BrunchEnCasa", 1], ["Comapan", 1], ["HuevosBenedictinos", 1], ["RecetasFaciles", 1], ["DesayunoSaludable", 1]], "captions_avg_len": 197.2, "top5": [{"fecha": "2026-05-20", "tipo": "Video", "url": "https://www.instagram.com/p/DYkzn_EJqvP/", "media_url": "assets/thumbs/ig-2dfe6cd0a5.jpg", "caption": "EL FAVORITO DE MAMÁ (BRUNCH EN CASA) 🥑🍳✨\n\n¿Quieres sorprenderla y no sabes cómo? ¡Te resolvemos el problema! Este plato es rápido, fácil, delicioso y…", "engagement": 67, "likes": 46, "comentarios": 21}, {"fecha": "2026-06-11", "tipo": "Video", "url": "https://www.instagram.com/p/DZditBdPJHM/", "media_url": "assets/thumbs/ig-69b0bace4c.jpg", "caption": "Llegar a nuestro stand es “pan comido”, el único problema es que no vas a quererte ir. ❣️", "engagement": 66, "likes": 65, "comentarios": 1}, {"fecha": "2026-05-30", "tipo": "Video", "url": "https://www.instagram.com/p/DY-n8NGRnZc/", "media_url": "assets/thumbs/ig-ff573bf51a.jpg", "caption": "Todos somos jefes… hasta que hay chisme. 👀y sobre todo si el chisme viene acompañado de un combo Comapan.", "engagement": 55, "likes": 55, "comentarios": 0}, {"fecha": "2026-06-09", "tipo": "Video", "url": "https://www.instagram.com/p/DZXkwCFjxQF/", "media_url": "assets/thumbs/ig-43a7b6ab9f.jpg", "caption": "Algunos siguen con lo de siempre. Otros ya le dieron la vuelta con la nueva mezcla para Pancakes de Comapan. Consiguela en comapan.apedir.co", "engagement": 42, "likes": 40, "comentarios": 2}, {"fecha": "2026-06-12", "tipo": "Video", "url": "https://www.instagram.com/p/DZf8DEGCnYW/", "media_url": "assets/thumbs/ig-814f421dc2.jpg", "caption": "#ContenidoPatrociando | ¡Mmmmmm pero que delicia Yeti! Y recordar su sabor en nuestra actividad con Uniagustianiana lo hace mejor. No olvides comprar…", "engagement": 28, "likes": 25, "comentarios": 3}]}, "facebook": {"n_posts": 21, "engagement_total": 157, "engagement_promedio": 7.5, "engagement_mediana": 5, "by_type": {"labels": ["Photo", "Text", "Video"], "counts": [6, 7, 8], "engagement": [28, 30, 99], "engagement_promedio": [4.7, 4.3, 12.4]}, "by_day": {"labels": ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"], "counts": [5, 2, 2, 3, 4, 4, 1], "engagement_promedio": [5.0, 7.0, 9.5, 3.7, 6.0, 14.8, 5.0]}, "by_hour": {"labels": ["0", "1", "13", "14", "16", "18", "19", "20", "21", "22", "23"], "counts": [1, 2, 1, 2, 2, 3, 1, 3, 2, 2, 2]}, "by_week": {"labels": ["2026-S21", "2026-S22", "2026-S23", "2026-S24", "2026-S25"], "counts": [4, 6, 6, 4, 1], "engagement": [25, 70, 39, 18, 5]}, "top_hashtags": [], "captions_avg_len": 145.0, "top5": [{"fecha": "2026-05-30", "tipo": "Video", "url": "https://www.facebook.com/100072188111060/posts/987461007003494", "media_url": "assets/thumbs/fb-5d909a40d2.jpg", "caption": "Todos somos jefes… hasta que hay chisme. 👀y sobre todo si el chisme viene acompañado de un combo Comapan.", "engagement": 31, "likes": 31, "comentarios": 0}, {"fecha": "2026-06-06", "tipo": "Video", "url": "https://www.facebook.com/100072188111060/posts/993695463046715", "media_url": "assets/thumbs/fb-37eafedf9b.jpg", "caption": "Tenemos un snack para que disfrutes en cada momento. Así que mejor asegúrate de pedirlos todos en comapan.apedir.co.", "engagement": 12, "likes": 12, "comentarios": 0}, {"fecha": "2026-05-30", "tipo": "Video", "url": "https://www.facebook.com/100072188111060/posts/986710640411864", "media_url": "assets/thumbs/fb-2dabd143e8.jpg", "caption": "No es cómo empiezas a prepararlo… es cómo le das la vuelta.\nY no, no hablamos de voltear tu pancake, hablamos de cómo hacer que tu martes se sienta c…", "engagement": 12, "likes": 12, "comentarios": 0}, {"fecha": "2026-06-03", "tipo": "Video", "url": "https://www.facebook.com/100072188111060/posts/990238326725762", "media_url": "assets/thumbs/fb-c3d3f5a9f2.jpg", "caption": "Se acabó lo mismo de siempre.\nLa mezcla para pancakes es perfecta para probar nuevas combinaciones, experimentar y darle la vuelta a tus comidas.\n👉 D…", "engagement": 11, "likes": 11, "comentarios": 0}, {"fecha": "2026-05-22", "tipo": "Video", "url": "https://www.facebook.com/100072188111060/posts/980217444394517", "media_url": "assets/thumbs/fb-e35e62662a.jpg", "caption": "No siempre tienes que elegir una, combínalas y disfruta del mejor sabor en tus comidas.\nEncuentra nuestras salsas Welldone en tiendas y supermercados.", "engagement": 11, "likes": 10, "comentarios": 0}]}, "tiktok": {"n_posts": 0, "engagement_total": 0, "engagement_promedio": 0.0, "engagement_mediana": 0, "by_type": {"labels": [], "counts": [], "engagement": [], "engagement_promedio": []}, "by_day": {"labels": ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"], "counts": [0, 0, 0, 0, 0, 0, 0], "engagement_promedio": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]}, "by_hour": {"labels": [], "counts": []}, "by_week": {"labels": [], "counts": [], "engagement": []}, "top_hashtags": [], "captions_avg_len": 0.0, "top5": []}, "linkedin": {"n_posts": 0, "engagement_total": 0, "engagement_promedio": 0.0, "engagement_mediana": 0, "by_type": {"labels": [], "counts": [], "engagement": [], "engagement_promedio": []}, "by_day": {"labels": ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"], "counts": [0, 0, 0, 0, 0, 0, 0], "engagement_promedio": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]}, "by_hour": {"labels": [], "counts": []}, "by_week": {"labels": [], "counts": [], "engagement": []}, "top_hashtags": [], "captions_avg_len": 0.0, "top5": []}, "fb_undated": 0, "fb_total": 21, "snapshots_history": [{"snapshot_date": "2026-06-17", "plataforma": "Instagram", "metrica": "followers", "valor": "13411", "posts_acumulados": "2260", "fuente": "apify"}, {"snapshot_date": "2026-06-17", "plataforma": "Facebook", "metrica": "page_likes", "valor": "119572", "posts_acumulados": "", "fuente": "apify"}], "hallazgos_llm": {"hallazgos_top": [{"categoria": "patron", "plataforma": "instagram", "dato": "Videos en Instagram generaron un engagement promedio de 32.0 por publicación en el periodo analizado.", "comparativo": "Esto es un 132% más alto que el engagement promedio de las imágenes (13.8) y un 160% más alto que los carruseles (12.3).", "interpretacion": "El formato de video es el más efectivo para captar la atención y la interacción de la audiencia en Instagram.", "implicacion": "No priorizar la creación de contenido en video resultará en una pérdida de oportunidades para maximizar el engagement.", "recomendacion": {"accion": "Aumentar la producción de videos cortos y dinámicos, explorando formatos como Reels o Stories con mayor frecuencia.", "prioridad": "alta", "esfuerzo": "medio"}}, {"categoria": "brecha", "plataforma": "facebook", "dato": "La tasa de engagement de Facebook fue del 0.13% en el periodo analizado.", "comparativo": "Esto es significativamente inferior al 4.02% de tasa de engagement observado en Instagram, a pesar de tener 8.8 veces más seguidores (119,000 vs 13,411).", "interpretacion": "La audiencia de Facebook muestra una interacción muy baja en comparación con su tamaño y con otras plataformas.", "implicacion": "Mantener la estrategia actual en Facebook sin ajustes podría llevar a una subutilización de la plataforma y un bajo retorno de la inversión.", "recomendacion": {"accion": "Realizar un análisis de audiencia en Facebook para entender sus intereses y adaptar el tipo de contenido y horarios de publicación.", "prioridad": "alta", "esfuerzo": "alto"}}, {"categoria": "anomalia", "plataforma": "instagram", "dato": "El engagement promedio en Instagram los domingos fue de 9.0 por publicación en el periodo.", "comparativo": "Este valor es un 68% inferior al engagement promedio de los jueves (28.0), el día de mayor rendimiento.", "interpretacion": "Las publicaciones de los domingos en Instagram tienen una interacción considerablemente menor, sugiriendo que la audiencia no está activa o el contenido no resuena ese día.", "implicacion": "Publicar contenido los domingos sin una estrategia específica para ese día puede diluir el rendimiento general de la cuenta.", "recomendacion": {"accion": "Experimentar con tipos de contenido específicos para el domingo o reducir la frecuencia de publicación ese día.", "prioridad": "media", "esfuerzo": "medio"}}, {"categoria": "punto_ciego", "plataforma": "cross", "dato": "No se registró ninguna publicación en TikTok ni LinkedIn durante el periodo analizado (2026-05-18 a 2026-06-17).", "comparativo": "Esto contrasta con la actividad regular en Instagram (24 posts) y Facebook (21 posts).", "interpretacion": "Existe una ausencia total de presencia en plataformas con potencial para alcanzar nuevas audiencias o segmentos profesionales.", "implicacion": "Se están perdiendo oportunidades de crecimiento de marca y conexión con públicos específicos que residen en estas plataformas.", "recomendacion": {"accion": "Evaluar la viabilidad de establecer una estrategia de contenido mínima en TikTok y LinkedIn para audiencias específicas.", "prioridad": "media", "esfuerzo": "alto"}}, {"categoria": "brecha", "plataforma": "facebook", "dato": "No se utilizaron hashtags en ninguna de las 21 publicaciones de Facebook durante el periodo.", "comparativo": "Esto difiere de la práctica en Instagram, donde se emplearon hashtags en las publicaciones.", "interpretacion": "La ausencia de hashtags en Facebook limita la visibilidad orgánica del contenido y la capacidad de ser descubierto por nuevas audiencias interesadas.", "implicacion": "No aprovechar los hashtags en Facebook puede resultar en un alcance reducido y una menor capacidad de segmentación de la audiencia.", "recomendacion": {"accion": "Implementar una estrategia de hashtags relevante en Facebook, investigando los más populares y específicos para la marca.", "prioridad": "media", "esfuerzo": "bajo"}}], "resumen_ejecutivo": "Durante el periodo del 18 de mayo al 17 de junio de 2026, el desempeño en redes sociales de Comapan_co muestra una marcada diferencia entre plataformas. Instagram, con 13,411 seguidores, generó una tasa de engagement del 4.02%, significativamente superior al 0.13% de Facebook, que cuenta con 119,000 seguidores. En ambas plataformas, el contenido en formato de video demostró ser el más efectivo, con un engagement promedio en Instagram de 32.0, un 132% más que las imágenes. Se identificó una anomalía en Instagram, donde el engagement los domingos fue un 68% inferior al de los jueves. Además, la ausencia de una estrategia de hashtags en Facebook y la falta de presencia en TikTok y LinkedIn representan brechas y puntos ciegos que limitan el alcance y el crecimiento potencial de la marca. Se recomienda priorizar la producción de video, optimizar la estrategia de Facebook y explorar nuevas plataformas.", "_meta": {"provider": "gemini", "model": "gemini-2.5-flash", "attempts": 1, "generated_at": "2026-06-17T03:09:35.788974+00:00", "status": "ok"}}};
+// ====================================================================
+// Bootstrap Supabase — los datos del reporte vienen de la BD, no embebidos
+// ====================================================================
+const SUPABASE_URL = "https://pmeotakzlgkjdbwdttyf.supabase.co";
+const SUPABASE_KEY = "sb_publishable_eI1vytZOLbn0bvbjKma-xA_Ons0-17w";
+const CLIENT_ID = "comapan";
+
+async function _sb(path) {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1${path}`, {
+    headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` }
+  });
+  if (!r.ok) throw new Error(`Supabase ${r.status} en ${path}`);
+  return r.json();
+}
+
+function _accountKey(p) { return p.charAt(0).toUpperCase() + p.slice(1); }
+
+function assembleDATA(periods, periodId, accounts, aggregates, hallazgos, summary) {
+  const period = periods.find(p => p.id === periodId) || {};
+
+  const accObj = {};
+  accounts.forEach(a => {
+    accObj[_accountKey(a.platform)] = {
+      plataforma: _accountKey(a.platform),
+      username:         a.username || "",
+      seguidores:       String(a.followers ?? ""),
+      page_likes:       String(a.page_likes ?? ""),
+      views_totales_90d:String(a.views_window ?? ""),
+      categoria:        a.category || "",
+      bio:              a.bio || "",
+      nombre:           a.display_name || "",
+      siguiendo:        String(a.following_n ?? ""),
+      posts_totales:    String(a.posts_total ?? ""),
+      verified:         String(a.verified ?? ""),
+      business_account: String(a.is_business ?? ""),
+      url_externa:      a.external_url || "",
+      rating:           a.rating || "",
+      website:          a.website || "",
+      snapshot_fecha:   a.snapshot_at || "",
+      direccion: "", telefono: ""
+    };
+  });
+
+  const blocks = { instagram:{}, facebook:{}, tiktok:{}, linkedin:{} };
+  aggregates.forEach(agg => {
+    const b = blocks[agg.platform]; if (!b) return;
+    if (agg.metric_name === "engagement_stats") {
+      Object.assign(b, agg.metric_value);
+    } else {
+      b[agg.metric_name] = agg.metric_value;
+    }
+  });
+
+  const hbyplat = { instagram:[], facebook:[], tiktok:[], linkedin:[], cross:[] };
+  hallazgos.forEach(h => {
+    if (!hbyplat[h.platform]) hbyplat[h.platform] = [];
+    hbyplat[h.platform].push({
+      categoria: h.categoria, plataforma: h.platform,
+      dato: h.dato, comparativo: h.comparativo,
+      interpretacion: h.interpretacion, implicacion: h.implicacion,
+      recomendacion: { accion: h.accion, prioridad: h.prioridad, esfuerzo: h.esfuerzo }
+    });
+  });
+
+  window.REPORT_META = {
+    current: periodId,
+    available: periods.map(p => ({ id: p.id, label: p.label, url: `/${p.id}/` }))
+  };
+
+  return {
+    generated_at: period.generated_at ? new Date(period.generated_at).toLocaleDateString("es-CO") : "",
+    ventana: { desde: period.starts_on || "", hasta: period.ends_on || "" },
+    accounts: accObj,
+    consolidated: ["instagram","facebook","tiktok","linkedin"].map(p => {
+      const acc = accObj[_accountKey(p)] || {};
+      const b = blocks[p] || {};
+      const top = (b.top5 || [])[0] || {};
+      return {
+        plataforma: _accountKey(p),
+        username:                acc.username || "",
+        seguidores:              acc.seguidores || "",
+        posts_90d:               String(b.n_posts ?? ""),
+        engagement_total_90d:    String(b.engagement_total ?? ""),
+        engagement_promedio_post:String(b.engagement_promedio ?? ""),
+        top_post_url:            top.url || "",
+        top_post_engagement:     String(top.engagement ?? ""),
+        snapshot_fecha:          acc.snapshot_fecha || ""
+      };
+    }),
+    instagram: blocks.instagram, facebook: blocks.facebook,
+    tiktok: blocks.tiktok, linkedin: blocks.linkedin,
+    fb_undated: 0, fb_total: blocks.facebook.n_posts || 0,
+    snapshots_history: [],
+    hallazgos_llm: {
+      hallazgos_top: Object.values(hbyplat).flat(),
+      hallazgos_by_platform: hbyplat,
+      resumen_ejecutivo: (summary[0] && summary[0].resumen) || "",
+      _meta: summary[0] ? { generated_at: summary[0].generated_at, model: summary[0].generated_by } : {}
+    }
+  };
+}
+
+async function loadDataFromSupabase() {
+  const m = location.pathname.match(/\/(diagnostico|\d{4}-\d{2})\/?$/);
+  let periodId = m ? m[1] : null;
+
+  const periods = await _sb(`/periods?client_id=eq.${CLIENT_ID}&order=starts_on.desc`);
+
+  if (!periodId) {
+    const latest = periods.find(p => !p.is_baseline);
+    periodId = latest ? latest.id : "diagnostico";
+  }
+
+  const [accounts, aggregates, hallazgos, summary] = await Promise.all([
+    _sb(`/accounts?client_id=eq.${CLIENT_ID}&period_id=eq.${periodId}`),
+    _sb(`/aggregates?client_id=eq.${CLIENT_ID}&period_id=eq.${periodId}`),
+    _sb(`/hallazgos?client_id=eq.${CLIENT_ID}&period_id=eq.${periodId}&order=platform,rank`),
+    _sb(`/summaries?client_id=eq.${CLIENT_ID}&period_id=eq.${periodId}`)
+  ]);
+
+  return assembleDATA(periods, periodId, accounts, aggregates, hallazgos, summary);
+}
+
+// Global fallback para imágenes rotas (CDN expirado, thumbs faltantes)
+window.addEventListener("error", function(e) {
+  if (e.target && e.target.tagName === "IMG" && !e.target.dataset.fallback) {
+    e.target.dataset.fallback = "1";
+    e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23F2E8D5'/%3E%3Ctext x='32' y='38' text-anchor='middle' font-family='sans-serif' font-size='10' fill='%238a8a8a'%3Esin imagen%3C/text%3E%3C/svg%3E";
+    e.target.style.opacity = "0.6";
+  }
+}, true);
+
+let DATA;
+(async () => {
+  try {
+    DATA = await loadDataFromSupabase();
+    initReport();
+    document.dispatchEvent(new Event("data-ready"));
+  } catch (err) {
+    console.error("loadDataFromSupabase falló:", err);
+    document.body.innerHTML = '<div style="padding:40px;max-width:600px;margin:80px auto;font-family:Roboto,sans-serif;text-align:center;"><h2 style="color:#DB0632">Error cargando el reporte</h2><p style="color:#666">' + (err && err.message || err) + '</p><p style="font-size:12px;color:#999">Si persiste, contactar soporte@datalitica.com.co</p></div>';
+  }
+})();
+
+function initReport() {
 
 // ── Config ──
 Chart.defaults.color = "#4a4a4a";
@@ -1451,6 +1595,8 @@ recos.forEach((r, i) => {
       </div>
     </div>`;
 });
+
+}  // ← cierra initReport()
 </script>
 
 <!-- =============================================================
@@ -1475,6 +1621,14 @@ recos.forEach((r, i) => {
     margin-bottom: 20px; font-size: 14px; line-height: 1.6;
   }
   .llm-hallazgos { display: grid; grid-template-columns: 1fr; gap: 12px; }
+  .llm-platform-group { margin-top: 24px; padding-top: 14px; border-top: 1px dashed var(--line); }
+  .llm-platform-group:first-of-type { border-top: none; padding-top: 6px; }
+  .llm-platform-title {
+    margin: 0 0 12px 0; font-family: 'Roboto Slab', serif; font-size: 15px;
+    color: var(--ink); display: flex; align-items: center; gap: 8px;
+  }
+  .llm-platform-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  .llm-platform-count { color: var(--muted); font-weight: 400; font-size: 13px; }
   .llm-card {
     background: white; padding: 16px 18px; border-radius: 4px;
     border: 1px solid var(--line);
@@ -1504,10 +1658,14 @@ recos.forEach((r, i) => {
   }
 </style>
 <script>
-(function(){
+// Hallazgos por plataforma (espera data-ready)
+document.addEventListener("data-ready", function(){
   if (typeof DATA === "undefined") return;
   var llm = DATA.hallazgos_llm;
-  if (!llm || !Array.isArray(llm.hallazgos_top) || llm.hallazgos_top.length === 0) return;
+  if (!llm) return;
+  var byPlat = llm.hallazgos_by_platform || {};
+  var hasAny = Object.values(byPlat).some(arr => Array.isArray(arr) && arr.length > 0);
+  if (!hasAny && !llm.resumen_ejecutivo) return;
 
   var CAT_LABEL = {
     patron: "Patrón", anomalia: "Anomalía", tendencia: "Tendencia",
@@ -1517,27 +1675,19 @@ recos.forEach((r, i) => {
     instagram: "Instagram", facebook: "Facebook", tiktok: "TikTok",
     linkedin: "LinkedIn", cross: "Cross-plataforma"
   };
+  var PLAT_COLOR = {
+    instagram: "#e1306c", facebook: "#1877f2", tiktok: "#000000",
+    linkedin: "#0a66c2", cross: "#19AAB2"
+  };
 
   function esc(s){ return String(s||"").replace(/[&<>"']/g, function(c){
     return ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]; }); }
 
-  var html = '<section class="llm-section" id="hallazgos-llm">';
-  html += '<h2>Hallazgos automáticos del periodo</h2>';
-  var meta = llm._meta || {};
-  html += '<div class="llm-meta">Generado por '+esc(meta.model||"Claude")+' · '
-        + (meta.attempts||1) + ' intento'+((meta.attempts||1)>1?'s':'')+' · '
-        + esc((meta.generated_at||"").slice(0,10)) + '</div>';
-
-  if (llm.resumen_ejecutivo) {
-    html += '<div class="llm-resumen">' + esc(llm.resumen_ejecutivo) + '</div>';
-  }
-  html += '<div class="llm-hallazgos">';
-  llm.hallazgos_top.forEach(function(h){
+  function renderCard(h) {
     var reco = h.recomendacion || {};
-    html += '<div class="llm-card">';
+    var html = '<div class="llm-card">';
     html +=   '<div class="llm-badges">';
     html +=     '<span class="llm-badge cat">' + esc(CAT_LABEL[h.categoria]||h.categoria) + '</span>';
-    html +=     '<span class="llm-badge">' + esc(PLAT_LABEL[h.plataforma]||h.plataforma) + '</span>';
     html +=   '</div>';
     html +=   '<div class="llm-row"><span class="llm-label">Dato</span> ' + esc(h.dato) + '</div>';
     html +=   '<div class="llm-row"><span class="llm-label">Vs</span> ' + esc(h.comparativo) + '</div>';
@@ -1551,13 +1701,42 @@ recos.forEach((r, i) => {
     html +=     '</div>';
     html +=   '</div>';
     html += '</div>';
-  });
-  html += '</div></section>';
+    return html;
+  }
 
-  // Insertar al final del <main>
+  var html = '<section class="llm-section" id="hallazgos-llm">';
+  html += '<h2>Hallazgos automáticos del periodo</h2>';
+  var meta = llm._meta || {};
+  if (meta.model || meta.generated_at) {
+    html += '<div class="llm-meta">Generado por '+esc(meta.model||"LLM")+' · '
+          + esc((meta.generated_at||"").slice(0,10)) + '</div>';
+  }
+  if (llm.resumen_ejecutivo) {
+    html += '<div class="llm-resumen"><strong>Resumen ejecutivo: </strong>' + esc(llm.resumen_ejecutivo) + '</div>';
+  }
+
+  // Una columna por plataforma con hallazgos
+  ["instagram","facebook","tiktok","linkedin","cross"].forEach(function(plat){
+    var items = byPlat[plat] || [];
+    if (items.length === 0) return;
+    var color = PLAT_COLOR[plat];
+    html += '<div class="llm-platform-group" style="--plat-color:'+color+'">';
+    html +=   '<h3 class="llm-platform-title">';
+    html +=     '<span class="llm-platform-dot" style="background:'+color+'"></span>';
+    html +=     esc(PLAT_LABEL[plat]||plat);
+    html +=     ' <span class="llm-platform-count">('+items.length+' hallazgo'+(items.length>1?'s':'')+')</span>';
+    html +=   '</h3>';
+    html +=   '<div class="llm-hallazgos">';
+    items.forEach(function(h){ html += renderCard(h); });
+    html +=   '</div>';
+    html += '</div>';
+  });
+
+  html += '</section>';
+
   var main = document.querySelector("main");
   if (main) main.insertAdjacentHTML("beforeend", html);
-})();
+});
 </script>
 
 </body>
