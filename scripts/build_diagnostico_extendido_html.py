@@ -150,7 +150,8 @@ def main() -> int:
     if not pattern.search(src):
         print("  ✗ No encontré 'const DATA = {...};' en el template fuente")
         return 1
-    src = pattern.sub(f"const DATA = {data_json};", src, count=1)
+    # Lambda evita que re.sub interprete \n, \g, etc. como secuencias especiales
+    src = pattern.sub(lambda m: f"const DATA = {data_json};", src, count=1)
     print("  ✓ DATA reemplazado")
 
     # Actualizar REPORT_META.current y meter el nuevo periodo en available
@@ -163,7 +164,7 @@ def main() -> int:
         ],
     }
     meta_json = json.dumps(new_meta, ensure_ascii=False)
-    src = re.sub(r"const REPORT_META = \{.*?\};", f"const REPORT_META = {meta_json};", src, count=1, flags=re.DOTALL)
+    src = re.sub(r"const REPORT_META = \{.*?\};", lambda m: f"const REPORT_META = {meta_json};", src, count=1, flags=re.DOTALL)
     print("  ✓ REPORT_META reemplazado")
 
     # Escribir el nuevo archivo
