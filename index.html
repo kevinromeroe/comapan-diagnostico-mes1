@@ -1176,6 +1176,8 @@ if (execEl && DATA.hallazgos_llm && DATA.hallazgos_llm.resumen_ejecutivo) {
 
 // Aliases necesarios para el código de charts más abajo (siguen referenciados)
 const ig = DATA.instagram, fb = DATA.facebook, tt = DATA.tiktok, li = DATA.linkedin;
+// Variable usada por el array legacy de findings (no se renderiza pero se construye)
+const ratioIgFb = (Math.max(ig.engagement_promedio, 0) / Math.max(fb.engagement_promedio, 1)).toFixed(1);
 
 // ── COMPARATIVO ──
 new Chart(document.getElementById("c-posts-red"), {
