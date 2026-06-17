@@ -1,0 +1,29 @@
+name: LOAD-ONLY diagnóstico extendido (gratis, lee datasets ya pagados)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  load:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      APIFY_TOKEN:           ${{ secrets.APIFY_TOKEN }}
+      SUPABASE_URL:          ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_KEY:  ${{ secrets.SUPABASE_SERVICE_KEY }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11", cache: pip }
+      - name: Install deps
+        run: pip install -r requirements.txt
+      - name: Load datasets (no scraping, no cost)
+        run: python scripts/load_diagnostico_extendido.py
+
+      - name: Resumen
+        if: always()
+        run: |
+          echo "### LOAD-ONLY diagnóstico extendido" >> $GITHUB_STEP_SUMMARY
+          echo "Costo: \$0 (solo lecturas de datasets ya guardados en Apify)" >> $GITHUB_STEP_SUMMARY
+          echo "Si éxito: 'diagnostico-extendido' en Supabase con ~298 posts" >> $GITHUB_STEP_SUMMARY

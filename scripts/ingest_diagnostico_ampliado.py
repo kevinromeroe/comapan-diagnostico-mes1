@@ -109,8 +109,9 @@ def main() -> int:
             "id": PERIOD_ID,
             "client_id": CLIENT_ID,
             "label": "Diagnóstico ampliado (Ene-May 2026)",
-            "starts_at": start.isoformat(),
-            "ends_at": end.isoformat(),
+            "starts_on": start.date().isoformat(),
+            "ends_on": end.date().isoformat(),
+            "is_baseline": True,
         }], on_conflict="id")
         print("  ✓ Periodo registrado en tabla periods")
     except Exception as exc:
