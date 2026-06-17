@@ -1,0 +1,31 @@
+name: Ingest junio 2026 FULL (4 plataformas con caps)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      APIFY_TOKEN:           ${{ secrets.APIFY_TOKEN }}
+      SUPABASE_URL:          ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_KEY:  ${{ secrets.SUPABASE_SERVICE_KEY }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11", cache: pip }
+
+      - name: Install deps
+        run: pip install -r requirements.txt
+
+      - name: Run full ingester (IG, FB, TT, LI)
+        run: python scripts/ingest_junio_full.py
+
+      - name: Resumen
+        if: always()
+        run: |
+          echo "### Ingest junio 2026 FULL" >> $GITHUB_STEP_SUMMARY
+          echo "- Verificar logs arriba para ver posts por plataforma" >> $GITHUB_STEP_SUMMARY
+          echo "- Siguiente paso: workflow 'Generate Narratives' con period=2026-06" >> $GITHUB_STEP_SUMMARY
