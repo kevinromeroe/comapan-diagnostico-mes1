@@ -564,7 +564,7 @@ const REPORT_META = {"current": "diagnostico", "available": [{"id": "diagnostico
   <div class="section-head">
     <div class="num">01 · Audiencia digital actual</div>
     <h2>El tamaño de la huella en cada red</h2>
-    <div class="desc">Snapshot de hoy. Cada red se mide con su métrica nativa — los seguidores de Instagram no equivalen a los likes de página de Facebook, ni se suman entre sí.</div>
+    <div class="desc">Snapshot de hoy. Cada red se mide con su métrica nativa — los seguidores de Instagram no equivalen a los seguidores de Facebook, ni se suman entre sí.</div>
   </div>
   <div class="ranking" id="audiencia-cards"></div>
 
@@ -946,7 +946,7 @@ const DEFINITIONS = {
   formato: "Engagement promedio por tipo de contenido = el promedio de likes + comentarios que recibe cada formato (foto, carrusel, reel). Permite identificar qué tipo de pieza conecta más.",
   mejor_dia: "Mejor día de la semana = el promedio de interacciones de los posts publicados ese día específico de la semana, comparado contra los otros días.",
   distribucion_hora: "Distribución por hora del día = la cantidad de publicaciones que se hicieron en cada franja horaria. Muestra los hábitos de publicación del equipo.",
-  audiencia: "Audiencia digital = cantidad de seguidores (Instagram, LinkedIn) o de likes de página (Facebook). En TikTok se muestran las views totales del periodo porque la API pública no entrega seguidores.",
+  audiencia: "Audiencia digital = cantidad de seguidores (Instagram, LinkedIn) o de seguidores (Facebook). En TikTok se muestran las views totales del periodo porque la API pública no entrega seguidores.",
   followers: "Seguidores = personas que siguen la cuenta y reciben sus publicaciones en su feed.",
   views_tiktok: "Views = reproducciones acumuladas de los videos publicados en Feb-Abr 2026.",
   "posts del periodo": "Posts (periodo) = número de publicaciones realizadas en Feb-Abr 2026.",
@@ -998,7 +998,7 @@ document.getElementById("kpi-hero").innerHTML =
 const audienciaCards = document.getElementById("audiencia-cards");
 const audienciaConfig = [
   { name: "Instagram", color: COLORS.ig, value: parseInt(DATA.accounts.Instagram?.seguidores || 0), label: "seguidores", note: "@" + (DATA.accounts.Instagram?.username || "comapan_co"), tip: "Seguidores = personas que siguen la cuenta y ven sus posts en su feed de Instagram." },
-  { name: "Facebook", color: COLORS.fb, value: parseInt(DATA.accounts.Facebook?.page_likes || 0), label: "likes de página", note: "ComapanCo", tip: "Likes de página = personas que dieron 'me gusta' a la página de Comapan en Facebook. Históricamente equivale al concepto de seguidores." },
+  { name: "Facebook", color: COLORS.fb, value: parseInt(DATA.accounts.Facebook?.page_likes || 0), label: "seguidores", note: "ComapanCo", tip: "Seguidores = personas que dieron 'me gusta' a la página de Comapan en Facebook. Históricamente equivale al concepto de seguidores." },
   { name: "TikTok", color: COLORS.tt, value: DATA.tiktok.n_posts, label: "posts publicados", note: "@comapanco · Feb-Abr", tip: "La API pública de TikTok no expone número de seguidores. Mostramos publicaciones del periodo como referencia de actividad." },
   { name: "LinkedIn", color: COLORS.li, value: parseInt(DATA.accounts.LinkedIn?.seguidores || 0), label: "seguidores", note: "Comapan S.A.", tip: "Seguidores = personas y empresas que siguen la página corporativa de Comapan en LinkedIn." },
 ];
@@ -1153,7 +1153,7 @@ DATA.consolidated.forEach(c => {
   if (c.plataforma === "TikTok") {
     audiencia = `${fmt(DATA.tiktok.n_posts)} <span style="color:var(--muted);font-size:11px">posts</span>`;
   } else if (c.plataforma === "Facebook") {
-    audiencia = `${fmt(parseInt(DATA.accounts.Facebook?.page_likes || 0))} <span style="color:var(--muted);font-size:11px">likes de página</span>`;
+    audiencia = `${fmt(parseInt(DATA.accounts.Facebook?.page_likes || 0))} <span style="color:var(--muted);font-size:11px">seguidores</span>`;
   } else {
     audiencia = `${fmt(c.seguidores)} <span style="color:var(--muted);font-size:11px">seguidores</span>`;
   }
@@ -1174,7 +1174,7 @@ function buildPlatform(prefix, key, color) {
     ? kpi("Posts publicados", fmt(d.n_posts), "en Feb-Abr 2026", false,
         "Número de videos publicados por @comapanco en el periodo analizado. TikTok no expone seguidores en su API pública.")
     : prefix === "fb"
-    ? kpi("Likes de página", fmt(acc.page_likes), "audiencia FB", false,
+    ? kpi("Seguidores", fmt(acc.page_likes), "audiencia FB", false,
         "Personas que dieron 'me gusta' a la página de Facebook. Históricamente equivale al concepto de seguidores.")
     : kpi("Seguidores", fmt(acc.seguidores), "", false,
         "Personas que siguen la cuenta y reciben sus publicaciones en su feed.");
