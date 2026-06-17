@@ -802,7 +802,25 @@ function assembleDATA(periods, periodId, accounts, aggregates, hallazgos, summar
     };
   });
 
-  const blocks = { instagram:{}, facebook:{}, tiktok:{}, linkedin:{} };
+  // Plantilla vacía: defaults sensatos para plataformas sin posts (LinkedIn=0, etc.)
+  function _emptyBlock() {
+    return {
+      n_posts: 0, engagement_total: 0, engagement_promedio: 0,
+      engagement_mediana: 0, captions_avg_len: 0,
+      by_type:        { labels: [], counts: [], engagement: [], engagement_promedio: [] },
+      by_day:         { labels: ["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"],
+                        counts: [0,0,0,0,0,0,0], engagement_promedio: [0,0,0,0,0,0,0] },
+      by_hour:        { labels: [], counts: [] },
+      by_week:        { labels: [], counts: [], engagement: [] },
+      top_hashtags:   [],
+      top5:           []
+    };
+  }
+
+  const blocks = {
+    instagram: _emptyBlock(), facebook: _emptyBlock(),
+    tiktok: _emptyBlock(),    linkedin: _emptyBlock()
+  };
   aggregates.forEach(agg => {
     const b = blocks[agg.platform]; if (!b) return;
     if (agg.metric_name === "engagement_stats") {
