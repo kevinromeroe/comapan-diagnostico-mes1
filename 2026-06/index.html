@@ -844,6 +844,8 @@ function assembleDATA(periods, periodId, accounts, aggregates, hallazgos, summar
       hallazgos_top: Object.values(hbyplat).flat(),
       hallazgos_by_platform: hbyplat,
       resumen_ejecutivo: (summary[0] && summary[0].resumen) || "",
+      headlines:        (summary[0] && summary[0].headlines)        || {},
+      chart_insights:   (summary[0] && summary[0].chart_insights)   || {},
       _meta: summary[0] ? { generated_at: summary[0].generated_at, model: summary[0].generated_by } : {}
     }
   };
