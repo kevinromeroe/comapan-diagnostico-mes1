@@ -161,6 +161,52 @@
   .period-selector:hover { border-color: var(--comapan-red); }
   .period-selector:focus { border-color: var(--comapan-red); box-shadow: 0 0 0 3px rgba(219,6,50,0.12); }
   .period-selector:empty { display: none; }
+  .pdf-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    margin-left: 8px; padding: 6px 12px;
+    border: 1px solid var(--line); border-radius: 6px; background: white;
+    font-family: inherit; font-size: 12px; font-weight: 500; color: var(--ink);
+    cursor: pointer; outline: none;
+    transition: border-color 0.15s, color 0.15s, box-shadow 0.15s;
+  }
+  .pdf-btn:hover { border-color: var(--comapan-red); color: var(--comapan-red); }
+  .pdf-btn:focus { border-color: var(--comapan-red); box-shadow: 0 0 0 3px rgba(219,6,50,0.12); }
+  .pdf-btn svg { display: inline-block; }
+
+  /* ============================================================
+     IMPRESIÓN A PDF
+     Optimizado para que "Imprimir → Guardar como PDF" produzca
+     un documento limpio con todas las secciones desplegadas.
+     ============================================================ */
+  @media print {
+    @page { size: A4; margin: 1.2cm; }
+    html, body { background: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body { font-size: 11px; }
+    /* Ocultar todo lo navegacional */
+    .menu-toggle, .menu-drawer, .menu-backdrop,
+    .period-selector, .pdf-btn,
+    nav.tabs, .info-icon, .global-tooltip { display: none !important; }
+    /* Mostrar TODAS las pestañas como secciones continuas */
+    section.tab { display: block !important; page-break-before: always; padding-top: 12px; }
+    section.tab:first-of-type { page-break-before: avoid; }
+    section.tab.active { display: block !important; }
+    /* Topbar compacto */
+    .topbar { padding: 8px 0 14px !important; border-bottom: 2px solid var(--comapan-red) !important; }
+    .topbar .meta { font-size: 10px !important; }
+    /* Charts: forzar tamaños razonables, evitar cortes feos */
+    .chart-wrap { page-break-inside: avoid; max-height: 240px; }
+    .chart-card { page-break-inside: avoid; }
+    .kpi, .ranking, .net-card, .finding, .reco-card { page-break-inside: avoid; }
+    /* Tooltips no van al PDF */
+    [data-tip]::after, [data-tip]::before { display: none !important; }
+    /* Footer impreso con metadata */
+    main::after {
+      content: "Datalítica Colombia S.A.S. · Generado para Catorce Días — Comapan · Documento confidencial";
+      display: block; margin-top: 20px; padding-top: 12px;
+      border-top: 1px solid var(--line);
+      font-size: 9px; color: var(--muted); text-align: center;
+    }
+  }
   .topbar .meta strong { color: var(--comapan-red); display: block; font-size: 13px;
     font-family: 'Roboto Slab', serif; font-weight: 700; letter-spacing: 0.3px; }
 
@@ -449,6 +495,12 @@
     <span id="meta-window"></span>
     <select id="period-selector" class="period-selector" aria-label="Seleccionar periodo de reporte"
             onchange="if(this.value)window.location.href=this.value"></select>
+    <button class="pdf-btn" type="button" onclick="window.print()" aria-label="Descargar como PDF">
+      <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
+        <path fill="currentColor" d="M5 1h6l4 4v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zm6 1.5V5h2.5L11 2.5zM6 10h4v1H6v-1zm0-2h4v1H6V8z"/>
+      </svg>
+      <span>PDF</span>
+    </button>
   </div>
   <button class="menu-toggle" id="menu-toggle" aria-label="Abrir menú">
     <span></span><span></span><span></span>
