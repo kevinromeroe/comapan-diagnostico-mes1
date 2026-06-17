@@ -949,7 +949,7 @@ const DEFINITIONS = {
   audiencia: "Audiencia digital = cantidad de seguidores (Instagram, LinkedIn) o de likes de página (Facebook). En TikTok se muestran las views totales del periodo porque la API pública no entrega seguidores.",
   followers: "Seguidores = personas que siguen la cuenta y reciben sus publicaciones en su feed.",
   views_tiktok: "Views = reproducciones acumuladas de los videos publicados en Feb-Abr 2026.",
-  posts del periodo: "Posts (periodo) = número de publicaciones realizadas en Feb-Abr 2026.",
+  "posts del periodo": "Posts (periodo) = número de publicaciones realizadas en Feb-Abr 2026.",
   top: "Top 5 = las 5 publicaciones que más interacciones recibieron en el periodo.",
   hashtags: "Hashtags = las etiquetas (#palabra) que aparecen con mayor frecuencia en los captions del periodo. Solo se cuentan las que la marca usa, no las que aparecen en comentarios.",
 };
@@ -1157,7 +1157,7 @@ DATA.consolidated.forEach(c => {
   } else {
     audiencia = `${fmt(c.seguidores)} <span style="color:var(--muted);font-size:11px">seguidores</span>`;
   }
-  tr.innerHTML = `<td><strong>${c.plataforma}</strong></td><td>${c.username || "—"}</td><td>${audiencia}</td><td>${c.posts del periodo}</td><td>${fmt(c.engagement total)}</td><td>${fmt(c.engagement_promedio_post)}</td><td><a href="${c.top_post_url}" target="_blank">ver →</a></td>`;
+  tr.innerHTML = `<td><strong>${c.plataforma}</strong></td><td>${c.username || "—"}</td><td>${audiencia}</td><td>${c["posts del periodo"]}</td><td>${fmt(c["engagement total"])}</td><td>${fmt(c.engagement_promedio_post)}</td><td><a href="${c.top_post_url}" target="_blank">ver →</a></td>`;
   tbody.appendChild(tr);
 });
 
