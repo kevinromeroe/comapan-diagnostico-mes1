@@ -618,7 +618,7 @@ const REPORT_META = {"current": "diagnostico", "available": [{"id": "diagnostico
   <div class="chart-card" style="padding:0">
     <table>
       <thead><tr>
-        <th>Red</th><th>Cuenta</th><th>Audiencia</th><th>Posts (90d)</th>
+        <th>Red</th><th>Cuenta</th><th>Audiencia</th><th>Posts (periodo)</th>
         <th>Engagement total</th><th>Eng./post</th><th>Top post</th>
       </tr></thead>
       <tbody id="t-accounts"></tbody>
@@ -949,7 +949,7 @@ const DEFINITIONS = {
   audiencia: "Audiencia digital = cantidad de seguidores (Instagram, LinkedIn) o de likes de página (Facebook). En TikTok se muestran las views totales del periodo porque la API pública no entrega seguidores.",
   followers: "Seguidores = personas que siguen la cuenta y reciben sus publicaciones en su feed.",
   views_tiktok: "Views = reproducciones acumuladas de los videos publicados en Feb-Abr 2026.",
-  posts del periodo: "Posts (90d) = número de publicaciones realizadas en Feb-Abr 2026.",
+  posts del periodo: "Posts (periodo) = número de publicaciones realizadas en Feb-Abr 2026.",
   top: "Top 5 = las 5 publicaciones que más interacciones recibieron en el periodo.",
   hashtags: "Hashtags = las etiquetas (#palabra) que aparecen con mayor frecuencia en los captions del periodo. Solo se cuentan las que la marca usa, no las que aparecen en comentarios.",
 };
@@ -981,7 +981,7 @@ const totalPosts = DATA.instagram.n_posts + DATA.facebook.n_posts + DATA.tiktok.
 const totalEng = DATA.instagram.engagement_total + DATA.facebook.engagement_total + DATA.tiktok.engagement_total + DATA.linkedin.engagement_total;
 
 // KPIs Hero — solo métricas globales sumables/promediables
-const tiktokViews = parseInt(DATA.accounts.TikTok?.views_totales_90d || 0);
+// (eliminado: tiktokViews — métrica no confiable)
 const postsPorSemana = (totalPosts / 13).toFixed(1);
 
 document.getElementById("kpi-hero").innerHTML =
@@ -999,7 +999,7 @@ const audienciaCards = document.getElementById("audiencia-cards");
 const audienciaConfig = [
   { name: "Instagram", color: COLORS.ig, value: parseInt(DATA.accounts.Instagram?.seguidores || 0), label: "seguidores", note: "@" + (DATA.accounts.Instagram?.username || "comapan_co"), tip: "Seguidores = personas que siguen la cuenta y ven sus posts en su feed de Instagram." },
   { name: "Facebook", color: COLORS.fb, value: parseInt(DATA.accounts.Facebook?.page_likes || 0), label: "likes de página", note: "ComapanCo", tip: "Likes de página = personas que dieron 'me gusta' a la página de Comapan en Facebook. Históricamente equivale al concepto de seguidores." },
-  { name: "TikTok", color: COLORS.tt, value: tiktokViews, label: "views", note: "@comapanco", tip: "Views = reproducciones acumuladas de los videos publicados en TikTok durante Feb-Abr 2026. Se usa como métrica de alcance porque la API pública de TikTok no entrega seguidores." },
+  { name: "TikTok", color: COLORS.tt, value: DATA.tiktok.n_posts, label: "posts publicados", note: "@comapanco · Feb-Abr", tip: "La API pública de TikTok no expone número de seguidores. Mostramos publicaciones del periodo como referencia de actividad." },
   { name: "LinkedIn", color: COLORS.li, value: parseInt(DATA.accounts.LinkedIn?.seguidores || 0), label: "seguidores", note: "Comapan S.A.", tip: "Seguidores = personas y empresas que siguen la página corporativa de Comapan en LinkedIn." },
 ];
 audienciaConfig.forEach(c => {
@@ -1129,9 +1129,9 @@ const ranking = document.getElementById("ranking-cards");
 ordered.forEach((n, i) => {
   const d = DATA[n.key];
   // TikTok usa "Views" como métrica de alcance; el resto usa "Seguidores"
-  const alcanceLabel = n.key === "tiktok" ? "Views (90d)" : "Seguidores";
+  const alcanceLabel = n.key === "tiktok" ? "Posts publicados" : "Seguidores";
   const alcanceValue = n.key === "tiktok"
-    ? fmt(parseInt(n.acc?.views_totales_90d || 0))
+    ? fmt(d.n_posts)
     : fmt(n.acc?.seguidores);
   ranking.innerHTML += `
     <div class="net-card">
@@ -1140,7 +1140,7 @@ ordered.forEach((n, i) => {
       <div class="stat-label">Engagement por post</div>
       <div class="stat">${fmt(d.engagement_promedio)}</div>
       <div class="row"><span class="k">${alcanceLabel}</span><span class="v">${alcanceValue}</span></div>
-      <div class="row"><span class="k">Posts (90d)</span><span class="v">${fmt(d.n_posts)}</span></div>
+      <div class="row"><span class="k">Posts (periodo)</span><span class="v">${fmt(d.n_posts)}</span></div>
       <div class="row"><span class="k">Engagement total</span><span class="v">${fmt(d.engagement_total)}</span></div>
     </div>`;
 });
@@ -1171,8 +1171,8 @@ function buildPlatform(prefix, key, color) {
   // - IG/FB/LI: Seguidores
   // - TikTok: Views totales (el actor no entrega followers)
   const kpiPrincipal = prefix === "tt"
-    ? kpi("Views totales", fmt(parseInt(acc.views_totales_90d || 0)), "Feb a Abr 2026", false,
-        "Reproducciones acumuladas de los videos publicados en TikTok durante Feb-Abr 2026.")
+    ? kpi("Posts publicados", fmt(d.n_posts), "en Feb-Abr 2026", false,
+        "Número de videos publicados por @comapanco en el periodo analizado. TikTok no expone seguidores en su API pública.")
     : prefix === "fb"
     ? kpi("Likes de página", fmt(acc.page_likes), "audiencia FB", false,
         "Personas que dieron 'me gusta' a la página de Facebook. Históricamente equivale al concepto de seguidores.")
@@ -1180,7 +1180,7 @@ function buildPlatform(prefix, key, color) {
         "Personas que siguen la cuenta y reciben sus publicaciones en su feed.");
   document.getElementById("kpi-" + prefix).innerHTML =
     kpiPrincipal +
-    kpi("Posts (90d)", fmt(data.n_posts), "", false,
+    kpi("Posts (periodo)", fmt(data.n_posts), "", false,
       "Cantidad de publicaciones realizadas en Feb-Abr 2026 en esta red.") +
     kpi("Engagement total", fmt(data.engagement_total), "", false,
       "Suma de likes + comentarios + shares de todos los posts del periodo en esta red.") +
