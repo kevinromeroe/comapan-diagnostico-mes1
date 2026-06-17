@@ -507,19 +507,19 @@
   </button>
 </div>
 <script>
-const REPORT_META = {"current": "diagnostico", "available": [{"id": "diagnostico", "label": "Diagnóstico (cierre may 2026)", "url": "/diagnostico/"}, {"id": "2026-06", "label": "Junio 2026", "url": "/2026-06/"}]};
-(function(){
-  if (typeof REPORT_META === "undefined") return;
-  var sel = document.getElementById("period-selector");
-  if (!sel) return;
-  (REPORT_META.available || []).forEach(function(p){
+// Selector de periodos — espera al evento data-ready que dispara loadDataFromSupabase
+document.addEventListener("data-ready", function(){
+  var meta = window.REPORT_META; if (!meta) return;
+  var sel = document.getElementById("period-selector"); if (!sel) return;
+  sel.innerHTML = ""; // reset por si re-render
+  (meta.available || []).forEach(function(p){
     var opt = document.createElement("option");
     opt.value = p.url;
     opt.textContent = p.label;
-    if (p.id === REPORT_META.current) opt.selected = true;
+    if (p.id === meta.current) opt.selected = true;
     sel.appendChild(opt);
   });
-})();
+});
 </script>
 
 <div class="menu-backdrop" id="menu-backdrop"></div>
@@ -759,7 +759,151 @@ const REPORT_META = {"current": "diagnostico", "available": [{"id": "diagnostico
 </footer>
 
 <script>
-const DATA = {"generated_at": "03/05/2026", "ventana": {"desde": "2026-02-03", "hasta": "2026-04-30"}, "accounts": {"Instagram": {"bio": "Comapan #ElPanDelSánduche  75 años compartiendo el sabor de una sonrisa😀 COMPRA ONLINE 👇🏽", "business_account": "True", "categoria": "None,Food & Drink", "direccion": "", "nombre": "El pan del sánduche", "page_likes": "", "plataforma": "Instagram", "posts_totales": "2225", "rating": "", "seguidores": "13422", "siguiendo": "270", "snapshot_fecha": "2026-05-03", "telefono": "", "url_externa": "https://linktr.ee/Comapan", "username": "comapan_co", "verified": "False", "views_totales_90d": "", "website": ""}, "Facebook": {"bio": "", "business_account": "", "categoria": "Page, Specialty Grocery Store", "direccion": "Carrera 42B No. 14 -18, Bogotá, Colombia, 111611", "nombre": "Comapan | Bogotá", "page_likes": "119971", "plataforma": "Facebook", "posts_totales": "", "rating": "88% recommend (89 Reviews)", "seguidores": "", "siguiendo": "", "snapshot_fecha": "2026-05-03", "telefono": "+57 322 8085210", "url_externa": "", "username": "ComapanCo", "verified": "", "views_totales_90d": "", "website": "http://www.comapan.com.co/"}, "TikTok": {"bio": "", "business_account": "", "categoria": "", "direccion": "", "nombre": "", "page_likes": "", "plataforma": "TikTok", "posts_totales": "", "rating": "", "seguidores": "", "siguiendo": "", "snapshot_fecha": "2026-05-03", "telefono": "", "url_externa": "", "username": "comapanco", "verified": "", "views_totales_90d": "82954", "website": ""}, "LinkedIn": {"bio": "", "business_account": "", "categoria": "", "direccion": "", "nombre": "Comapan S.A.", "page_likes": "", "plataforma": "LinkedIn", "posts_totales": "", "rating": "", "seguidores": "5020", "siguiendo": "", "snapshot_fecha": "2026-05-03", "telefono": "", "url_externa": "", "username": "comapan-s-a-", "verified": "", "views_totales_90d": "", "website": ""}}, "consolidated": [{"plataforma": "Instagram", "username": "comapan_co", "seguidores": "13422", "posts_90d": "79", "engagement_total_90d": "9195", "engagement_promedio_post": "116.4", "top_post_url": "https://www.instagram.com/p/DUl9fL8jw1M/", "top_post_engagement": "3246", "snapshot_fecha": "2026-05-03"}, {"plataforma": "Facebook", "username": "ComapanCo", "seguidores": "", "posts_90d": "42", "engagement_total_90d": "2751", "engagement_promedio_post": "65.5", "top_post_url": "https://www.facebook.com/reel/2843588825975724/", "top_post_engagement": "821", "snapshot_fecha": "2026-05-03"}, {"plataforma": "TikTok", "username": "comapanco", "seguidores": "", "posts_90d": "27", "engagement_total_90d": "1725", "engagement_promedio_post": "63.9", "top_post_url": "https://www.tiktok.com/@comapanco/video/7612042089769028885", "top_post_engagement": "575", "snapshot_fecha": "2026-05-03"}, {"plataforma": "LinkedIn", "username": "comapan-s-a-", "seguidores": "5020", "posts_90d": "16", "engagement_total_90d": "162", "engagement_promedio_post": "10.1", "top_post_url": "https://www.linkedin.com/posts/comapan-s-a-_y-s%C3%AD-empezamos-antes-de-que-el-pan-tajado-activity-7425194694047076353-aa9R", "top_post_engagement": "26", "snapshot_fecha": "2026-05-03"}], "instagram": {"n_posts": 79, "engagement_total": 9195, "engagement_promedio": 116.4, "engagement_mediana": 29, "by_type": {"labels": ["Image", "Sidecar", "Video"], "counts": [14, 14, 51], "engagement": [1905, 517, 6773], "engagement_promedio": [136.1, 36.9, 132.8]}, "by_day": {"labels": ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"], "counts": [10, 15, 7, 15, 10, 10, 12], "engagement_promedio": [53.1, 239.1, 32.0, 86.0, 33.7, 224.1, 82.2]}, "by_hour": {"labels": ["8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "21"], "counts": [1, 6, 1, 7, 2, 4, 3, 10, 18, 17, 6, 3, 1]}, "by_week": {"labels": ["2026-S06", "2026-S07", "2026-S08", "2026-S09", "2026-S10", "2026-S11", "2026-S12", "2026-S13", "2026-S14", "2026-S15", "2026-S16", "2026-S17", "2026-S18"], "counts": [6, 11, 6, 7, 5, 7, 6, 3, 3, 5, 5, 8, 7], "engagement": [318, 4068, 181, 2076, 142, 192, 149, 86, 540, 444, 442, 250, 307]}, "top_hashtags": [["DíaDeLaMujer", 2], ["DíaInternacionalDelPerroCaliente", 1], ["DíaInternacionalDelPanDeMasaMadre", 1], ["Mar10Day", 1], ["DíaMundialMarioBros", 1], ["MujeresComapan", 1], ["ManosEnLaMasa", 1], ["Felices85Leon", 1], ["FelizCumpleaños", 1], ["NacionalXForta", 1]], "captions_avg_len": 152.0, "top5": [{"fecha": "2026-02-10", "tipo": "Video", "url": "https://www.instagram.com/p/DUl9fL8jw1M/", "media_url": "assets/thumbs/ig-e7e53f2f95.jpg", "caption": "Antojito crocante resuelto 😌✨ Los Mini Caladitos Comapan @comapan_co son livianos, crocantes y van con todo.  Lo mejor: los encuentras fácil", "engagement": 3246, "likes": 3037, "comentarios": 209}, {"fecha": "2026-02-28", "tipo": "Image", "url": "https://www.instagram.com/p/DVTk9nqiiaR/", "media_url": "assets/thumbs/ig-5e1cc358dc.jpg", "caption": "Feliz cumple amix 🦁  Pásala muy rico, que te consientan, te den muchos regalos y que te partan la torta 🙊 si es @comapan_co mucho mejor  Te ", "engagement": 1620, "likes": 1582, "comentarios": 38}, {"fecha": "2026-02-12", "tipo": "Video", "url": "https://www.instagram.com/p/DUrV8AEDGHl/", "media_url": "assets/thumbs/ig-aedf093eda.jpg", "caption": "Oeee acuérdense que hay parchesito pa ver fútbol esta noche... vayan alistando el mecato obviamente con Comapan  🥪 @comapan_co  📺 @winsports", "engagement": 592, "likes": 589, "comentarios": 3}, {"fecha": "2026-04-05", "tipo": "Video", "url": "https://www.instagram.com/p/DWxIfXUjtTx/", "media_url": "assets/thumbs/ig-0cf7625969.jpg", "caption": "La vida se trata de esos pequeños momentos que te sacan una sonrisa sin mucha explicación. Encuentra en Comapan todo para acompañar tus mome", "engagement": 500, "likes": 473, "comentarios": 27}, {"fecha": "2026-04-09", "tipo": "Video", "url": "https://www.instagram.com/p/DW7VM3EEo_F/", "media_url": "assets/thumbs/ig-c805c2813f.jpg", "caption": "Ok ok lo del sánduche es broma, pero cuéntanos, ¿cuántos intentos fueron?", "engagement": 334, "likes": 283, "comentarios": 51}]}, "facebook": {"n_posts": 42, "engagement_total": 2751, "engagement_promedio": 65.5, "engagement_mediana": 11, "by_type": {"labels": ["Video", "Photo", "Album"], "counts": [30, 8, 4], "engagement": [2546, 165, 40], "engagement_promedio": [84.9, 20.6, 10.0]}, "by_day": {"labels": ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"], "counts": [5, 6, 2, 4, 3, 3, 6], "engagement_promedio": [13.8, 15.2, 13.0, 174.0, 14.0, 23.3, 257.8]}, "by_hour": {"labels": ["11", "12", "13", "14", "15", "16", "17", "18", "19"], "counts": [2, 2, 2, 2, 1, 4, 10, 5, 1]}, "by_week": {"labels": ["2026-S10", "2026-S11", "2026-S12", "2026-S13", "2026-S14", "2026-S15", "2026-S16", "2026-S17", "2026-S18"], "counts": [2, 3, 5, 4, 2, 4, 1, 6, 2], "engagement": [830, 83, 59, 37, 715, 691, 17, 100, 9]}, "top_hashtags": [["#DíaDeLaMujer", 2], ["#Mar10Day", 1], ["#DíaMundialMarioBros", 1], ["#MujeresComapan", 1], ["#ManosEnLaMasa", 1], ["#DíaInternacionalDelPanDeMasaMadre", 1]], "captions_avg_len": 153.0, "top5": [{"fecha": "2026-03-08", "tipo": "Video", "url": "https://www.facebook.com/reel/2843588825975724/", "media_url": "assets/thumbs/fb-1e92c5f354.jpg", "caption": "Hoy se celebra su estilo, a su ritmo y con lo que se le antoje. Que cada gustico sea parte de su celebración 💐  #DíaDeLaMujer", "engagement": 821, "likes": 809, "comentarios": 8}, {"fecha": "2026-04-05", "tipo": "Video", "url": "https://www.facebook.com/reel/1590878365529737/", "media_url": "assets/thumbs/fb-ced775dc18.jpg", "caption": "La vida se trata de esos pequeños momentos que te sacan una sonrisa sin mucha explicación. Encuentra en Comapan todo para acompañar tus mome", "engagement": 701, "likes": 684, "comentarios": 11}, {"fecha": "2026-04-09", "tipo": "Video", "url": "https://www.facebook.com/reel/1207760354582328/", "media_url": "assets/thumbs/fb-15a73a80ed.jpg", "caption": "No pudiste, tranqui… lo sabemos 😏 pero cuéntanos, ¿cuántos intentos fueron?", "engagement": 631, "likes": 548, "comentarios": 81}, {"fecha": "", "tipo": "Photo", "url": "https://www.facebook.com/ComapanCo/posts/pfbid036ALeZrhEdCn1u2ZTLbXABjVtzoXK6eAUumfLXeLVGoodJ8gvY5xtBhXqdNJYtw6al", "media_url": "assets/thumbs/fb-66cc731a2f.jpg", "caption": "La misión era la Luna… 🚀 pero lo mejor… es lo que te espera al volver.", "engagement": 68, "likes": 67, "comentarios": 1}, {"fecha": "", "tipo": "Photo", "url": "https://www.facebook.com/ComapanCo/posts/pfbid02Z7Tv7s7dowAsuzMihzTPBJPbsWzf7Eq1qBVmNa7Fhd7CxBN3vT1ebWWie37HRSKTl", "media_url": "assets/thumbs/fb-0652921076.jpg", "caption": "No tenemos dudas y tampoco podemos afirmarlo, pero quienes somos para negarlo. Ve ya por un Ponqué Tajado Comapan a tiendas y supermercados ", "engagement": 57, "likes": 56, "comentarios": 1}]}, "tiktok": {"n_posts": 27, "engagement_total": 1725, "engagement_promedio": 63.9, "engagement_mediana": 30, "by_type": {"labels": ["Video"], "counts": [27], "engagement": [1725], "engagement_promedio": [63.9]}, "by_day": {"labels": ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"], "counts": [1, 2, 5, 6, 6, 5, 2], "engagement_promedio": [22.0, 19.5, 40.2, 63.0, 54.0, 140.4, 29.5]}, "by_hour": {"labels": ["12", "16", "17", "18", "19", "20", "21"], "counts": [1, 5, 8, 7, 3, 2, 1]}, "by_week": {"labels": ["2026-S06", "2026-S07", "2026-S08", "2026-S09", "2026-S11", "2026-S12", "2026-S13", "2026-S14", "2026-S15", "2026-S16", "2026-S17", "2026-S18"], "counts": [2, 1, 2, 4, 1, 2, 4, 1, 3, 1, 4, 2], "engagement": [153, 29, 288, 702, 16, 63, 182, 20, 70, 41, 104, 57]}, "top_hashtags": [], "captions_avg_len": 166.0, "top5": [{"fecha": "2026-02-28", "tipo": "Video", "url": "https://www.tiktok.com/@comapanco/video/7612042089769028885", "media_url": "assets/thumbs/tt-629e0c53ff.jpg", "caption": "Estos rollitos de salchicha con pan tajado son fáciles, rápidos y siempre funcionan 🤤 Perfectos para lonchera, onces o cuando hay antojo y p", "engagement": 575, "likes": 358, "comentarios": 13}, {"fecha": "2026-02-19", "tipo": "Video", "url": "https://www.tiktok.com/@comapanco/video/7608722991169473813", "media_url": "assets/thumbs/tt-d1f30b48ee.jpg", "caption": "Las onces también pueden ser especiales ✨ Estos mini panes franceses son perfectos para mandarles a los niños algo rico, calientico y hecho ", "engagement": 251, "likes": 181, "comentarios": 18}, {"fecha": "2026-02-06", "tipo": "Video", "url": "https://www.tiktok.com/@comapanco/video/7603898252768988436", "media_url": "assets/thumbs/tt-0009b323ec.jpg", "caption": "Nuestro pan será lo que quieras que sea…Perfecto para solucionar esas onces rápidas de los niños en casa", "engagement": 127, "likes": 86, "comentarios": 1}, {"fecha": "2026-03-25", "tipo": "Video", "url": "https://www.tiktok.com/@comapanco/video/7621318298504006933", "media_url": "assets/thumbs/tt-4c3acc434a.jpg", "caption": "Un postre frío y cremoso que vas a disfrutar con cada cucharada 😮‍💨✨ Las mantecadas Comapan absorben todo el sabor y se convierten en algo s", "engagement": 90, "likes": 74, "comentarios": 4}, {"fecha": "2026-03-20", "tipo": "Video", "url": "https://www.tiktok.com/@comapanco/video/7619456927403183381", "media_url": "assets/thumbs/tt-5b623e1a4d.jpg", "caption": "Podríamos crear una película con estos momentos en búsqueda de la felicidad, pero se nos adelantaron.", "engagement": 49, "likes": 22, "comentarios": 8}]}, "linkedin": {"n_posts": 16, "engagement_total": 162, "engagement_promedio": 10.1, "engagement_mediana": 8, "by_type": {"labels": ["post"], "counts": [16], "engagement": [162], "engagement_promedio": [10.1]}, "by_day": {"labels": ["Lun", "Mar", "Mié", "Jue"], "counts": [3, 3, 5, 5], "engagement_promedio": [10.0, 5.0, 10.8, 12.6]}, "by_hour": {"labels": ["9", "10", "11", "12", "14", "15", "16"], "counts": [1, 3, 5, 2, 1, 3, 1]}, "by_week": {"labels": ["2026-S06", "2026-S07", "2026-S08", "2026-S09", "2026-S10", "2026-S11", "2026-S12", "2026-S14", "2026-S15", "2026-S16", "2026-S18"], "counts": [1, 2, 1, 2, 1, 1, 1, 3, 1, 1, 2], "engagement": [26, 29, 18, 13, 6, 13, 11, 15, 7, 9, 15]}, "top_hashtags": [["#DíaInternacionalDelPanDeMasaMadre", 1]], "captions_avg_len": 149.0, "top5": [{"fecha": "2026-02-05", "tipo": "post", "url": "https://www.linkedin.com/posts/comapan-s-a-_y-s%C3%AD-empezamos-antes-de-que-el-pan-tajado-activity-7425194694047076353-aa9R", "media_url": "assets/thumbs/li-6ab910384d.jpg", "caption": "Y sí, empezamos antes de que el pan tajado fuera parte de la rutina en Colombia. Lo siguiente fue crecer, evolucionar y acompañar a miles de", "engagement": 26, "likes": 25, "comentarios": 0}, {"fecha": "2026-02-11", "tipo": "post", "url": "https://www.linkedin.com/posts/comapan-s-a-_cu%C3%A1l-es-el-sabor-y-el-ritmo-que-suben-tu-ugcPost-7422397587489546240-4ayW", "media_url": "assets/thumbs/li-23fba5d175.jpg", "caption": "¿Cuál es el sabor y el ritmo que suben tu hype en la oficina?🎧", "engagement": 22, "likes": 19, "comentarios": 2}, {"fecha": "2026-02-16", "tipo": "post", "url": "https://www.linkedin.com/posts/comapan-s-a-_si-no-hay-mesas-hay-razones-tu-pr%C3%B3ximo-activity-7429217049584840704-YpI6", "media_url": "assets/thumbs/li-417c262ef2.jpg", "caption": "Si no hay mesas, hay razones 🔥🍔 Tu próximo Comapan puede estar más cerca de lo que crees.👀👇 https://lnkd.in/euEycN-A", "engagement": 18, "likes": 18, "comentarios": 0}, {"fecha": "2026-03-12", "tipo": "post", "url": "https://www.linkedin.com/posts/comapan-s-a-_en-comapan-creemos-que-los-equipos-tambi%C3%A9n-activity-7437900233482821632-C3Zr", "media_url": "assets/thumbs/li-64591bd20d.jpg", "caption": "En Comapan creemos que los equipos también se construyen en esos pequeños momentos del día.", "engagement": 13, "likes": 13, "comentarios": 0}, {"fecha": "2026-04-29", "tipo": "post", "url": "https://www.linkedin.com/posts/comapan-s-a-_hoy-pusimos-a-prueba-el-conocimiento-de-nuestros-activity-7455286054800162817-DNnT", "media_url": "assets/thumbs/li-08315a90e5.jpg", "caption": "Hoy pusimos a prueba el conocimiento de nuestros colaboradores sobre nuestros panes tajados ahora con masa madre. Dale play y descubre que t", "engagement": 11, "likes": 11, "comentarios": 0}]}, "fb_undated": 13, "fb_total": 42, "snapshots_history": [{"snapshot_date": "2026-05-03", "plataforma": "Instagram", "metrica": "followers", "valor": "13422", "posts_acumulados": "2225", "fuente": "apify"}, {"snapshot_date": "2026-05-03", "plataforma": "Facebook", "metrica": "page_likes", "valor": "119971", "posts_acumulados": "", "fuente": "apify"}, {"snapshot_date": "2026-05-03", "plataforma": "LinkedIn", "metrica": "followers", "valor": "5020", "posts_acumulados": "", "fuente": "apify"}], "periodo_label": "Diagnóstico inicial — cierre de mayo 2026", "periodo_id": "diagnostico"};
+// ====================================================================
+// Bootstrap Supabase — los datos del reporte vienen de la BD, no embebidos
+// ====================================================================
+const SUPABASE_URL = "https://pmeotakzlgkjdbwdttyf.supabase.co";
+const SUPABASE_KEY = "sb_publishable_eI1vytZOLbn0bvbjKma-xA_Ons0-17w";
+const CLIENT_ID = "comapan";
+
+async function _sb(path) {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1${path}`, {
+    headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` }
+  });
+  if (!r.ok) throw new Error(`Supabase ${r.status} en ${path}`);
+  return r.json();
+}
+
+function _accountKey(p) { return p.charAt(0).toUpperCase() + p.slice(1); }
+
+function assembleDATA(periods, periodId, accounts, aggregates, hallazgos, summary) {
+  const period = periods.find(p => p.id === periodId) || {};
+
+  const accObj = {};
+  accounts.forEach(a => {
+    accObj[_accountKey(a.platform)] = {
+      plataforma: _accountKey(a.platform),
+      username:         a.username || "",
+      seguidores:       String(a.followers ?? ""),
+      page_likes:       String(a.page_likes ?? ""),
+      views_totales_90d:String(a.views_window ?? ""),
+      categoria:        a.category || "",
+      bio:              a.bio || "",
+      nombre:           a.display_name || "",
+      siguiendo:        String(a.following_n ?? ""),
+      posts_totales:    String(a.posts_total ?? ""),
+      verified:         String(a.verified ?? ""),
+      business_account: String(a.is_business ?? ""),
+      url_externa:      a.external_url || "",
+      rating:           a.rating || "",
+      website:          a.website || "",
+      snapshot_fecha:   a.snapshot_at || "",
+      direccion: "", telefono: ""
+    };
+  });
+
+  const blocks = { instagram:{}, facebook:{}, tiktok:{}, linkedin:{} };
+  aggregates.forEach(agg => {
+    const b = blocks[agg.platform]; if (!b) return;
+    if (agg.metric_name === "engagement_stats") {
+      Object.assign(b, agg.metric_value);
+    } else {
+      b[agg.metric_name] = agg.metric_value;
+    }
+  });
+
+  const hbyplat = { instagram:[], facebook:[], tiktok:[], linkedin:[], cross:[] };
+  hallazgos.forEach(h => {
+    if (!hbyplat[h.platform]) hbyplat[h.platform] = [];
+    hbyplat[h.platform].push({
+      categoria: h.categoria, plataforma: h.platform,
+      dato: h.dato, comparativo: h.comparativo,
+      interpretacion: h.interpretacion, implicacion: h.implicacion,
+      recomendacion: { accion: h.accion, prioridad: h.prioridad, esfuerzo: h.esfuerzo }
+    });
+  });
+
+  window.REPORT_META = {
+    current: periodId,
+    available: periods.map(p => ({ id: p.id, label: p.label, url: `/${p.id}/` }))
+  };
+
+  return {
+    generated_at: period.generated_at ? new Date(period.generated_at).toLocaleDateString("es-CO") : "",
+    ventana: { desde: period.starts_on || "", hasta: period.ends_on || "" },
+    accounts: accObj,
+    consolidated: ["instagram","facebook","tiktok","linkedin"].map(p => {
+      const acc = accObj[_accountKey(p)] || {};
+      const b = blocks[p] || {};
+      const top = (b.top5 || [])[0] || {};
+      return {
+        plataforma: _accountKey(p),
+        username:                acc.username || "",
+        seguidores:              acc.seguidores || "",
+        posts_90d:               String(b.n_posts ?? ""),
+        engagement_total_90d:    String(b.engagement_total ?? ""),
+        engagement_promedio_post:String(b.engagement_promedio ?? ""),
+        top_post_url:            top.url || "",
+        top_post_engagement:     String(top.engagement ?? ""),
+        snapshot_fecha:          acc.snapshot_fecha || ""
+      };
+    }),
+    instagram: blocks.instagram, facebook: blocks.facebook,
+    tiktok: blocks.tiktok, linkedin: blocks.linkedin,
+    fb_undated: 0, fb_total: blocks.facebook.n_posts || 0,
+    snapshots_history: [],
+    hallazgos_llm: {
+      hallazgos_top: Object.values(hbyplat).flat(),
+      hallazgos_by_platform: hbyplat,
+      resumen_ejecutivo: (summary[0] && summary[0].resumen) || "",
+      _meta: summary[0] ? { generated_at: summary[0].generated_at, model: summary[0].generated_by } : {}
+    }
+  };
+}
+
+async function loadDataFromSupabase() {
+  const m = location.pathname.match(/\/(diagnostico|\d{4}-\d{2})\/?$/);
+  let periodId = m ? m[1] : null;
+
+  const periods = await _sb(`/periods?client_id=eq.${CLIENT_ID}&order=starts_on.desc`);
+
+  if (!periodId) {
+    const latest = periods.find(p => !p.is_baseline);
+    periodId = latest ? latest.id : "diagnostico";
+  }
+
+  const [accounts, aggregates, hallazgos, summary] = await Promise.all([
+    _sb(`/accounts?client_id=eq.${CLIENT_ID}&period_id=eq.${periodId}`),
+    _sb(`/aggregates?client_id=eq.${CLIENT_ID}&period_id=eq.${periodId}`),
+    _sb(`/hallazgos?client_id=eq.${CLIENT_ID}&period_id=eq.${periodId}&order=platform,rank`),
+    _sb(`/summaries?client_id=eq.${CLIENT_ID}&period_id=eq.${periodId}`)
+  ]);
+
+  return assembleDATA(periods, periodId, accounts, aggregates, hallazgos, summary);
+}
+
+// Global fallback para imágenes rotas (CDN expirado, thumbs faltantes)
+window.addEventListener("error", function(e) {
+  if (e.target && e.target.tagName === "IMG" && !e.target.dataset.fallback) {
+    e.target.dataset.fallback = "1";
+    e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23F2E8D5'/%3E%3Ctext x='32' y='38' text-anchor='middle' font-family='sans-serif' font-size='10' fill='%238a8a8a'%3Esin imagen%3C/text%3E%3C/svg%3E";
+    e.target.style.opacity = "0.6";
+  }
+}, true);
+
+let DATA;
+(async () => {
+  try {
+    DATA = await loadDataFromSupabase();
+    initReport();
+    document.dispatchEvent(new Event("data-ready"));
+  } catch (err) {
+    console.error("loadDataFromSupabase falló:", err);
+    document.body.innerHTML = '<div style="padding:40px;max-width:600px;margin:80px auto;font-family:Roboto,sans-serif;text-align:center;"><h2 style="color:#DB0632">Error cargando el reporte</h2><p style="color:#666">' + (err && err.message || err) + '</p><p style="font-size:12px;color:#999">Si persiste, contactar soporte@datalitica.com.co</p></div>';
+  }
+})();
+
+function initReport() {
 
 // ── Config ──
 Chart.defaults.color = "#4a4a4a";
@@ -1451,6 +1595,8 @@ recos.forEach((r, i) => {
       </div>
     </div>`;
 });
+
+}  // ← cierra initReport()
 </script>
 
 <!-- =============================================================
@@ -1475,6 +1621,14 @@ recos.forEach((r, i) => {
     margin-bottom: 20px; font-size: 14px; line-height: 1.6;
   }
   .llm-hallazgos { display: grid; grid-template-columns: 1fr; gap: 12px; }
+  .llm-platform-group { margin-top: 24px; padding-top: 14px; border-top: 1px dashed var(--line); }
+  .llm-platform-group:first-of-type { border-top: none; padding-top: 6px; }
+  .llm-platform-title {
+    margin: 0 0 12px 0; font-family: 'Roboto Slab', serif; font-size: 15px;
+    color: var(--ink); display: flex; align-items: center; gap: 8px;
+  }
+  .llm-platform-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  .llm-platform-count { color: var(--muted); font-weight: 400; font-size: 13px; }
   .llm-card {
     background: white; padding: 16px 18px; border-radius: 4px;
     border: 1px solid var(--line);
@@ -1504,10 +1658,14 @@ recos.forEach((r, i) => {
   }
 </style>
 <script>
-(function(){
+// Hallazgos por plataforma (espera data-ready)
+document.addEventListener("data-ready", function(){
   if (typeof DATA === "undefined") return;
   var llm = DATA.hallazgos_llm;
-  if (!llm || !Array.isArray(llm.hallazgos_top) || llm.hallazgos_top.length === 0) return;
+  if (!llm) return;
+  var byPlat = llm.hallazgos_by_platform || {};
+  var hasAny = Object.values(byPlat).some(arr => Array.isArray(arr) && arr.length > 0);
+  if (!hasAny && !llm.resumen_ejecutivo) return;
 
   var CAT_LABEL = {
     patron: "Patrón", anomalia: "Anomalía", tendencia: "Tendencia",
@@ -1517,27 +1675,19 @@ recos.forEach((r, i) => {
     instagram: "Instagram", facebook: "Facebook", tiktok: "TikTok",
     linkedin: "LinkedIn", cross: "Cross-plataforma"
   };
+  var PLAT_COLOR = {
+    instagram: "#e1306c", facebook: "#1877f2", tiktok: "#000000",
+    linkedin: "#0a66c2", cross: "#19AAB2"
+  };
 
   function esc(s){ return String(s||"").replace(/[&<>"']/g, function(c){
     return ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]; }); }
 
-  var html = '<section class="llm-section" id="hallazgos-llm">';
-  html += '<h2>Hallazgos automáticos del periodo</h2>';
-  var meta = llm._meta || {};
-  html += '<div class="llm-meta">Generado por '+esc(meta.model||"Claude")+' · '
-        + (meta.attempts||1) + ' intento'+((meta.attempts||1)>1?'s':'')+' · '
-        + esc((meta.generated_at||"").slice(0,10)) + '</div>';
-
-  if (llm.resumen_ejecutivo) {
-    html += '<div class="llm-resumen">' + esc(llm.resumen_ejecutivo) + '</div>';
-  }
-  html += '<div class="llm-hallazgos">';
-  llm.hallazgos_top.forEach(function(h){
+  function renderCard(h) {
     var reco = h.recomendacion || {};
-    html += '<div class="llm-card">';
+    var html = '<div class="llm-card">';
     html +=   '<div class="llm-badges">';
     html +=     '<span class="llm-badge cat">' + esc(CAT_LABEL[h.categoria]||h.categoria) + '</span>';
-    html +=     '<span class="llm-badge">' + esc(PLAT_LABEL[h.plataforma]||h.plataforma) + '</span>';
     html +=   '</div>';
     html +=   '<div class="llm-row"><span class="llm-label">Dato</span> ' + esc(h.dato) + '</div>';
     html +=   '<div class="llm-row"><span class="llm-label">Vs</span> ' + esc(h.comparativo) + '</div>';
@@ -1551,13 +1701,42 @@ recos.forEach((r, i) => {
     html +=     '</div>';
     html +=   '</div>';
     html += '</div>';
-  });
-  html += '</div></section>';
+    return html;
+  }
 
-  // Insertar al final del <main>
+  var html = '<section class="llm-section" id="hallazgos-llm">';
+  html += '<h2>Hallazgos automáticos del periodo</h2>';
+  var meta = llm._meta || {};
+  if (meta.model || meta.generated_at) {
+    html += '<div class="llm-meta">Generado por '+esc(meta.model||"LLM")+' · '
+          + esc((meta.generated_at||"").slice(0,10)) + '</div>';
+  }
+  if (llm.resumen_ejecutivo) {
+    html += '<div class="llm-resumen"><strong>Resumen ejecutivo: </strong>' + esc(llm.resumen_ejecutivo) + '</div>';
+  }
+
+  // Una columna por plataforma con hallazgos
+  ["instagram","facebook","tiktok","linkedin","cross"].forEach(function(plat){
+    var items = byPlat[plat] || [];
+    if (items.length === 0) return;
+    var color = PLAT_COLOR[plat];
+    html += '<div class="llm-platform-group" style="--plat-color:'+color+'">';
+    html +=   '<h3 class="llm-platform-title">';
+    html +=     '<span class="llm-platform-dot" style="background:'+color+'"></span>';
+    html +=     esc(PLAT_LABEL[plat]||plat);
+    html +=     ' <span class="llm-platform-count">('+items.length+' hallazgo'+(items.length>1?'s':'')+')</span>';
+    html +=   '</h3>';
+    html +=   '<div class="llm-hallazgos">';
+    items.forEach(function(h){ html += renderCard(h); });
+    html +=   '</div>';
+    html += '</div>';
+  });
+
+  html += '</section>';
+
   var main = document.querySelector("main");
   if (main) main.insertAdjacentHTML("beforeend", html);
-})();
+});
 </script>
 
 </body>

@@ -132,25 +132,30 @@ def build_one(
 
 
 def build_all() -> dict[str, Path]:
-    """Genera HTMLs para todos los periodos disponibles + index.html raíz."""
-    available = list_available_periods()
-    if not available:
-        raise RuntimeError("No hay JSONs en data/ para renderizar.")
+    """Después del refactor a Supabase, los HTMLs son IDÉNTICOS — el periodo se
+    detecta en el JS desde window.location.pathname y la data viene de Supabase.
+
+    Solo copiamos el template a las rutas que necesitamos para mantener URLs."""
+    template_src = TEMPLATE_PATH.read_text(encoding="utf-8")
+
+    # Subrutas que mantenemos (URL semánticas) — la data la maneja Supabase.
+    routes = ["diagnostico"]
+    # Por convención, dejamos también la subruta del mes actual (a partir de Supabase)
+    # Si quieres archivado por mes, agregar acá. Por ahora dejamos solo diagnostico + raíz.
 
     outputs: dict[str, Path] = {}
-    for pid in available:
-        data_path = DATA_DIR / f"{pid}.json"
-        # subruta: /diagnostico/index.html y /YYYY-MM/index.html
-        sub = "diagnostico" if pid == "diagnostico" else pid
-        out = PROJECT_ROOT / sub / "index.html"
-        outputs[pid] = build_one(data_path, out, available_periods=available)
+    for route in routes:
+        out = PROJECT_ROOT / route / "index.html"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(template_src, encoding="utf-8")
+        outputs[route] = out
+        log.info("route_built", extra={"route": route, "out": str(out)})
 
-    # Raíz: copia del periodo más reciente que no sea diagnostico (si existe), si no diagnostico
-    non_diag = [p for p in available if p != "diagnostico"]
-    latest = non_diag[-1] if non_diag else "diagnostico"
-    shutil.copy(outputs[latest], PROJECT_ROOT / "index.html")
-    outputs["__root__"] = PROJECT_ROOT / "index.html"
-    log.info("root_updated", extra={"from_period": latest})
+    # Raíz también
+    root_path = PROJECT_ROOT / "index.html"
+    root_path.write_text(template_src, encoding="utf-8")
+    outputs["__root__"] = root_path
+    log.info("root_built")
     return outputs
 
 
