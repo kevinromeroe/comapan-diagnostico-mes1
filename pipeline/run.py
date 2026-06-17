@@ -124,9 +124,10 @@ def main() -> int:
     # =====================  PUBLISH  =====================
     commit_sha: str | None = None
     if not args.dry_run and not args.no_publish:
-        cycle = client_cfg.get("client", {}).get("cycle", "quincenal")
         try:
-            published = publish_git.commit_report(snap_dt.date(), cycle=cycle)
+            published = publish_git.commit_report(
+                snap_dt.date(), period_id, cycle=cycle,
+            )
             commit_sha = "pushed" if published else "no_changes"
         except Exception as exc:
             log.error("publish_failed", extra={"error": str(exc)})

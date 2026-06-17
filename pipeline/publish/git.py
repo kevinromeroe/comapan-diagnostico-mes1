@@ -92,7 +92,39 @@ def commit_and_push(
     raise PublishError("git push falló tras reintentos con pull --rebase.")
 
 
-def commit_report(snapshot: date, *, cycle: str = "quincenal") -> bool:
-    """Helper para el caso común: publicar index.html + thumbs nuevos."""
+def commit_report(snapshot: date, period_id: str, *, cycle: str = "mensual") -> bool:
+    """Helper para el caso común: publica index.html raíz + diagnostico/ +
+    <period_id>/ + assets/thumbs/. El .gitignore se encarga de blindar data/."""
     msg = f"Reporte {cycle} {snapshot.isoformat()} — auto-generado"
-    return commit_and_push(["index.html", "assets/thumbs/"], message=msg)
+    paths = [
+        "index.html",         # raíz (siempre se actualiza al último periodo)
+        "diagnostico/",       # baseline congelado (re-rendido pero contenido idéntico)
+        f"{period_id}/",      # subdir del periodo nuevo (ej: 2026-06/)
+        "assets/thumbs/",     # nuevas miniaturas de top posts
+    ]
+    return commit_and_push(paths, message=msg)
+
+
+def commit_all_deploy_artifacts(snapshot: date, *, cycle: str = "mensual",
+                                 message: str | None = None) -> bool:
+    """Alternativa robusta: `git add -A` desde la raíz y commit. Respeta el
+    .gitignore (que blinda data/, secrets, raw, etc). Útil si en algún
+    momento agregamos más subrutas y no queremos tocar este código."""
+    ensure_identity("Datalitica Bot", "bot@datalitica.com.co")
+    _git("add", "-A")
+    res = _git("status", "--porcelain", check=False)
+    if not res.stdout.strip():
+        log.info("publish_no_changes_global")
+        return False
+    msg = message or f"Reporte {cycle} {snapshot.isoformat()} — auto-generado"
+    _git("commit", "-m", msg)
+    for attempt in range(1, 3):
+        push = _git("push", "origin", "main", check=False)
+        if push.returncode == 0:
+            log.info("publish_pushed_global", extra={"attempt": attempt})
+            return True
+        if "non-fast-forward" in (push.stderr or "").lower() or "rejected" in (push.stderr or "").lower():
+            _git("pull", "--rebase", "origin", "main")
+            continue
+        raise PublishError(f"git push failed: {push.stderr.strip()}")
+    raise PublishError("git push falló tras reintentos.")
