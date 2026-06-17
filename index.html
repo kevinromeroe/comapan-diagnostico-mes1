@@ -1151,7 +1151,7 @@ DATA.consolidated.forEach(c => {
   const tr = document.createElement("tr");
   let audiencia;
   if (c.plataforma === "TikTok") {
-    audiencia = `${fmt(tiktokViews)} <span style="color:var(--muted);font-size:11px">views</span>`;
+    audiencia = `${fmt(DATA.tiktok.n_posts)} <span style="color:var(--muted);font-size:11px">posts</span>`;
   } else if (c.plataforma === "Facebook") {
     audiencia = `<span style="color:var(--muted)">n/d</span>`;
   } else {
