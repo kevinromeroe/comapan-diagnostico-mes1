@@ -1,0 +1,32 @@
+name: Ingest DIAGNOSTICO AMPLIADO (Ene-May 2026, resultsLimit=300)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      APIFY_TOKEN:           ${{ secrets.APIFY_TOKEN }}
+      SUPABASE_URL:          ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_KEY:  ${{ secrets.SUPABASE_SERVICE_KEY }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11", cache: pip }
+      - name: Install deps
+        run: pip install -r requirements.txt
+      - name: Run ingester ampliado
+        run: python scripts/ingest_diagnostico_ampliado.py
+
+      - name: Resumen
+        if: always()
+        run: |
+          echo "### Diagnóstico ampliado (Ene-May 2026)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Revisar logs arriba para ver distribución mensual por plataforma." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Si llegamos a enero → reemplazaremos el diagnóstico actual" >> $GITHUB_STEP_SUMMARY
+          echo "Si no llegamos a enero → etiquetamos honestamente la ventana real" >> $GITHUB_STEP_SUMMARY
