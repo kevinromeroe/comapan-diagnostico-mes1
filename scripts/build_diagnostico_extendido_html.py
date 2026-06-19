@@ -35,6 +35,123 @@ PLATFORM_CAPS = {"instagram": "Instagram", "facebook": "Facebook",
                  "tiktok": "TikTok", "linkedin": "LinkedIn"}
 
 
+
+# ─────────────────────────────────────────────────────────────
+# ENRIQUECIMIENTOS — agregados que el build calcula desde posts
+# ─────────────────────────────────────────────────────────────
+from datetime import datetime as _dt, timezone as _tz
+from collections import defaultdict
+
+DOW_LABELS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
+
+def _parse_ts(s):
+    if not s: return None
+    try:
+        # ISO 8601 con Z o offset
+        if s.endswith("Z"):
+            return _dt.fromisoformat(s.replace("Z", "+00:00"))
+        return _dt.fromisoformat(s)
+    except Exception:
+        return None
+
+def enrich_by_hour_engagement(data, posts):
+    """Calcula engagement_promedio por hora para cada plataforma."""
+    by_plat = defaultdict(list)
+    for p in posts:
+        by_plat[p["platform"]].append(p)
+    for plat in ("instagram", "facebook", "tiktok", "linkedin"):
+        block = data.get(plat) or {}
+        bh = block.get("by_hour") or {}
+        labels = bh.get("labels") or []
+        if not labels: continue
+        eng_by_hour = defaultdict(list)
+        for p in by_plat.get(plat, []):
+            ts = _parse_ts(p.get("posted_at"))
+            if not ts: continue
+            h = str(ts.hour)
+            eng_by_hour[h].append(p.get("engagement") or 0)
+        promedios = []
+        for h in labels:
+            arr = eng_by_hour.get(h, [])
+            promedios.append(round(sum(arr) / len(arr), 1) if arr else 0)
+        bh["engagement_promedio"] = promedios
+        block["by_hour"] = bh
+        data[plat] = block
+
+def enrich_by_day_hour_heatmap(data, posts):
+    """Genera matriz 7×24 con engagement_promedio por (día semana, hora) por plataforma."""
+    by_plat = defaultdict(list)
+    for p in posts:
+        by_plat[p["platform"]].append(p)
+    for plat in ("instagram", "facebook", "tiktok", "linkedin"):
+        # matrix[dow][hour] = engagement_promedio
+        matrix = [[0 for _ in range(24)] for _ in range(7)]
+        counts = [[0 for _ in range(24)] for _ in range(7)]
+        engs   = [[0 for _ in range(24)] for _ in range(7)]
+        for p in by_plat.get(plat, []):
+            ts = _parse_ts(p.get("posted_at"))
+            if not ts: continue
+            dow = ts.weekday()  # 0=Lun … 6=Dom
+            h = ts.hour
+            engs[dow][h] += p.get("engagement") or 0
+            counts[dow][h] += 1
+        for d in range(7):
+            for h in range(24):
+                if counts[d][h] > 0:
+                    matrix[d][h] = round(engs[d][h] / counts[d][h], 1)
+        block = data.get(plat) or {}
+        block["by_day_hour"] = {
+            "labels_dow":  DOW_LABELS,
+            "labels_hour": [str(h) for h in range(24)],
+            "matrix":      matrix,
+            "counts":      counts,
+        }
+        data[plat] = block
+
+def gemini_per_post_insights(data, api_key, max_retries=2):
+    """Para cada top5 de cada plataforma, genera 1 frase: por qué funcionó."""
+    if not api_key:
+        print("  ⚠ GEMINI_API_KEY no presente, saltando insights por post")
+        return
+    import urllib.request, urllib.error, json as _json
+    URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
+    for plat in ("instagram", "facebook", "tiktok", "linkedin"):
+        block = data.get(plat) or {}
+        top5 = block.get("top5") or []
+        for i, post in enumerate(top5):
+            caption = (post.get("caption") or "")[:200]
+            eng     = post.get("engagement") or 0
+            likes   = post.get("likes") or 0
+            coms    = post.get("comentarios") or 0
+            tipo    = post.get("tipo") or "post"
+            prompt = (
+                f"Eres analista de social media corporativo. Analiza por qué este "
+                f"post de Comapan ({plat}) tuvo {eng} interacciones ({likes} likes, "
+                f"{coms} comentarios). Tipo: {tipo}. Caption: "{caption}". "
+                f"Responde en UNA sola frase de máximo 25 palabras, español neutro "
+                f"SIN acentos diacríticos, foco accionable para el equipo creativo."
+            )
+            body = {"contents": [{"parts": [{"text": prompt}]}],
+                    "generationConfig": {"temperature": 0.3, "maxOutputTokens": 100}}
+            req = urllib.request.Request(
+                f"{URL}?key={api_key}",
+                data=_json.dumps(body).encode("utf-8"),
+                headers={"Content-Type": "application/json"},
+                method="POST",
+            )
+            try:
+                with urllib.request.urlopen(req, timeout=30) as r:
+                    resp = _json.loads(r.read())
+                    insight = resp["candidates"][0]["content"]["parts"][0]["text"].strip()
+                    # limpiar comillas o markdown
+                    insight = insight.strip('"\'').replace("\n", " ").strip()
+                    post["insight"] = insight
+            except Exception as exc:
+                print(f"    ⚠ Gemini insight failed for {plat}[{i}]: {exc}")
+                post["insight"] = ""
+        print(f"  ✓ {plat}: {len([p for p in top5 if p.get('insight')])}/{len(top5)} insights generados")
+
+
 def build_data_dict(sb: Supabase) -> dict:
     """Reconstruye el DATA dict canónico desde Supabase."""
     accounts_rows = sb.select("accounts",
@@ -135,6 +252,21 @@ def main() -> int:
     sb = Supabase()
     print("→ Construyendo DATA desde Supabase…")
     data = build_data_dict(sb)
+
+    # Enriquecimiento: leer posts + calcular by_hour engagement + heatmap + insights
+    print("→ Leyendo posts desde Supabase para enriquecer DATA…")
+    try:
+        posts = sb.select("posts", filter=f"client_id=eq.{CLIENT_ID}")
+        print(f"  {len(posts)} posts cargados")
+        enrich_by_hour_engagement(data, posts)
+        print("  ✓ by_hour.engagement_promedio agregado")
+        enrich_by_day_hour_heatmap(data, posts)
+        print("  ✓ by_day_hour heatmap agregado")
+        import os
+        gemini_per_post_insights(data, os.environ.get("GEMINI_API_KEY"))
+    except Exception as exc:
+        print(f"  ⚠ Enriquecimiento parcial fallo: {exc}")
+
 
     print(f"  IG posts: {data['instagram'].get('n_posts')}")
     print(f"  FB posts: {data['facebook'].get('n_posts')}")

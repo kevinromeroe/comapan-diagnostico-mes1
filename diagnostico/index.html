@@ -316,6 +316,15 @@
   .platform-dot { width: 12px; height: 12px; border-radius: 50%; }
   .platform-header .meta { color: var(--muted); font-size: 14px; }
 
+  
+  /* Heatmap dia x hora */
+  .hm-grid { display: grid; grid-template-columns: 40px repeat(24, 1fr); gap: 1px; background: #e8e4da; padding: 1px; border-radius: 4px; font-family: 'Roboto', sans-serif; }
+  .hm-cell { background: #fff; padding: 4px 0; text-align: center; font-size: 9px; min-height: 22px; display: flex; align-items: center; justify-content: center; color: #2a2a2a; }
+  .hm-corner { background: transparent; }
+  .hm-h { color: #8a8a8a; font-weight: 600; font-size: 8px; }
+  .hm-d { color: #4a4a4a; font-weight: 700; font-size: 10px; background: #fbfaf7; }
+  .hm-v { font-size: 8px; font-weight: 600; }
+
   /* Findings */
   .finding { display: flex; gap: 24px; padding: 28px 0; border-bottom: 1px solid var(--line); }
   .finding:last-child { border-bottom: 0; }
@@ -648,6 +657,7 @@ const REPORT_META = {"current": "diagnostico", "available": [{"id": "diagnostico
     <div class="chart-card"><h3>Engagement promedio por tipo de contenido <i class="info-icon" data-tip="Promedio de likes + comentarios que recibe cada formato (foto, carrusel, reel). Se calcula sumando el engagement de los posts del tipo y dividiendo entre cuántos hubo. Identifica el formato que más conecta.">i</i></h3><div class="chart-wrap"><canvas id="c-ig-type"></canvas></div><div class="learn" id="l-ig-type"></div></div>
     <div class="chart-card"><h3>Mejor día de la semana <i class="info-icon" data-tip="Engagement promedio de los posts publicados ese día específico de la semana, comparado contra los demás días. Revela el día con mejor desempeño para esta cuenta.">i</i></h3><div class="chart-wrap"><canvas id="c-ig-dow"></canvas></div><div class="learn" id="l-ig-dow"></div></div>
     <div class="chart-card"><h3>Distribución por hora del día <i class="info-icon" data-tip="Cantidad de publicaciones que se hicieron en cada franja horaria. Muestra los hábitos de publicación del equipo, no necesariamente cuándo la audiencia está más activa.">i</i></h3><div class="chart-wrap"><canvas id="c-ig-hour"></canvas></div><div class="learn" id="l-ig-hour"></div></div>
+    <div class="chart-card"><h3>Heatmap día × hora — engagement promedio <i class="info-icon" data-tip="Cada celda es el engagement promedio de los posts publicados ese día de la semana a esa hora del día. Cuanto mas roja, mejor performance. Util para encontrar ventanas optimas de publicacion.">i</i></h3><div id="h-ig-heatmap" style="overflow-x: auto"></div></div>
   </div>
   <h2 style="margin-top:48px">Top 5 publicaciones</h2>
   <div class="chart-card" style="padding:0">
@@ -671,6 +681,7 @@ const REPORT_META = {"current": "diagnostico", "available": [{"id": "diagnostico
     <div class="chart-card"><h3>Volumen semanal (posts datados) <i class="info-icon" data-tip="Cantidad de posts por semana. Solo cuenta los posts que tienen fecha disponible (videos y reels). Las fotos individuales y álbumes en Facebook no exponen su fecha públicamente.">i</i></h3><div class="chart-wrap"><canvas id="c-fb-week"></canvas></div><div class="learn" id="l-fb-week"></div></div>
     <div class="chart-card"><h3>Mejor día de la semana <i class="info-icon" data-tip="Engagement promedio agrupado por día de la semana. Indica qué día rinde más para esta cuenta.">i</i></h3><div class="chart-wrap"><canvas id="c-fb-dow"></canvas></div><div class="learn" id="l-fb-dow"></div></div>
     <div class="chart-card"><h3>Distribución por hora del día <i class="info-icon" data-tip="Cantidad de publicaciones en cada franja horaria. Refleja el horario habitual del equipo de contenido.">i</i></h3><div class="chart-wrap"><canvas id="c-fb-hour"></canvas></div><div class="learn" id="l-fb-hour"></div></div>
+    <div class="chart-card"><h3>Heatmap día × hora — engagement promedio <i class="info-icon" data-tip="Cada celda es el engagement promedio de los posts publicados ese día de la semana a esa hora del día. Cuanto mas roja, mejor performance. Util para encontrar ventanas optimas de publicacion.">i</i></h3><div id="h-fb-heatmap" style="overflow-x: auto"></div></div>
   </div>
   <h2 style="margin-top:48px">Top 5 publicaciones</h2>
   <div class="chart-card" style="padding:0">
@@ -1255,22 +1266,72 @@ function buildPlatform(prefix, key, color) {
       `Los <strong>${data.by_day.labels[dMax]}</strong> son el mejor día (${fmt(dowAvg[dMax])} eng. promedio), mientras que los ${data.by_day.labels[dMin]} caen a ${fmt(dowAvg[dMin])}. Reorganizar el calendario hacia ${data.by_day.labels[dMax]} es una palanca de bajo costo.`);
   }
 
-  // hour
+  // hour (combo: barras de volumen + linea de engagement promedio)
   const cHour = document.getElementById(`c-${prefix}-hour`);
   if (cHour && data.by_hour.labels.length) {
+    const engPromHour = data.by_hour.engagement_promedio || data.by_hour.labels.map(() => 0);
     new Chart(cHour, {
       type: "bar",
-      data: { labels: data.by_hour.labels,
-        datasets: [{ data: data.by_hour.counts, backgroundColor: color + "aa", borderRadius: 2 }] },
-      options: { plugins: { legend: { display: false } }, maintainAspectRatio: false,
-        scales: { y: { beginAtZero: true, grid: { color: "#f0f0f0" } }, x: { grid: { display: false } } } }
+      data: {
+        labels: data.by_hour.labels,
+        datasets: [
+          { type: "bar", label: "Publicaciones", data: data.by_hour.counts,
+            backgroundColor: color + "aa", borderRadius: 2, yAxisID: "y" },
+          { type: "line", label: "Engagement promedio", data: engPromHour,
+            borderColor: "#1a1a1a", backgroundColor: "transparent", borderWidth: 2,
+            tension: 0.3, pointRadius: 3, pointBackgroundColor: "#1a1a1a", yAxisID: "y1" }
+        ]
+      },
+      options: {
+        plugins: { legend: { display: true, position: "bottom", labels: { font: { size: 10 } } } },
+        maintainAspectRatio: false,
+        scales: {
+          y:  { beginAtZero: true, position: "left",
+                title: { display: true, text: "Posts", font: { size: 10 } },
+                grid: { color: "#f0f0f0" } },
+          y1: { beginAtZero: true, position: "right",
+                title: { display: true, text: "Eng. promedio", font: { size: 10 } },
+                grid: { drawOnChartArea: false } },
+          x:  { grid: { display: false } }
+        }
+      }
     });
     const hourCounts = data.by_hour.counts;
     const hMax = maxIdx(hourCounts);
     const peakHour = data.by_hour.labels[hMax];
     const peakRange = `${peakHour}:00 - ${(parseInt(peakHour)+1)%24}:00`;
+    // mejor hora por engagement
+    let bestEngHour = peakHour, bestEng = 0;
+    (engPromHour || []).forEach((v, i) => { if (v > bestEng) { bestEng = v; bestEngHour = data.by_hour.labels[i]; } });
+    const bestRange = `${bestEngHour}:00 - ${(parseInt(bestEngHour)+1)%24}:00`;
     learn(`l-${prefix}-hour`,
-      `El horario con mayor concentración de publicaciones es <strong>${peakRange}</strong> (${hourCounts[hMax]} posts). Validar contra horarios de mayor consumo de la audiencia objetivo.`);
+      `Mayor concentracion de publicaciones a las <strong>${peakRange}</strong> (${hourCounts[hMax]} posts), pero el mejor engagement promedio se da en <strong>${bestRange}</strong> (${fmt(Math.round(bestEng))} interacciones por post). Considerar mover la franja editorial hacia esa ventana.`);
+  }
+
+  // heatmap dia × hora — engagement promedio
+  const heatHost = document.getElementById(`h-${prefix}-heatmap`);
+  if (heatHost && data.by_day_hour && data.by_day_hour.matrix) {
+    const m = data.by_day_hour.matrix;
+    let maxV = 0;
+    m.forEach(row => row.forEach(v => { if (v > maxV) maxV = v; }));
+    const dows = data.by_day_hour.labels_dow;
+    let html = '<div class="hm-grid">';
+    // header: hours
+    html += '<div class="hm-cell hm-corner"></div>';
+    for (let h = 0; h < 24; h++) html += `<div class="hm-cell hm-h">${h}</div>`;
+    // rows
+    for (let d = 0; d < 7; d++) {
+      html += `<div class="hm-cell hm-d">${dows[d]}</div>`;
+      for (let h = 0; h < 24; h++) {
+        const v = m[d][h];
+        const intensity = maxV > 0 ? Math.min(1, v / maxV) : 0;
+        const alpha = intensity > 0 ? (0.15 + intensity * 0.85) : 0;
+        const title = v > 0 ? `${dows[d]} ${h}:00 → ${v} eng. prom.` : `${dows[d]} ${h}:00 → sin posts`;
+        html += `<div class="hm-cell hm-v" style="background:rgba(219,6,50,${alpha})" title="${title}">${v > 0 ? Math.round(v) : ''}</div>`;
+      }
+    }
+    html += '</div>';
+    heatHost.innerHTML = html;
   }
 
   // Learn del top 5: concentración + patrón dominante + gap
@@ -1312,7 +1373,7 @@ function buildPlatform(prefix, key, color) {
   // top 5
   const top = document.querySelector(`#t-${prefix}-top tbody`);
   const platformIcon = { ig: "📷", fb: "📷", tt: "▶", li: "💼" }[prefix] || "▶";
-  data.top5.forEach(p => {
+  data.top5.forEach((p, idxP) => {
     const tr = document.createElement("tr");
     const thumb = p.media_url
       ? `<img class="post-thumb" src="${p.media_url}" loading="lazy" decoding="async" fetchpriority="low" referrerpolicy="no-referrer" onerror="this.outerHTML='<div class=\\'post-thumb-placeholder\\'>${platformIcon}</div>'">`
@@ -1326,6 +1387,14 @@ function buildPlatform(prefix, key, color) {
       : `<td style="width:72px">${thumb}</td><td>${p.fecha}</td><td><span class="pill">${prettyType(p.tipo)}</span></td><td>${p.caption}</td><td>${fmt(p.likes)}</td><td>${fmt(p.comentarios)}</td><td><strong>${fmt(p.engagement)}</strong></td><td><a href="${p.url}" target="_blank">ver →</a></td>`;
     tr.innerHTML = cols;
     top.appendChild(tr);
+    // fila adicional con el insight LLM de por que funciono este post
+    if (p.insight) {
+      const ir = document.createElement("tr");
+      ir.className = "post-insight-row";
+      const colCount = tr.children.length;
+      ir.innerHTML = `<td colspan="${colCount}" style="background:#FBFAF7; border-top:0; padding:10px 16px 14px; font-size:12.5px; color:#4a4a4a; line-height:1.5; font-style: italic; border-left: 3px solid ${color};">💡 ${p.insight}</td>`;
+      top.appendChild(ir);
+    }
   });
 }
 
