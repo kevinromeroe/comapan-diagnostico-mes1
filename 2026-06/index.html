@@ -1464,7 +1464,7 @@ function buildPlatform(prefix, key, color) {
   data.top5.forEach(p => {
     const tr = document.createElement("tr");
     const thumb = p.media_url
-      ? `<img class="post-thumb" src="${p.media_url}" referrerpolicy="no-referrer" onerror="this.outerHTML='<div class=\\'post-thumb-placeholder\\'>${platformIcon}</div>'">`
+      ? `<img class="post-thumb" src="${p.media_url}" loading="lazy" decoding="async" fetchpriority="low" referrerpolicy="no-referrer" onerror="this.outerHTML='<div class=\\'post-thumb-placeholder\\'>${platformIcon}</div>'">`
       : `<div class="post-thumb-placeholder">${platformIcon}</div>`;
     const cols = prefix === "tt"
       ? `<td style="width:72px">${thumb}</td><td>${p.fecha}</td><td>${p.caption}</td><td>${fmt(p.likes)}</td><td>${fmt(p.comentarios)}</td><td><strong>${fmt(p.engagement)}</strong></td><td><a href="${p.url}" target="_blank">ver →</a></td>`
