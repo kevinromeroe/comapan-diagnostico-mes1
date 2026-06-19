@@ -39,8 +39,17 @@ PLATFORM_CAPS = {"instagram": "Instagram", "facebook": "Facebook",
 # ─────────────────────────────────────────────────────────────
 # ENRIQUECIMIENTOS — agregados que el build calcula desde posts
 # ─────────────────────────────────────────────────────────────
-from datetime import datetime as _dt, timezone as _tz
+from datetime import datetime as _dt, timezone as _tz, timedelta as _td
 from collections import defaultdict
+
+# America/Bogota = UTC-5 (no DST)
+BOGOTA_TZ = _tz(_td(hours=-5))
+
+def _to_bogota(ts):
+    if ts is None: return None
+    if ts.tzinfo is None:
+        ts = ts.replace(tzinfo=_tz.utc)
+    return ts.astimezone(BOGOTA_TZ)
 
 DOW_LABELS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
 
@@ -55,27 +64,36 @@ def _parse_ts(s):
         return None
 
 def enrich_by_hour_engagement(data, posts):
-    """Calcula engagement_promedio por hora para cada plataforma."""
+    """Recalcula counts + engagement_promedio por hora en zona Bogota (UTC-5)."""
     by_plat = defaultdict(list)
     for p in posts:
         by_plat[p["platform"]].append(p)
     for plat in ("instagram", "facebook", "tiktok", "linkedin"):
         block = data.get(plat) or {}
-        bh = block.get("by_hour") or {}
-        labels = bh.get("labels") or []
-        if not labels: continue
-        eng_by_hour = defaultdict(list)
+        counts_by_hour = defaultdict(int)
+        eng_by_hour    = defaultdict(list)
         for p in by_plat.get(plat, []):
-            ts = _parse_ts(p.get("posted_at"))
+            ts = _to_bogota(_parse_ts(p.get("posted_at")))
             if not ts: continue
-            h = str(ts.hour)
+            h = ts.hour
+            counts_by_hour[h] += 1
             eng_by_hour[h].append(p.get("engagement") or 0)
+        if not counts_by_hour:
+            continue
+        # Reconstruir labels ordenados (solo horas con posts, como en el agregador original)
+        labels_sorted = sorted(counts_by_hour.keys())
+        labels   = [str(h) for h in labels_sorted]
+        counts   = [counts_by_hour[h] for h in labels_sorted]
         promedios = []
-        for h in labels:
+        for h in labels_sorted:
             arr = eng_by_hour.get(h, [])
             promedios.append(round(sum(arr) / len(arr), 1) if arr else 0)
-        bh["engagement_promedio"] = promedios
-        block["by_hour"] = bh
+        block["by_hour"] = {
+            "labels": labels,
+            "counts": counts,
+            "engagement_promedio": promedios,
+            "_timezone": "America/Bogota",
+        }
         data[plat] = block
 
 def enrich_by_day_hour_heatmap(data, posts):
@@ -89,9 +107,9 @@ def enrich_by_day_hour_heatmap(data, posts):
         counts = [[0 for _ in range(24)] for _ in range(7)]
         engs   = [[0 for _ in range(24)] for _ in range(7)]
         for p in by_plat.get(plat, []):
-            ts = _parse_ts(p.get("posted_at"))
+            ts = _to_bogota(_parse_ts(p.get("posted_at")))
             if not ts: continue
-            dow = ts.weekday()  # 0=Lun … 6=Dom
+            dow = ts.weekday()  # 0=Lun … 6=Dom (en hora Bogota)
             h = ts.hour
             engs[dow][h] += p.get("engagement") or 0
             counts[dow][h] += 1
