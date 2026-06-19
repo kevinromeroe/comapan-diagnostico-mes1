@@ -142,11 +142,10 @@ TAG_TAXONOMY = [
 ]
 
 
-def gemini_tag_posts_batched(data, api_key, batch_size=25):
-    """Etiqueta TODOS los posts con taxonomia cerrada via Gemini batched + verbose logs."""
+def gemini_tag_posts_batched(data, api_key, sb=None, batch_size=25):
+    """Etiqueta posts NO etiquetados aun. Persiste tags en Supabase para reuso."""
     if not api_key:
         print("  ❌ FATAL: GEMINI_API_KEY no presente. Verificar secret en GitHub.")
-        print("     URL: https://github.com/kevinromeroe/comapan-diagnostico-mes1/settings/secrets/actions")
         raise RuntimeError("GEMINI_API_KEY missing")
     print(f"  GEMINI_API_KEY presente (len={len(api_key)} chars, prefijo={api_key[:6]}…)")
 
@@ -167,27 +166,40 @@ def gemini_tag_posts_batched(data, api_key, batch_size=25):
     # (el caller debe poner posts crudos en data["_all_posts_for_tagging"] si quiere todo)
     queue = []
     seen = set()
+    already = 0
     for plat in ("instagram", "facebook", "tiktok", "linkedin"):
         block = data.get(plat) or {}
         for i, post in enumerate(block.get("top5") or []):
             key = (plat, post.get("url") or post.get("id") or f"{plat}-{i}")
             if key in seen: continue
             seen.add(key)
+            # Si ya tiene tag_primary persistido, lo respetamos y NO llamamos a Gemini
+            if post.get("tag_primary"):
+                already += 1
+                continue
             queue.append({
                 "key": key, "plat": plat, "ref": post,
                 "tipo": post.get("tipo") or "post",
                 "caption": (post.get("caption") or "")[:400],
+                "post_id": None,  # top5 no tiene id directo
             })
 
-    # Si data trae __all_posts_for_tagging (con su caption + tipo + plat + ref),
-    # los agregamos tambien para los ~298 posts totales
     extra = data.pop("__all_posts_for_tagging", [])
     for ex in extra:
         if ex["key"] in seen: continue
         seen.add(ex["key"])
+        # Saltar si ya tiene tag_primary
+        if ex.get("ref", {}).get("tag_primary"):
+            already += 1
+            continue
+        # Para los posts extra, podemos rastrear el id si esta en ref
+        ex["post_id"] = ex.get("ref", {}).get("id")
         queue.append(ex)
 
-    print(f"  Etiquetando {len(queue)} publicaciones en batches de {batch_size}...")
+    print(f"  Posts ya etiquetados (skip): {already}")
+    print(f"  Posts a etiquetar ahora: {len(queue)} en batches de {batch_size}")
+    if not queue:
+        print("  ✓ Todos los posts ya tienen tag persistido — sin llamadas a Gemini")
 
     taxonomy_str = ", ".join(TAG_TAXONOMY)
 
@@ -255,6 +267,9 @@ def gemini_tag_posts_batched(data, api_key, batch_size=25):
                     continue
                 items = parsed.get("items") or []
                 ok_count = 0
+                upsert_rows = []
+                from datetime import datetime as _dtnow, timezone as _tzn
+                now_iso = _dtnow.now(_tzn.utc).isoformat()
                 for it in items:
                     idx = it.get("i")
                     if idx is None or idx >= len(batch): continue
@@ -262,10 +277,27 @@ def gemini_tag_posts_batched(data, api_key, batch_size=25):
                     if primary not in TAG_TAXONOMY: primary = "marca"
                     secondary = [t.lower().strip() for t in (it.get("secondary") or [])
                                  if t.lower().strip() in TAG_TAXONOMY and t.lower().strip() != primary][:2]
-                    batch[idx]["ref"]["tags"] = [primary] + secondary
+                    full_tags = [primary] + secondary
+                    batch[idx]["ref"]["tags"] = full_tags
                     batch[idx]["ref"]["tag_primary"] = primary
                     ok_count += 1
-                print(f"  ✓ Batch {start//batch_size + 1}: {ok_count}/{len(batch)} posts etiquetados")
+                    # Persistir a Supabase si tenemos post_id
+                    pid = batch[idx].get("post_id")
+                    if sb is not None and pid:
+                        upsert_rows.append({
+                            "id":          pid,
+                            "tags":        full_tags,
+                            "tag_primary": primary,
+                            "tagged_at":   now_iso,
+                        })
+                if sb is not None and upsert_rows:
+                    try:
+                        sb.upsert("posts", upsert_rows, on_conflict="id")
+                        print(f"  ✓ Batch {start//batch_size + 1}: {ok_count}/{len(batch)} tags + {len(upsert_rows)} persistidos a Supabase")
+                    except Exception as exc:
+                        print(f"  ⚠ Batch {start//batch_size + 1}: tags OK pero falló persistir a Supabase: {exc}")
+                else:
+                    print(f"  ✓ Batch {start//batch_size + 1}: {ok_count}/{len(batch)} posts etiquetados (sin persistir)")
         except urllib.error.HTTPError as e:
             err_body = e.read().decode("utf-8", errors="ignore")[:600]
             print(f"    ⚠ Batch {start//batch_size + 1}: HTTPError {e.code}")
@@ -349,6 +381,7 @@ def build_data_dict(sb: Supabase) -> dict:
         }
 
     # --- posts filtrados ---
+    # NOTA: posts table tiene tags persistidos en columnas tags/tag_primary/tagged_at
     posts_rows = sb.select("posts", filter=f"client_id=eq.{CLIENT_ID}")
     print(f"  Posts totales en Supabase: {len(posts_rows)}")
     posts_bg = []
@@ -369,6 +402,9 @@ def build_data_dict(sb: Supabase) -> dict:
             "engagement": r.get("engagement") or 0,
             "media_url":  r.get("media_url") or "",
             "ts":         ts,
+            # Tags persistidos previamente (si los hay)
+            "tags":         r.get("tags"),
+            "tag_primary":  r.get("tag_primary"),
         })
     print(f"  Posts en ventana Ene-May (Bogota): {len(posts_bg)}")
 
@@ -473,6 +509,8 @@ def build_data_dict(sb: Supabase) -> dict:
             "media_url":   p["media_url"],
             "engagement":  p["engagement"],
             "comentarios": p["comments"],
+            "tags":        p.get("tags"),
+            "tag_primary": p.get("tag_primary"),
         } for p in ps_sorted]
 
         blocks[plat] = {
@@ -568,7 +606,7 @@ def main() -> int:
         all_for_tag = data.pop("_all_posts_for_tagging", [])
         data["__all_posts_for_tagging"] = all_for_tag
         import os
-        gemini_tag_posts_batched(data, os.environ.get("GEMINI_API_KEY"), batch_size=25)
+        gemini_tag_posts_batched(data, os.environ.get("GEMINI_API_KEY"), sb=sb, batch_size=25)
         # Limpiar el hook que ya no sirve y no debe ir al JSON
         data.pop("__all_posts_for_tagging", None)
     except Exception as exc:
