@@ -171,24 +171,44 @@ def gemini_per_post_insights(data, api_key, max_retries=2):
 
 
 def build_data_dict(sb: Supabase) -> dict:
-    """Reconstruye el DATA dict canónico desde Supabase."""
-    accounts_rows = sb.select("accounts",
-        filter=f"client_id=eq.{CLIENT_ID}&period_id=eq.{PERIOD_ID}")
-    agg_rows = sb.select("aggregates",
-        filter=f"client_id=eq.{CLIENT_ID}&period_id=eq.{PERIOD_ID}")
+    """Construye DATA desde la tabla `posts` (no depende de aggregates).
 
-    # --- accounts ---
+    Lee:
+      - accounts del periodo "diagnostico" (snapshot mas reciente disponible)
+      - posts del cliente filtrados a ventana Ene-May 2026
+    Calcula todos los agregados al vuelo en zona America/Bogota.
+    """
+    # Imports locales para evitar costos al cargar
+    from datetime import datetime as _dt, timezone as _tz, timedelta as _td_local
+    from collections import Counter as _Counter
+
+    BG = _tz(_td_local(hours=-5))  # America/Bogota
+    START = _dt(2026, 1, 1,  tzinfo=BG)
+    END   = _dt(2026, 5, 31, 23, 59, 59, tzinfo=BG)
+
+    def _to_bg(s):
+        if not s: return None
+        try:
+            t = _dt.fromisoformat(s.replace("Z", "+00:00")) if s.endswith("Z") else _dt.fromisoformat(s)
+            if t.tzinfo is None: t = t.replace(tzinfo=_tz.utc)
+            return t.astimezone(BG)
+        except Exception:
+            return None
+
+    # --- accounts (snapshot vigente) ---
+    accounts_rows = sb.select("accounts",
+        filter=f"client_id=eq.{CLIENT_ID}&period_id=eq.diagnostico")
     accounts: dict = {}
     for a in accounts_rows:
-        plat_cap = PLATFORM_CAPS.get(a["platform"], a["platform"].capitalize())
-        accounts[plat_cap] = {
+        cap = PLATFORM_CAPS.get(a["platform"], a["platform"].capitalize())
+        accounts[cap] = {
             "bio": a.get("bio") or "",
             "business_account": str(a.get("is_business")) if a.get("is_business") is not None else "",
             "categoria": a.get("category") or "",
             "direccion": (a.get("raw") or {}).get("direccion") or "",
             "nombre": a.get("display_name") or "",
             "page_likes": str(a.get("page_likes")) if a.get("page_likes") is not None else "",
-            "plataforma": plat_cap,
+            "plataforma": cap,
             "posts_totales": str(a.get("posts_total")) if a.get("posts_total") is not None else "",
             "rating": (a.get("raw") or {}).get("rating") or "",
             "seguidores": str(a.get("followers")) if a.get("followers") is not None else "",
@@ -202,41 +222,167 @@ def build_data_dict(sb: Supabase) -> dict:
             "website": a.get("website") or "",
         }
 
-    # --- platform blocks (instagram, facebook, tiktok, linkedin) ---
-    blocks: dict = {"instagram": {}, "facebook": {}, "tiktok": {}, "linkedin": {}}
-    for a in agg_rows:
-        plat = a["platform"]
-        if plat not in blocks:
+    # --- posts filtrados ---
+    posts_rows = sb.select("posts", filter=f"client_id=eq.{CLIENT_ID}")
+    print(f"  Posts totales en Supabase: {len(posts_rows)}")
+    posts_bg = []
+    for r in posts_rows:
+        ts = _to_bg(r.get("posted_at"))
+        if not ts or ts < START or ts > END:
             continue
-        name = a["metric_name"]
-        val = a["metric_value"]
-        if name == "engagement_stats" and isinstance(val, dict):
-            blocks[plat].update(val)
-        else:
-            blocks[plat][name] = val
+        posts_bg.append({
+            "platform":   r.get("platform"),
+            "id":         r.get("id"),
+            "url":        r.get("url") or "",
+            "type":       r.get("type") or "post",
+            "caption":    r.get("caption") or "",
+            "hashtags":   r.get("hashtags") or [],
+            "likes":      r.get("likes") or 0,
+            "comments":   r.get("comments") or 0,
+            "shares":     r.get("shares") or 0,
+            "engagement": r.get("engagement") or 0,
+            "media_url":  r.get("media_url") or "",
+            "ts":         ts,
+        })
+    print(f"  Posts en ventana Ene-May (Bogota): {len(posts_bg)}")
 
-    # --- consolidated (1 fila por plataforma para la tabla) ---
+    DOW = ["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"]
+    blocks: dict = {"instagram": {}, "facebook": {}, "tiktok": {}, "linkedin": {}}
+
+    for plat in ("instagram","facebook","tiktok","linkedin"):
+        ps = [p for p in posts_bg if p["platform"] == plat]
+        n = len(ps)
+        if n == 0:
+            blocks[plat] = {
+                "n_posts": 0, "engagement_total": 0, "engagement_promedio": 0, "engagement_mediana": 0,
+                "by_type": {"labels": [], "counts": [], "engagement": [], "engagement_promedio": []},
+                "by_day":  {"labels": DOW, "counts": [0]*7, "engagement_promedio": [0]*7},
+                "by_hour": {"labels": [], "counts": [], "engagement_promedio": [], "_timezone": "America/Bogota"},
+                "by_week": {"labels": [], "counts": [], "engagement": []},
+                "captions_avg_len": 0, "top_hashtags": [], "top5": [],
+            }
+            continue
+
+        engs = [p["engagement"] for p in ps]
+        total_eng = sum(engs)
+        prom = round(total_eng / n, 1)
+        med = sorted(engs)[n // 2]
+
+        # by_type
+        type_counts = _Counter()
+        type_engs   = _Counter()
+        for p in ps:
+            t = p["type"] or "post"
+            type_counts[t] += 1
+            type_engs[t]   += p["engagement"]
+        type_labels = sorted(type_counts.keys(), key=lambda t: -type_counts[t])
+        by_type = {
+            "labels": type_labels,
+            "counts": [type_counts[t] for t in type_labels],
+            "engagement": [type_engs[t] for t in type_labels],
+            "engagement_promedio": [round(type_engs[t]/type_counts[t], 1) for t in type_labels],
+        }
+
+        # by_day (0=Lun)
+        day_counts = [0]*7
+        day_engs   = [0]*7
+        for p in ps:
+            d = p["ts"].weekday()
+            day_counts[d] += 1
+            day_engs[d]   += p["engagement"]
+        by_day = {
+            "labels": DOW,
+            "counts": day_counts,
+            "engagement_promedio": [round(day_engs[i]/day_counts[i], 1) if day_counts[i] else 0 for i in range(7)],
+        }
+
+        # by_hour (Bogota) - solo horas con posts, ordenadas
+        h_counts = _Counter()
+        h_engs   = _Counter()
+        for p in ps:
+            h = p["ts"].hour
+            h_counts[h] += 1
+            h_engs[h]   += p["engagement"]
+        h_sorted = sorted(h_counts.keys())
+        by_hour = {
+            "labels": [str(h) for h in h_sorted],
+            "counts": [h_counts[h] for h in h_sorted],
+            "engagement_promedio": [round(h_engs[h]/h_counts[h], 1) for h in h_sorted],
+            "_timezone": "America/Bogota",
+        }
+
+        # by_week (formato 2026-Sxx)
+        week_counts = _Counter()
+        week_engs   = _Counter()
+        for p in ps:
+            iso = p["ts"].isocalendar()
+            wk = f"{iso[0]}-S{iso[1]:02d}"
+            week_counts[wk] += 1
+            week_engs[wk]   += p["engagement"]
+        wk_sorted = sorted(week_counts.keys())
+        by_week = {
+            "labels": wk_sorted,
+            "counts": [week_counts[w] for w in wk_sorted],
+            "engagement": [week_engs[w] for w in wk_sorted],
+        }
+
+        # top_hashtags
+        hash_count = _Counter()
+        for p in ps:
+            for tag in (p.get("hashtags") or []):
+                if tag: hash_count[tag] += 1
+        top_hashtags = hash_count.most_common(10)
+
+        # captions_avg_len
+        captions_avg_len = round(sum(len(p["caption"] or "") for p in ps) / n, 1)
+
+        # top5 por engagement
+        ps_sorted = sorted(ps, key=lambda p: -p["engagement"])[:5]
+        top5 = [{
+            "url":         p["url"],
+            "tipo":        p["type"],
+            "fecha":       p["ts"].strftime("%Y-%m-%d"),
+            "likes":       p["likes"],
+            "caption":     p["caption"],
+            "media_url":   p["media_url"],
+            "engagement":  p["engagement"],
+            "comentarios": p["comments"],
+        } for p in ps_sorted]
+
+        blocks[plat] = {
+            "n_posts": n,
+            "engagement_total": total_eng,
+            "engagement_promedio": prom,
+            "engagement_mediana": med,
+            "by_type": by_type,
+            "by_day":  by_day,
+            "by_hour": by_hour,
+            "by_week": by_week,
+            "captions_avg_len": captions_avg_len,
+            "top_hashtags": top_hashtags,
+            "top5": top5,
+        }
+
+    # --- consolidated (una fila por red) ---
     consolidated = []
     for plat, cap in PLATFORM_CAPS.items():
         b = blocks.get(plat) or {}
         acc = accounts.get(cap) or {}
-        if not b and not acc:
-            continue
-        top5 = b.get("top5") or []
-        top_post = top5[0] if top5 else {}
+        if not b.get("n_posts"): continue
+        t5 = b.get("top5") or []
+        top_post = t5[0] if t5 else {}
         consolidated.append({
             "plataforma": cap,
             "username": acc.get("username", ""),
             "seguidores": acc.get("seguidores", ""),
             "posts del periodo": str(b.get("n_posts") or 0),
-            "engagement total": str(b.get("engagement_total") or 0),
-            "engagement_promedio_post": str(round(b.get("engagement_promedio") or 0, 1)),
-            "top_post_url": top_post.get("url", ""),
+            "engagement total":  str(b.get("engagement_total") or 0),
+            "engagement_promedio_post": str(b.get("engagement_promedio") or 0),
+            "top_post_url": top_post.get("url",""),
             "top_post_engagement": str(top_post.get("engagement") or 0),
-            "snapshot_fecha": acc.get("snapshot_fecha", ""),
+            "snapshot_fecha": acc.get("snapshot_fecha",""),
         })
 
-    # --- snapshots_history (minimal, desde accounts) ---
     snapshots = []
     for cap, acc in accounts.items():
         if acc.get("seguidores"):
@@ -271,15 +417,12 @@ def main() -> int:
     print("→ Construyendo DATA desde Supabase…")
     data = build_data_dict(sb)
 
-    # Enriquecimiento: leer posts + calcular by_hour engagement + heatmap + insights
-    print("→ Leyendo posts desde Supabase para enriquecer DATA…")
+    # Heatmap (matriz dia x hora) — agregado adicional desde los posts ya parseados
+    print("→ Generando heatmap dia x hora + insights LLM…")
     try:
         posts = sb.select("posts", filter=f"client_id=eq.{CLIENT_ID}")
-        print(f"  {len(posts)} posts cargados")
-        enrich_by_hour_engagement(data, posts)
-        print("  ✓ by_hour.engagement_promedio agregado")
         enrich_by_day_hour_heatmap(data, posts)
-        print("  ✓ by_day_hour heatmap agregado")
+        print("  ✓ by_day_hour heatmap agregado (Bogota)")
         import os
         gemini_per_post_insights(data, os.environ.get("GEMINI_API_KEY"))
     except Exception as exc:
