@@ -127,7 +127,7 @@ def gemini_per_post_insights(data, api_key, max_retries=2):
             prompt = (
                 f"Eres analista de social media corporativo. Analiza por qué este "
                 f"post de Comapan ({plat}) tuvo {eng} interacciones ({likes} likes, "
-                f"{coms} comentarios). Tipo: {tipo}. Caption: "{caption}". "
+                f"{coms} comentarios). Tipo: {tipo}. Caption: \"{caption}\". "
                 f"Responde en UNA sola frase de máximo 25 palabras, español neutro "
                 f"SIN acentos diacríticos, foco accionable para el equipo creativo."
             )

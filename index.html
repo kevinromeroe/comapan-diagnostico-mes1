@@ -701,6 +701,8 @@ const REPORT_META = {"current": "diagnostico", "available": [{"id": "diagnostico
   <div class="chart-grid cols-2" style="margin-top:32px">
     <div class="chart-card"><h3>Volumen semanal <i class="info-icon" data-tip="Cantidad de videos publicados por semana en TikTok.">i</i></h3><div class="chart-wrap"><canvas id="c-tt-week"></canvas></div><div class="learn" id="l-tt-week"></div></div>
     <div class="chart-card"><h3>Mejor día de la semana <i class="info-icon" data-tip="Engagement promedio (likes + comentarios + shares) por día. En TikTok usa la suma de todas las interacciones del video.">i</i></h3><div class="chart-wrap"><canvas id="c-tt-dow"></canvas></div><div class="learn" id="l-tt-dow"></div></div>
+    <div class="chart-card"><h3>Distribución por hora del día <i class="info-icon" data-tip="Barras: volumen de videos por hora. Linea: engagement promedio por hora. Util para ver si publicamos cuando la audiencia esta activa.">i</i></h3><div class="chart-wrap"><canvas id="c-tt-hour"></canvas></div><div class="learn" id="l-tt-hour"></div></div>
+    <div class="chart-card"><h3>Heatmap día × hora — engagement promedio <i class="info-icon" data-tip="Engagement promedio por dia de la semana y hora del dia. Cuanto mas roja la celda, mejor performance en esa ventana.">i</i></h3><div id="h-tt-heatmap" style="overflow-x: auto"></div></div>
   </div>
   <h2 style="margin-top:48px">Top 5 videos</h2>
   <div class="chart-card" style="padding:0">
@@ -720,6 +722,8 @@ const REPORT_META = {"current": "diagnostico", "available": [{"id": "diagnostico
   <div class="chart-grid cols-2" style="margin-top:32px">
     <div class="chart-card"><h3>Volumen semanal <i class="info-icon" data-tip="Cantidad de publicaciones por semana en LinkedIn.">i</i></h3><div class="chart-wrap"><canvas id="c-li-week"></canvas></div><div class="learn" id="l-li-week"></div></div>
     <div class="chart-card"><h3>Mejor día de la semana <i class="info-icon" data-tip="Engagement promedio (likes + comentarios + shares) por día de la semana en LinkedIn.">i</i></h3><div class="chart-wrap"><canvas id="c-li-dow"></canvas></div><div class="learn" id="l-li-dow"></div></div>
+    <div class="chart-card"><h3>Distribución por hora del día <i class="info-icon" data-tip="Barras: volumen de posts por hora. Linea: engagement promedio por hora. Util para ver si publicamos cuando la audiencia esta activa.">i</i></h3><div class="chart-wrap"><canvas id="c-li-hour"></canvas></div><div class="learn" id="l-li-hour"></div></div>
+    <div class="chart-card"><h3>Heatmap día × hora — engagement promedio <i class="info-icon" data-tip="Engagement promedio por dia de la semana y hora del dia. Cuanto mas roja la celda, mejor performance en esa ventana.">i</i></h3><div id="h-li-heatmap" style="overflow-x: auto"></div></div>
   </div>
   <h2 style="margin-top:48px">Top 5 publicaciones</h2>
   <div class="chart-card" style="padding:0">
