@@ -143,16 +143,13 @@ TAG_TAXONOMY = [
 
 
 def gemini_tag_posts_batched(data, api_key, batch_size=50):
-    """Etiqueta TODOS los posts (no solo top5) con taxonomia cerrada via Gemini batched.
-
-    - Hace ~6 llamadas para 300 posts (free tier OK).
-    - Almacena tags en post["tags"] = [primary, sec1, sec2].
-    - Tambien deja resumenes pre-computados en data[plat]["tag_summary"] y
-      data[plat]["tag_engagement"] para los charts.
-    """
+    """Etiqueta TODOS los posts con taxonomia cerrada via Gemini batched + verbose logs."""
     if not api_key:
-        print("  ⚠ GEMINI_API_KEY no presente, saltando tagging")
-        return
+        print("  ❌ FATAL: GEMINI_API_KEY no presente. Verificar secret en GitHub.")
+        print("     URL: https://github.com/kevinromeroe/comapan-diagnostico-mes1/settings/secrets/actions")
+        raise RuntimeError("GEMINI_API_KEY missing")
+    print(f"  GEMINI_API_KEY presente (len={len(api_key)} chars, prefijo={api_key[:6]}…)")
+
     import urllib.request, urllib.error, json as _json, re as _re
     URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
 
@@ -230,10 +227,24 @@ def gemini_tag_posts_batched(data, api_key, batch_size=50):
         )
         try:
             with urllib.request.urlopen(req, timeout=60) as r:
-                resp = _json.loads(r.read())
-                txt = resp["candidates"][0]["content"]["parts"][0]["text"]
-                parsed = _json.loads(txt)
+                status = r.status
+                raw_body = r.read()
+                resp = _json.loads(raw_body)
+                try:
+                    txt = resp["candidates"][0]["content"]["parts"][0]["text"]
+                except (KeyError, IndexError) as e:
+                    print(f"    ⚠ Batch {start//batch_size + 1}: shape de respuesta inesperada (status={status})")
+                    print(f"       Resp keys: {list(resp.keys())}")
+                    print(f"       Resp[:500]: {str(resp)[:500]}")
+                    continue
+                try:
+                    parsed = _json.loads(txt)
+                except Exception as e:
+                    print(f"    ⚠ Batch {start//batch_size + 1}: JSON parse falló de la respuesta de Gemini")
+                    print(f"       Texto Gemini: {txt[:300]}")
+                    continue
                 items = parsed.get("items") or []
+                ok_count = 0
                 for it in items:
                     idx = it.get("i")
                     if idx is None or idx >= len(batch): continue
@@ -243,30 +254,36 @@ def gemini_tag_posts_batched(data, api_key, batch_size=50):
                                  if t.lower().strip() in TAG_TAXONOMY and t.lower().strip() != primary][:2]
                     batch[idx]["ref"]["tags"] = [primary] + secondary
                     batch[idx]["ref"]["tag_primary"] = primary
-                print(f"  ✓ Batch {start//batch_size + 1}: {len(items)} posts etiquetados")
+                    ok_count += 1
+                print(f"  ✓ Batch {start//batch_size + 1}: {ok_count}/{len(batch)} posts etiquetados")
+        except urllib.error.HTTPError as e:
+            err_body = e.read().decode("utf-8", errors="ignore")[:600]
+            print(f"    ⚠ Batch {start//batch_size + 1}: HTTPError {e.code}")
+            print(f"       Body: {err_body}")
         except Exception as exc:
-            print(f"    ⚠ Batch falló: {exc}")
+            print(f"    ⚠ Batch {start//batch_size + 1}: {type(exc).__name__}: {exc}")
 
-    # Pre-agregar: tag_summary[plat] y tag_engagement[plat] para los charts
+    # Pre-agregar usando TODOS los posts en queue (no solo top5)
     from collections import defaultdict
     for plat in ("instagram", "facebook", "tiktok", "linkedin"):
         block = data.get(plat) or {}
-        all_tagged = [p for p in (block.get("top5") or []) if p.get("tag_primary")]
-        # Si ademas pre-agregamos los all_posts: contar de ahi tambien
-        # (para el chart de mix preferimos el universo completo)
+        plat_tagged = [q for q in queue if q["plat"] == plat and q["ref"].get("tag_primary")]
         block["tag_summary"]    = {}
         block["tag_engagement"] = {}
-        if all_tagged:
-            counts = defaultdict(int)
+        if plat_tagged:
+            counts  = defaultdict(int)
             eng_sum = defaultdict(int)
             eng_n   = defaultdict(int)
-            for p in all_tagged:
-                counts[p["tag_primary"]] += 1
-                eng_sum[p["tag_primary"]] += p.get("engagement", 0)
-                eng_n[p["tag_primary"]] += 1
+            for q in plat_tagged:
+                primary = q["ref"]["tag_primary"]
+                eng     = q["ref"].get("engagement", 0)
+                counts[primary]  += 1
+                eng_sum[primary] += eng
+                eng_n[primary]   += 1
             block["tag_summary"]    = dict(counts)
             block["tag_engagement"] = {k: round(eng_sum[k]/eng_n[k], 1) for k in eng_n if eng_n[k] > 0}
         data[plat] = block
+        print(f"  {plat}: {len(plat_tagged)} posts taggeados → {len(block['tag_summary'])} categorias")
 
 
 def build_data_dict(sb: Supabase) -> dict:
