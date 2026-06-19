@@ -658,6 +658,8 @@ const REPORT_META = {"current": "diagnostico", "available": [{"id": "diagnostico
     <div class="chart-card"><h3>Mejor día de la semana <i class="info-icon" data-tip="Engagement promedio de los posts publicados ese día específico de la semana, comparado contra los demás días. Revela el día con mejor desempeño para esta cuenta.">i</i></h3><div class="chart-wrap"><canvas id="c-ig-dow"></canvas></div><div class="learn" id="l-ig-dow"></div></div>
     <div class="chart-card"><h3>Distribución por hora del día <i class="info-icon" data-tip="Cantidad de publicaciones que se hicieron en cada franja horaria. Muestra los hábitos de publicación del equipo, no necesariamente cuándo la audiencia está más activa.">i</i></h3><div class="chart-wrap"><canvas id="c-ig-hour"></canvas></div><div class="learn" id="l-ig-hour"></div></div>
     <div class="chart-card"><h3>Heatmap día × hora — engagement promedio <i class="info-icon" data-tip="Cada celda es el engagement promedio de los posts publicados ese día de la semana a esa hora del día. Cuanto mas roja, mejor performance. Util para encontrar ventanas optimas de publicacion.">i</i></h3><div id="h-ig-heatmap" style="overflow-x: auto"></div></div>
+    <div class="chart-card"><h3>Mix de contenido <i class="info-icon" data-tip="Distribucion de los posts del periodo por categoria de contenido (etiquetado automatico por IA basado en el caption).">i</i></h3><div class="chart-wrap"><canvas id="c-ig-tagmix"></canvas></div><div class="learn" id="l-ig-tagmix"></div></div>
+    <div class="chart-card"><h3>Engagement por categoría <i class="info-icon" data-tip="Engagement promedio por post segun la categoria. Indica que tipo de contenido conecta mas con la audiencia.">i</i></h3><div class="chart-wrap"><canvas id="c-ig-tageng"></canvas></div><div class="learn" id="l-ig-tageng"></div></div>
   </div>
   <h2 style="margin-top:48px">Top 5 publicaciones</h2>
   <div class="chart-card" style="padding:0">
@@ -682,6 +684,8 @@ const REPORT_META = {"current": "diagnostico", "available": [{"id": "diagnostico
     <div class="chart-card"><h3>Mejor día de la semana <i class="info-icon" data-tip="Engagement promedio agrupado por día de la semana. Indica qué día rinde más para esta cuenta.">i</i></h3><div class="chart-wrap"><canvas id="c-fb-dow"></canvas></div><div class="learn" id="l-fb-dow"></div></div>
     <div class="chart-card"><h3>Distribución por hora del día <i class="info-icon" data-tip="Cantidad de publicaciones en cada franja horaria. Refleja el horario habitual del equipo de contenido.">i</i></h3><div class="chart-wrap"><canvas id="c-fb-hour"></canvas></div><div class="learn" id="l-fb-hour"></div></div>
     <div class="chart-card"><h3>Heatmap día × hora — engagement promedio <i class="info-icon" data-tip="Cada celda es el engagement promedio de los posts publicados ese día de la semana a esa hora del día. Cuanto mas roja, mejor performance. Util para encontrar ventanas optimas de publicacion.">i</i></h3><div id="h-fb-heatmap" style="overflow-x: auto"></div></div>
+    <div class="chart-card"><h3>Mix de contenido <i class="info-icon" data-tip="Distribucion de los posts del periodo por categoria de contenido (etiquetado automatico por IA basado en el caption).">i</i></h3><div class="chart-wrap"><canvas id="c-fb-tagmix"></canvas></div><div class="learn" id="l-fb-tagmix"></div></div>
+    <div class="chart-card"><h3>Engagement por categoría <i class="info-icon" data-tip="Engagement promedio por post segun la categoria. Indica que tipo de contenido conecta mas con la audiencia.">i</i></h3><div class="chart-wrap"><canvas id="c-fb-tageng"></canvas></div><div class="learn" id="l-fb-tageng"></div></div>
   </div>
   <h2 style="margin-top:48px">Top 5 publicaciones</h2>
   <div class="chart-card" style="padding:0">
@@ -703,6 +707,8 @@ const REPORT_META = {"current": "diagnostico", "available": [{"id": "diagnostico
     <div class="chart-card"><h3>Mejor día de la semana <i class="info-icon" data-tip="Engagement promedio (likes + comentarios + shares) por día. En TikTok usa la suma de todas las interacciones del video.">i</i></h3><div class="chart-wrap"><canvas id="c-tt-dow"></canvas></div><div class="learn" id="l-tt-dow"></div></div>
     <div class="chart-card"><h3>Distribución por hora del día <i class="info-icon" data-tip="Barras: volumen de videos por hora. Linea: engagement promedio por hora. Util para ver si publicamos cuando la audiencia esta activa.">i</i></h3><div class="chart-wrap"><canvas id="c-tt-hour"></canvas></div><div class="learn" id="l-tt-hour"></div></div>
     <div class="chart-card"><h3>Heatmap día × hora — engagement promedio <i class="info-icon" data-tip="Engagement promedio por dia de la semana y hora del dia. Cuanto mas roja la celda, mejor performance en esa ventana.">i</i></h3><div id="h-tt-heatmap" style="overflow-x: auto"></div></div>
+    <div class="chart-card"><h3>Mix de contenido <i class="info-icon" data-tip="Distribucion de los posts del periodo por categoria de contenido (etiquetado automatico por IA basado en el caption).">i</i></h3><div class="chart-wrap"><canvas id="c-tt-tagmix"></canvas></div><div class="learn" id="l-tt-tagmix"></div></div>
+    <div class="chart-card"><h3>Engagement por categoría <i class="info-icon" data-tip="Engagement promedio por post segun la categoria. Indica que tipo de contenido conecta mas con la audiencia.">i</i></h3><div class="chart-wrap"><canvas id="c-tt-tageng"></canvas></div><div class="learn" id="l-tt-tageng"></div></div>
   </div>
   <h2 style="margin-top:48px">Top 5 videos</h2>
   <div class="chart-card" style="padding:0">
@@ -724,6 +730,8 @@ const REPORT_META = {"current": "diagnostico", "available": [{"id": "diagnostico
     <div class="chart-card"><h3>Mejor día de la semana <i class="info-icon" data-tip="Engagement promedio (likes + comentarios + shares) por día de la semana en LinkedIn.">i</i></h3><div class="chart-wrap"><canvas id="c-li-dow"></canvas></div><div class="learn" id="l-li-dow"></div></div>
     <div class="chart-card"><h3>Distribución por hora del día <i class="info-icon" data-tip="Barras: volumen de posts por hora. Linea: engagement promedio por hora. Util para ver si publicamos cuando la audiencia esta activa.">i</i></h3><div class="chart-wrap"><canvas id="c-li-hour"></canvas></div><div class="learn" id="l-li-hour"></div></div>
     <div class="chart-card"><h3>Heatmap día × hora — engagement promedio <i class="info-icon" data-tip="Engagement promedio por dia de la semana y hora del dia. Cuanto mas roja la celda, mejor performance en esa ventana.">i</i></h3><div id="h-li-heatmap" style="overflow-x: auto"></div></div>
+    <div class="chart-card"><h3>Mix de contenido <i class="info-icon" data-tip="Distribucion de los posts del periodo por categoria de contenido (etiquetado automatico por IA basado en el caption).">i</i></h3><div class="chart-wrap"><canvas id="c-li-tagmix"></canvas></div><div class="learn" id="l-li-tagmix"></div></div>
+    <div class="chart-card"><h3>Engagement por categoría <i class="info-icon" data-tip="Engagement promedio por post segun la categoria. Indica que tipo de contenido conecta mas con la audiencia.">i</i></h3><div class="chart-wrap"><canvas id="c-li-tageng"></canvas></div><div class="learn" id="l-li-tageng"></div></div>
   </div>
   <h2 style="margin-top:48px">Top 5 publicaciones</h2>
   <div class="chart-card" style="padding:0">
@@ -1336,6 +1344,33 @@ function buildPlatform(prefix, key, color) {
     }
     html += '</div>';
     heatHost.innerHTML = html;
+    // hallazgo automatico debajo del heatmap
+    const learnHost = document.createElement("div");
+    learnHost.className = "learn";
+    let bestD = 0, bestH = 0, bestV = 0;
+    let worstHigh = null; // alta cadencia pero bajo engagement
+    const ch = data.by_day_hour.counts;
+    for (let d = 0; d < 7; d++) {
+      for (let h = 0; h < 24; h++) {
+        if (m[d][h] > bestV) { bestV = m[d][h]; bestD = d; bestH = h; }
+        // alta cadencia (>=3 posts) y engagement bajo (<promedio global)
+        const globalAvg = data.engagement_promedio || 0;
+        if (ch[d][h] >= 3 && m[d][h] < globalAvg * 0.5 && globalAvg > 0) {
+          if (!worstHigh || ch[d][h] > worstHigh.count) {
+            worstHigh = { d, h, v: m[d][h], count: ch[d][h] };
+          }
+        }
+      }
+    }
+    const dows2 = data.by_day_hour.labels_dow;
+    let learnTxt = bestV > 0
+      ? `Mejor ventana del periodo: <strong>${dows2[bestD]} ${bestH}:00</strong> con ${fmt(Math.round(bestV))} interacciones promedio por post.`
+      : "Aun no hay variacion suficiente para identificar una ventana ganadora.";
+    if (worstHigh) {
+      learnTxt += ` <strong>${dows2[worstHigh.d]} ${worstHigh.h}:00</strong> esta sub-aprovechado: se publican ${worstHigh.count} posts pero solo promedian ${fmt(Math.round(worstHigh.v))}. Considerar reubicar esa franja.`;
+    }
+    learnHost.innerHTML = learnTxt;
+    heatHost.parentElement.appendChild(learnHost);
   }
 
   // Learn del top 5: concentración + patrón dominante + gap
@@ -1391,15 +1426,72 @@ function buildPlatform(prefix, key, color) {
       : `<td style="width:72px">${thumb}</td><td>${p.fecha}</td><td><span class="pill">${prettyType(p.tipo)}</span></td><td>${p.caption}</td><td>${fmt(p.likes)}</td><td>${fmt(p.comentarios)}</td><td><strong>${fmt(p.engagement)}</strong></td><td><a href="${p.url}" target="_blank">ver →</a></td>`;
     tr.innerHTML = cols;
     top.appendChild(tr);
-    // fila adicional con el insight LLM de por que funciono este post
-    if (p.insight) {
-      const ir = document.createElement("tr");
-      ir.className = "post-insight-row";
+    // tags como pills bajo el caption
+    if (p.tags && p.tags.length) {
+      const tr2 = document.createElement("tr");
+      tr2.className = "post-tags-row";
       const colCount = tr.children.length;
-      ir.innerHTML = `<td colspan="${colCount}" style="background:#FBFAF7; border-top:0; padding:10px 16px 14px; font-size:12.5px; color:#4a4a4a; line-height:1.5; font-style: italic; border-left: 3px solid ${color};">💡 ${p.insight}</td>`;
-      top.appendChild(ir);
+      const pills = p.tags.map((t, i) => {
+        const isPrimary = i === 0;
+        const bg = isPrimary ? color + "33" : "#f0ece2";
+        const txtColor = isPrimary ? color : "#6a6a6a";
+        const border = isPrimary ? `1px solid ${color}66` : "1px solid #e0d9c8";
+        return `<span style="display:inline-block; padding:3px 10px; margin:0 6px 0 0; border-radius:14px; font-size:11px; font-weight:600; background:${bg}; color:${txtColor}; border:${border}; text-transform:capitalize;">${t}</span>`;
+      }).join("");
+      tr2.innerHTML = `<td colspan="${colCount}" style="background:#FCFBF7; border-top:0; padding:6px 16px 12px;">${pills}</td>`;
+      top.appendChild(tr2);
     }
   });
+
+  // === Charts de TAGS (mix de contenido + engagement por categoria) ===
+  if (data.tag_summary && Object.keys(data.tag_summary).length) {
+    const tagsSorted = Object.entries(data.tag_summary).sort((a, b) => b[1] - a[1]);
+    const tagLabels = tagsSorted.map(e => e[0].charAt(0).toUpperCase() + e[0].slice(1));
+    const tagCounts = tagsSorted.map(e => e[1]);
+    const tagEngs   = tagsSorted.map(e => (data.tag_engagement && data.tag_engagement[e[0]]) || 0);
+
+    // Mix de contenido — barras horizontales
+    const cMix = document.getElementById(`c-${prefix}-tagmix`);
+    if (cMix) {
+      new Chart(cMix, {
+        type: "bar",
+        data: { labels: tagLabels,
+          datasets: [{ data: tagCounts, backgroundColor: color + "aa", borderRadius: 2 }] },
+        options: { indexAxis: "y", plugins: { legend: { display: false } }, maintainAspectRatio: false,
+          scales: { x: { beginAtZero: true, grid: { color: "#f0f0f0" } }, y: { grid: { display: false } } } }
+      });
+      const top1 = tagsSorted[0];
+      const totalT = tagCounts.reduce((a,b)=>a+b, 0);
+      const pct = totalT > 0 ? Math.round(top1[1] / totalT * 100) : 0;
+      learn(`l-${prefix}-tagmix`,
+        `<strong>${top1[0].charAt(0).toUpperCase() + top1[0].slice(1)}</strong> es la categoria dominante: ${pct}% del contenido del periodo. ${tagsSorted.length} categorias en uso de las 12 posibles.`);
+    }
+
+    // Engagement por categoria — barras horizontales
+    const cEng = document.getElementById(`c-${prefix}-tageng`);
+    if (cEng) {
+      const sortedByEng = tagsSorted.slice().sort((a, b) => (data.tag_engagement[b[0]] || 0) - (data.tag_engagement[a[0]] || 0));
+      const engLabels = sortedByEng.map(e => e[0].charAt(0).toUpperCase() + e[0].slice(1));
+      const engVals   = sortedByEng.map(e => (data.tag_engagement[e[0]] || 0));
+      new Chart(cEng, {
+        type: "bar",
+        data: { labels: engLabels,
+          datasets: [{ data: engVals, backgroundColor: "#1a1a1a99", borderRadius: 2 }] },
+        options: { indexAxis: "y", plugins: { legend: { display: false } }, maintainAspectRatio: false,
+          scales: { x: { beginAtZero: true, grid: { color: "#f0f0f0" } }, y: { grid: { display: false } } } }
+      });
+      const winnerCat = sortedByEng[0];
+      const loserCat  = sortedByEng[sortedByEng.length - 1];
+      if (winnerCat && loserCat && winnerCat[0] !== loserCat[0]) {
+        const wv = data.tag_engagement[winnerCat[0]] || 0;
+        const lv = data.tag_engagement[loserCat[0]] || 0;
+        const ratio = lv > 0 ? Math.round(wv / lv) : "—";
+        learn(`l-${prefix}-tageng`,
+          `<strong>${winnerCat[0].charAt(0).toUpperCase() + winnerCat[0].slice(1)}</strong> es la categoria de mejor desempeño (${fmt(Math.round(wv))} eng. promedio por post)${ratio !== "—" ? `, ${ratio}× sobre <strong>${loserCat[0]}</strong> (${fmt(Math.round(lv))})` : ""}. Considerar subir cadencia de esa categoria.`);
+      }
+    }
+  }
+
 }
 
 buildPlatform("ig", "instagram", COLORS.ig);

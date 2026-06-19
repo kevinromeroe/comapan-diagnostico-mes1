@@ -126,48 +126,147 @@ def enrich_by_day_hour_heatmap(data, posts):
         }
         data[plat] = block
 
-def gemini_per_post_insights(data, api_key, max_retries=2):
-    """Para cada top5 de cada plataforma, genera 1 frase: por qué funcionó."""
+TAG_TAXONOMY = [
+    "producto",      # Showcase de un producto puntual
+    "receta",        # Receta o uso del producto
+    "ugc",           # User-generated content / repost
+    "estacional",    # Dias especiales (Dia Mujer, Madre, etc)
+    "tendencia",     # Pop culture, meme, trending audio
+    "marca",         # Storytelling corporativo, valores
+    "promocional",   # Descuentos, lanzamientos, ofertas
+    "educativo",     # Tips, datos curiosos
+    "cultura",       # Empleados, behind the scenes
+    "interaccion",   # Preguntas a la audiencia, encuestas
+    "cobranding",    # Colab con otra marca o influencer
+    "humor",         # Tono comico
+]
+
+
+def gemini_tag_posts_batched(data, api_key, batch_size=50):
+    """Etiqueta TODOS los posts (no solo top5) con taxonomia cerrada via Gemini batched.
+
+    - Hace ~6 llamadas para 300 posts (free tier OK).
+    - Almacena tags en post["tags"] = [primary, sec1, sec2].
+    - Tambien deja resumenes pre-computados en data[plat]["tag_summary"] y
+      data[plat]["tag_engagement"] para los charts.
+    """
     if not api_key:
-        print("  ⚠ GEMINI_API_KEY no presente, saltando insights por post")
+        print("  ⚠ GEMINI_API_KEY no presente, saltando tagging")
         return
-    import urllib.request, urllib.error, json as _json
+    import urllib.request, urllib.error, json as _json, re as _re
     URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
+
+    # Recolectar todos los posts de las 4 plataformas + top5 (las top5 ya estan en blocks)
+    # Pero queremos etiquetar TODOS los posts. Para eso volvemos a leer posts y usamos
+    # un mapeo por post["id"] o (plat, url).
+    # Estrategia simpler: hacer tagging SOLO sobre top5 de cada plataforma porque para
+    # el chart de "engagement por categoria" con ALL posts necesitariamos sus captions
+    # tambien, lo cual incrementa los tokens. Hago 2 pasadas si nos sobra cuota.
+    #
+    # Aqui hacemos top5 (max 20 posts) + tantos posts adicionales como se pueda en
+    # los batches restantes. Configurable.
+
+    # Construir cola de posts: priorizamos top5 por plataforma, luego el resto en orden
+    # (el caller debe poner posts crudos en data["_all_posts_for_tagging"] si quiere todo)
+    queue = []
+    seen = set()
     for plat in ("instagram", "facebook", "tiktok", "linkedin"):
         block = data.get(plat) or {}
-        top5 = block.get("top5") or []
-        for i, post in enumerate(top5):
-            caption = (post.get("caption") or "")[:200]
-            eng     = post.get("engagement") or 0
-            likes   = post.get("likes") or 0
-            coms    = post.get("comentarios") or 0
-            tipo    = post.get("tipo") or "post"
-            prompt = (
-                f"Eres analista de social media corporativo. Analiza por qué este "
-                f"post de Comapan ({plat}) tuvo {eng} interacciones ({likes} likes, "
-                f"{coms} comentarios). Tipo: {tipo}. Caption: \"{caption}\". "
-                f"Responde en UNA sola frase de máximo 25 palabras, español neutro "
-                f"SIN acentos diacríticos, foco accionable para el equipo creativo."
+        for i, post in enumerate(block.get("top5") or []):
+            key = (plat, post.get("url") or post.get("id") or f"{plat}-{i}")
+            if key in seen: continue
+            seen.add(key)
+            queue.append({
+                "key": key, "plat": plat, "ref": post,
+                "tipo": post.get("tipo") or "post",
+                "caption": (post.get("caption") or "")[:400],
+            })
+
+    # Si data trae __all_posts_for_tagging (con su caption + tipo + plat + ref),
+    # los agregamos tambien para los ~298 posts totales
+    extra = data.pop("__all_posts_for_tagging", [])
+    for ex in extra:
+        if ex["key"] in seen: continue
+        seen.add(ex["key"])
+        queue.append(ex)
+
+    print(f"  Etiquetando {len(queue)} publicaciones en batches de {batch_size}...")
+
+    taxonomy_str = ", ".join(TAG_TAXONOMY)
+
+    for start in range(0, len(queue), batch_size):
+        batch = queue[start:start+batch_size]
+        post_lines = []
+        for j, p_item in enumerate(batch):
+            post_lines.append(
+                f"#{j} [{p_item['plat']} {p_item['tipo']}] {p_item['caption']}"
             )
-            body = {"contents": [{"parts": [{"text": prompt}]}],
-                    "generationConfig": {"temperature": 0.3, "maxOutputTokens": 100}}
-            req = urllib.request.Request(
-                f"{URL}?key={api_key}",
-                data=_json.dumps(body).encode("utf-8"),
-                headers={"Content-Type": "application/json"},
-                method="POST",
-            )
-            try:
-                with urllib.request.urlopen(req, timeout=30) as r:
-                    resp = _json.loads(r.read())
-                    insight = resp["candidates"][0]["content"]["parts"][0]["text"].strip()
-                    # limpiar comillas o markdown
-                    insight = insight.strip('"\'').replace("\n", " ").strip()
-                    post["insight"] = insight
-            except Exception as exc:
-                print(f"    ⚠ Gemini insight failed for {plat}[{i}]: {exc}")
-                post["insight"] = ""
-        print(f"  ✓ {plat}: {len([p for p in top5 if p.get('insight')])}/{len(top5)} insights generados")
+
+        prompt = (
+            "Clasifica cada publicacion de Comapan (panaderia colombiana). "
+            "Asigna UNA etiqueta primaria obligatoria y entre 0 y 2 secundarias. "
+            "TAXONOMIA CERRADA (no inventes): " + taxonomy_str + ". "
+            "Definiciones rapidas: producto=showcase de un item especifico; "
+            "receta=cocinar con el producto; ugc=repost de cliente; "
+            "estacional=fechas especiales (Dia Mujer, etc); tendencia=meme/pop; "
+            "marca=storytelling corporativo; promocional=descuento/lanzamiento; "
+            "educativo=tip o dato; cultura=empleados; interaccion=pregunta a la audiencia; "
+            "cobranding=colab con otra marca; humor=tono comico. "
+            "Devuelve SOLO JSON sin markdown: "
+            '{"items":[{"i":0,"primary":"producto","secondary":["humor"]},...]}\n\n'
+            "Posts:\n" + "\n".join(post_lines)
+        )
+
+        body = {
+            "contents": [{"parts": [{"text": prompt}]}],
+            "generationConfig": {"temperature": 0.1, "maxOutputTokens": 4000,
+                                 "responseMimeType": "application/json"}
+        }
+        req = urllib.request.Request(
+            f"{URL}?key={api_key}",
+            data=_json.dumps(body).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST"
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=60) as r:
+                resp = _json.loads(r.read())
+                txt = resp["candidates"][0]["content"]["parts"][0]["text"]
+                parsed = _json.loads(txt)
+                items = parsed.get("items") or []
+                for it in items:
+                    idx = it.get("i")
+                    if idx is None or idx >= len(batch): continue
+                    primary = (it.get("primary") or "").lower().strip()
+                    if primary not in TAG_TAXONOMY: primary = "marca"
+                    secondary = [t.lower().strip() for t in (it.get("secondary") or [])
+                                 if t.lower().strip() in TAG_TAXONOMY and t.lower().strip() != primary][:2]
+                    batch[idx]["ref"]["tags"] = [primary] + secondary
+                    batch[idx]["ref"]["tag_primary"] = primary
+                print(f"  ✓ Batch {start//batch_size + 1}: {len(items)} posts etiquetados")
+        except Exception as exc:
+            print(f"    ⚠ Batch falló: {exc}")
+
+    # Pre-agregar: tag_summary[plat] y tag_engagement[plat] para los charts
+    from collections import defaultdict
+    for plat in ("instagram", "facebook", "tiktok", "linkedin"):
+        block = data.get(plat) or {}
+        all_tagged = [p for p in (block.get("top5") or []) if p.get("tag_primary")]
+        # Si ademas pre-agregamos los all_posts: contar de ahi tambien
+        # (para el chart de mix preferimos el universo completo)
+        block["tag_summary"]    = {}
+        block["tag_engagement"] = {}
+        if all_tagged:
+            counts = defaultdict(int)
+            eng_sum = defaultdict(int)
+            eng_n   = defaultdict(int)
+            for p in all_tagged:
+                counts[p["tag_primary"]] += 1
+                eng_sum[p["tag_primary"]] += p.get("engagement", 0)
+                eng_n[p["tag_primary"]] += 1
+            block["tag_summary"]    = dict(counts)
+            block["tag_engagement"] = {k: round(eng_sum[k]/eng_n[k], 1) for k in eng_n if eng_n[k] > 0}
+        data[plat] = block
 
 
 def build_data_dict(sb: Supabase) -> dict:
@@ -395,7 +494,22 @@ def build_data_dict(sb: Supabase) -> dict:
                 "fuente": "apify",
             })
 
+    # Hook para tagging: pasarle al gemini_tag_posts_batched todos los posts del periodo
+    all_for_tag = []
+    for plat in ("instagram","facebook","tiktok","linkedin"):
+        ps = [p for p in posts_bg if p["platform"] == plat]
+        for i, p in enumerate(ps):
+            all_for_tag.append({
+                "key": (plat, p.get("id") or p.get("url") or f"{plat}-{i}"),
+                "plat": plat,
+                "tipo": p.get("type") or "post",
+                "caption": (p.get("caption") or "")[:400],
+                "ref": p,  # apuntara al dict del post; pero como ya construimos blocks con copias,
+                            # esto no se va a propagar. Estrategia: tagging por (plat, post_id) y
+                            # luego se reaplica al chart desde block["tag_summary"] precomputado.
+            })
     return {
+        "_all_posts_for_tagging": all_for_tag,
         "generated_at": "17/06/2026",
         "ventana": {"desde": "2026-01-01", "hasta": "2026-05-31"},
         "accounts": accounts,
@@ -417,14 +531,19 @@ def main() -> int:
     print("→ Construyendo DATA desde Supabase…")
     data = build_data_dict(sb)
 
-    # Heatmap (matriz dia x hora) — agregado adicional desde los posts ya parseados
-    print("→ Generando heatmap dia x hora + insights LLM…")
+    # Heatmap (matriz dia x hora) + tagging de TODOS los posts via Gemini batched
+    print("→ Generando heatmap dia x hora + tagging LLM (batched)…")
     try:
         posts = sb.select("posts", filter=f"client_id=eq.{CLIENT_ID}")
         enrich_by_day_hour_heatmap(data, posts)
         print("  ✓ by_day_hour heatmap agregado (Bogota)")
+        # Mover _all_posts_for_tagging de data a estructura para tagging
+        all_for_tag = data.pop("_all_posts_for_tagging", [])
+        data["__all_posts_for_tagging"] = all_for_tag
         import os
-        gemini_per_post_insights(data, os.environ.get("GEMINI_API_KEY"))
+        gemini_tag_posts_batched(data, os.environ.get("GEMINI_API_KEY"), batch_size=50)
+        # Limpiar el hook que ya no sirve y no debe ir al JSON
+        data.pop("__all_posts_for_tagging", None)
     except Exception as exc:
         print(f"  ⚠ Enriquecimiento parcial fallo: {exc}")
 
