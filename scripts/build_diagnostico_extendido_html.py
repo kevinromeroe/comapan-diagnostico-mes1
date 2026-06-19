@@ -142,7 +142,7 @@ TAG_TAXONOMY = [
 ]
 
 
-def gemini_tag_posts_batched(data, api_key, batch_size=50):
+def gemini_tag_posts_batched(data, api_key, batch_size=25):
     """Etiqueta TODOS los posts con taxonomia cerrada via Gemini batched + verbose logs."""
     if not api_key:
         print("  ❌ FATAL: GEMINI_API_KEY no presente. Verificar secret en GitHub.")
@@ -216,8 +216,12 @@ def gemini_tag_posts_batched(data, api_key, batch_size=50):
 
         body = {
             "contents": [{"parts": [{"text": prompt}]}],
-            "generationConfig": {"temperature": 0.1, "maxOutputTokens": 4000,
-                                 "responseMimeType": "application/json"}
+            "generationConfig": {
+                "temperature": 0.1,
+                "maxOutputTokens": 8000,
+                "responseMimeType": "application/json",
+                "thinkingConfig": {"thinkingBudget": 0}
+            }
         }
         req = urllib.request.Request(
             f"{URL}?key={api_key}",
@@ -230,10 +234,16 @@ def gemini_tag_posts_batched(data, api_key, batch_size=50):
                 status = r.status
                 raw_body = r.read()
                 resp = _json.loads(raw_body)
+                # diagnostico: finishReason + tokens
+                fr = (resp.get("candidates") or [{}])[0].get("finishReason")
+                um = resp.get("usageMetadata") or {}
+                if fr and fr != "STOP":
+                    print(f"  ⚠ Batch {start//batch_size + 1}: finishReason={fr} prompt={um.get('promptTokenCount')} resp={um.get('candidatesTokenCount')} thoughts={um.get('thoughtsTokenCount')}")
                 try:
                     txt = resp["candidates"][0]["content"]["parts"][0]["text"]
                 except (KeyError, IndexError) as e:
-                    print(f"    ⚠ Batch {start//batch_size + 1}: shape de respuesta inesperada (status={status})")
+                    print(f"    ⚠ Batch {start//batch_size + 1}: shape de respuesta inesperada (status={status} finishReason={fr})")
+                    print(f"       Usage: {um}")
                     print(f"       Resp keys: {list(resp.keys())}")
                     print(f"       Resp[:500]: {str(resp)[:500]}")
                     continue
@@ -558,7 +568,7 @@ def main() -> int:
         all_for_tag = data.pop("_all_posts_for_tagging", [])
         data["__all_posts_for_tagging"] = all_for_tag
         import os
-        gemini_tag_posts_batched(data, os.environ.get("GEMINI_API_KEY"), batch_size=50)
+        gemini_tag_posts_batched(data, os.environ.get("GEMINI_API_KEY"), batch_size=25)
         # Limpiar el hook que ya no sirve y no debe ir al JSON
         data.pop("__all_posts_for_tagging", None)
     except Exception as exc:
