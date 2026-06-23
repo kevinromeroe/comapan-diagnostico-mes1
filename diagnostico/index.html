@@ -1521,8 +1521,6 @@ function buildPlatform(prefix, key, color) {
   // 3) Peores 5
   renderPostList(`#t-${prefix}-worst`, data.worst5 || []);
 
-  });
-
   // === Charts de TAGS (mix de contenido + engagement por categoria) ===
   if (data.tag_summary && Object.keys(data.tag_summary).length) {
     const tagsSorted = Object.entries(data.tag_summary).sort((a, b) => b[1] - a[1]);
