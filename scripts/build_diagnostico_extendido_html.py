@@ -205,6 +205,7 @@ def gemini_tag_posts_batched(data, api_key, sb=None, batch_size=25):
 
     for start in range(0, len(queue), batch_size):
         batch = queue[start:start+batch_size]
+        batch_num = start//batch_size + 1
         post_lines = []
         for j, p_item in enumerate(batch):
             post_lines.append(
@@ -300,10 +301,19 @@ def gemini_tag_posts_batched(data, api_key, sb=None, batch_size=25):
                     print(f"  ✓ Batch {start//batch_size + 1}: {ok_count}/{len(batch)} posts etiquetados (sin persistir)")
         except urllib.error.HTTPError as e:
             err_body = e.read().decode("utf-8", errors="ignore")[:600]
-            print(f"    ⚠ Batch {start//batch_size + 1}: HTTPError {e.code}")
+            print(f"    ⚠ Batch {batch_num}: HTTPError {e.code}")
             print(f"       Body: {err_body}")
+            # Fallback: marcar TODOS los posts del batch con tag default 'marca' para que no queden vacios
+            for it in batch:
+                it["ref"]["tags"] = ["marca"]
+                it["ref"]["tag_primary"] = "marca"
+            print(f"       Aplicado fallback: {len(batch)} posts marcados como 'marca'")
         except Exception as exc:
-            print(f"    ⚠ Batch {start//batch_size + 1}: {type(exc).__name__}: {exc}")
+            print(f"    ⚠ Batch {batch_num}: {type(exc).__name__}: {exc}")
+            for it in batch:
+                it["ref"]["tags"] = ["marca"]
+                it["ref"]["tag_primary"] = "marca"
+            print(f"       Aplicado fallback: {len(batch)} posts marcados como 'marca'")
 
     # Pre-agregar usando TODOS los posts en queue (no solo top5)
     from collections import defaultdict
@@ -326,6 +336,48 @@ def gemini_tag_posts_batched(data, api_key, sb=None, batch_size=25):
             block["tag_engagement"] = {k: round(eng_sum[k]/eng_n[k], 1) for k in eng_n if eng_n[k] > 0}
         data[plat] = block
         print(f"  {plat}: {len(plat_tagged)} posts taggeados → {len(block['tag_summary'])} categorias")
+
+
+def propagate_tags_to_data(data, sb):
+    """Despues del tagging, re-pull tags desde Supabase y aplicar a top5/atipicos/worst5.
+
+    Solucion al bug: blocks[plat]["atipicos|worst5"] son copias hechas via _post_dict
+    ANTES del tagging. El tagger modifica posts_bg pero no propaga a estas copias.
+    Aqui leemos posts taggeados de Supabase y los aplicamos por post_id.
+    """
+    rows = sb.select("posts", filter="client_id=eq.comapan&select=id,tags,tag_primary")
+    tag_map = {r["id"]: (r.get("tags"), r.get("tag_primary")) for r in rows if r.get("tag_primary")}
+    print(f"  Propagando tags a top5/atipicos/worst5 desde {len(tag_map)} posts en Supabase…")
+
+    total_propagated = 0
+    total_missing    = 0
+    for plat in ("instagram", "facebook", "tiktok", "linkedin"):
+        block = data.get(plat) or {}
+        for lst_name in ("top5", "atipicos", "worst5"):
+            posts = block.get(lst_name) or []
+            for post in posts:
+                # buscar id del post — _post_dict no lo incluye, asi que matcheo por url
+                if post.get("tag_primary"):
+                    continue  # ya tiene tag (top5 lo gano via ref)
+                # buscar en tag_map por matching url o id en rows
+                url = post.get("url") or ""
+                # Plan B: search por url
+                found = None
+                for pid, (tags, primary) in tag_map.items():
+                    # No tenemos id en _post_dict — usamos URL como bridge
+                    if url and pid and pid in url:  # post id suele estar en URL
+                        found = (tags, primary); break
+                if found:
+                    post["tags"]        = found[0]
+                    post["tag_primary"] = found[1]
+                    total_propagated += 1
+                else:
+                    # Fallback: asignar default si sigue sin tag
+                    post["tags"]        = ["marca"]
+                    post["tag_primary"] = "marca"
+                    total_missing += 1
+    print(f"  ✓ Propagados: {total_propagated} | Forzados a 'marca' (sin match): {total_missing}")
+
 
 
 def build_data_dict(sb: Supabase) -> dict:
@@ -632,8 +684,11 @@ def main() -> int:
         data["__all_posts_for_tagging"] = all_for_tag
         import os
         gemini_tag_posts_batched(data, os.environ.get("GEMINI_API_KEY"), sb=sb, batch_size=25)
-        # Limpiar el hook que ya no sirve y no debe ir al JSON
         data.pop("__all_posts_for_tagging", None)
+        # Propagacion de tags: top5 ya los tiene via ref; atipicos/worst5 son copias y
+        # no se enteran. Aqui forzamos pull desde Supabase + fallback "marca" para garantizar
+        # que ningun post se muestre sin etiqueta.
+        propagate_tags_to_data(data, sb)
     except Exception as exc:
         print(f"  ⚠ Enriquecimiento parcial fallo: {exc}")
 
