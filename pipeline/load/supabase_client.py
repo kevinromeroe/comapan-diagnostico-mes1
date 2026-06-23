@@ -85,6 +85,18 @@ class Supabase:
             path += f"&{filter}"
         return self._request("GET", path) or []
 
+    def update(self, table: str, filter: str, patch: dict[str, Any]) -> Any:
+        """PATCH parcial sobre filas que matchean filter (no requiere todas las columnas NOT NULL).
+
+        Args:
+            table: nombre de la tabla
+            filter: query string para identificar filas (ej "id=eq.abc")
+            patch: dict con solo las columnas a actualizar
+        """
+        path = f"/{table}?{filter}"
+        return self._request("PATCH", path, patch)
+
+
     def delete(self, table: str, filter: str) -> None:
         """filter es la query string ya armada, ej: 'period_id=eq.2026-06'."""
         self._request("DELETE", f"/{table}?{filter}", extra_headers={"Prefer": "return=minimal"})

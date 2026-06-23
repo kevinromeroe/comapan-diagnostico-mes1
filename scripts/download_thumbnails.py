@@ -120,14 +120,18 @@ def main() -> int:
             if fail <= 5:
                 print(f"  [{i}/{len(pending)}] ✗ {plat} {pid[:20]} (CDN expirada)")
 
-    # Batch upsert a Supabase
+    # PATCH una fila a la vez (mas seguro que upsert con NOT NULL constraints)
     if updates:
-        print(f"\n→ Actualizando {len(updates)} filas en posts table…")
-        # Chunks de 100
-        for start in range(0, len(updates), 100):
-            chunk = updates[start:start+100]
-            sb.upsert("posts", chunk, on_conflict="id")
-        print("  ✓ Supabase actualizado")
+        print(f"\n→ Actualizando {len(updates)} filas en posts table (PATCH)…")
+        for u in updates:
+            try:
+                sb.update("posts", f"id=eq.{u['id']}", {
+                    "media_url_local":         u["media_url_local"],
+                    "thumbnail_downloaded_at": u["thumbnail_downloaded_at"],
+                })
+            except Exception as e:
+                print(f"  ⚠ Update falló id={u['id']}: {e}")
+        print(f"  ✓ {len(updates)} filas actualizadas")
 
     print(f"\n══ RESUMEN ══")
     print(f"  Descargados: {ok}/{len(pending)}")
