@@ -544,8 +544,8 @@ const REPORT_META = {"current": "diagnostico", "available": [{"id": "diagnostico
   <button data-tab="facebook">Facebook</button>
   <button data-tab="tiktok">TikTok</button>
   <button data-tab="linkedin">LinkedIn</button>
-  <button data-tab="hallazgos">Hallazgos</button>
-  <button data-tab="recomendaciones">Recomendaciones</button>
+  <button data-tab="categorias">Categorías</button>
+  <button data-tab="conclusiones">Conclusiones</button>
 </aside>
 
 <nav class="tabs">
@@ -555,8 +555,8 @@ const REPORT_META = {"current": "diagnostico", "available": [{"id": "diagnostico
   <button data-tab="facebook">Facebook</button>
   <button data-tab="tiktok">TikTok</button>
   <button data-tab="linkedin">LinkedIn</button>
-  <button data-tab="hallazgos">Hallazgos</button>
-  <button data-tab="recomendaciones">Recomendaciones</button>
+  <button data-tab="categorias">Categorías</button>
+  <button data-tab="conclusiones">Conclusiones</button>
 </nav>
 
 <main>
@@ -801,22 +801,38 @@ const REPORT_META = {"current": "diagnostico", "available": [{"id": "diagnostico
 </section>
 
 <!-- ============ HALLAZGOS ============ -->
-<section class="tab" id="tab-hallazgos">
+<!-- ============ ANALISIS POR CATEGORIAS ============ -->
+<section class="tab" id="tab-categorias">
   <div class="section-head">
-    <div class="num">05 · Hallazgos</div>
-    <h2>Lo que los datos están diciendo</h2>
-    <div class="desc">Patrones, oportunidades y alertas extraídos de Ene-May 2026, ordenados por impacto.</div>
+    <div class="num">05 · Análisis por categorías</div>
+    <h2>Qué tipo de contenido funciona — y dónde</h2>
+    <div class="desc">Análisis de las 12 categorías editoriales (etiquetadas automáticamente por IA) cruzando red, tipo de media y desempeño. Pista accionable para el equipo creativo.</div>
   </div>
-  <div id="findings"></div>
+
+  <div class="chart-grid cols-2" style="margin-top:24px">
+    <div class="chart-card"><h3>Mix de contenido global <i class="info-icon" data-tip="Distribución porcentual de las 12 categorías sobre los 298 posts del período.">i</i></h3><div class="chart-wrap" style="height:340px"><canvas id="c-cat-mix"></canvas></div><div class="learn" id="l-cat-mix"></div></div>
+    <div class="chart-card"><h3>Performance por categoría <i class="info-icon" data-tip="Engagement promedio, mediana y percentil 75 por categoría. Mediana muy distinta del promedio indica alta variabilidad.">i</i></h3><div class="chart-wrap" style="height:340px"><canvas id="c-cat-perf"></canvas></div><div class="learn" id="l-cat-perf"></div></div>
+  </div>
+
+  <div class="chart-card" style="margin-top:24px"><h3>Categoría × Red — engagement promedio <i class="info-icon" data-tip="Heatmap del engagement promedio por categoría y red. Cuanto más rojo, mejor performance.">i</i></h3><div id="h-cat-plat" style="overflow-x:auto"></div><div class="learn" id="l-cat-plat"></div></div>
+
+  <div class="chart-card" style="margin-top:24px"><h3>Categoría × Tipo de media — engagement promedio <i class="info-icon" data-tip="Heatmap del engagement promedio por categoría y tipo de media. Útil para decidir qué formato usar.">i</i></h3><div id="h-cat-type" style="overflow-x:auto"></div><div class="learn" id="l-cat-type"></div></div>
+
+  <div class="chart-card" style="margin-top:24px"><h3>Gaps estratégicos <i class="info-icon" data-tip="Categorías que se publican poco (menos de 5% del mix) pero rinden mejor que el promedio global. Son las que conviene escalar.">i</i></h3><div id="tbl-cat-gaps"></div></div>
 </section>
 
-<!-- ============ RECOMENDACIONES ============ -->
-<section class="tab" id="tab-recomendaciones">
+<!-- ============ CONCLUSIONES Y PLAN DE ACCION (hallazgos + recomendaciones unificados) ============ -->
+<section class="tab" id="tab-conclusiones">
   <div class="section-head">
-    <div class="num">06 · Recomendaciones</div>
-    <h2>Tres palancas para mover la aguja en los próximos 30 días</h2>
-    <div class="desc">Acciones concretas, priorizadas por relación esfuerzo/impacto.</div>
+    <div class="num">06 · Conclusiones y plan de acción</div>
+    <h2>Síntesis del período + palancas para los próximos 30 días</h2>
+    <div class="desc">Hallazgos clave que se desprenden del análisis y recomendaciones priorizadas por esfuerzo/impacto.</div>
   </div>
+
+  <h3 style="margin-top:36px; font-size:18px; color:var(--ink);">Hallazgos clave</h3>
+  <div id="findings"></div>
+
+  <h3 style="margin-top:48px; font-size:18px; color:var(--ink);">Recomendaciones priorizadas</h3>
   <div id="recos"></div>
 
   <div class="section-head" style="margin-top:64px">
@@ -1573,6 +1589,149 @@ buildPlatform("ig", "instagram", COLORS.ig);
 buildPlatform("fb", "facebook", COLORS.fb);
 buildPlatform("tt", "tiktok", COLORS.tt);
 buildPlatform("li", "linkedin", COLORS.li);
+
+// =================================================================
+// === ANÁLISIS POR CATEGORÍAS (5 sub-secciones cross-platform) ===
+// =================================================================
+(function renderCategoryAnalysis() {
+  const ca = (typeof DATA !== "undefined") ? DATA.category_analysis : null;
+  if (!ca || !ca.mix_global || !ca.mix_global.length) return;
+
+  const palette = ["#DB0632", "#F5DA6C", "#FFBC7D", "#5BAC47", "#19AAB2",
+                   "#1a1a1a", "#8a8a8a", "#e1306c", "#1877f2", "#000000", "#0a66c2", "#F8E0E5"];
+  const cap = s => (s || "").charAt(0).toUpperCase() + (s || "").slice(1);
+
+  // A) Mix de contenido (barras horizontales con %)
+  const mix = ca.mix_global;
+  const cMix = document.getElementById("c-cat-mix");
+  if (cMix) {
+    new Chart(cMix, {
+      type: "bar",
+      data: {
+        labels: mix.map(m => cap(m.category)),
+        datasets: [{
+          data: mix.map(m => m.pct),
+          backgroundColor: mix.map((_, i) => palette[i % palette.length] + "cc"),
+          borderRadius: 3,
+        }]
+      },
+      options: {
+        indexAxis: "y", maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: ctx => `${ctx.parsed.x}% (${mix[ctx.dataIndex].count} posts)` } }
+        },
+        scales: {
+          x: { beginAtZero: true, ticks: { callback: v => v + "%" }, grid: { color: "#f0f0f0" } },
+          y: { grid: { display: false } }
+        }
+      }
+    });
+    const top1 = mix[0]; const top2 = mix[1];
+    document.getElementById("l-cat-mix").innerHTML =
+      `<strong>${cap(top1.category)}</strong> domina con <strong>${top1.pct}%</strong> del mix (${top1.count} posts). ` +
+      (top2 ? `Le sigue <strong>${cap(top2.category)}</strong> con ${top2.pct}%. ` : "") +
+      `${mix.length} de las 12 categorías están en uso.`;
+  }
+
+  // B) Performance por categoría (barras con promedio + tooltip de mediana/p75)
+  const perf = ca.performance;
+  const cPerf = document.getElementById("c-cat-perf");
+  if (cPerf) {
+    new Chart(cPerf, {
+      type: "bar",
+      data: {
+        labels: perf.map(p => cap(p.category)),
+        datasets: [{
+          label: "Engagement promedio",
+          data: perf.map(p => p.mean),
+          backgroundColor: "#DB0632aa",
+          borderRadius: 3,
+        }, {
+          label: "Mediana",
+          data: perf.map(p => p.median),
+          backgroundColor: "#1a1a1a99",
+          borderRadius: 3,
+        }]
+      },
+      options: {
+        indexAxis: "y", maintainAspectRatio: false,
+        plugins: {
+          legend: { position: "bottom", labels: { font: { size: 10 } } },
+          tooltip: { callbacks: {
+            afterBody: items => {
+              const i = items[0].dataIndex;
+              return [`n = ${perf[i].n} posts`, `p75 = ${perf[i].p75}`];
+            }
+          }}
+        },
+        scales: {
+          x: { beginAtZero: true, grid: { color: "#f0f0f0" } },
+          y: { grid: { display: false } }
+        }
+      }
+    });
+    const winner = perf[0]; const loser = perf[perf.length - 1];
+    const ratio = loser.mean > 0 ? Math.round(winner.mean / loser.mean) : "—";
+    document.getElementById("l-cat-perf").innerHTML =
+      `<strong>${cap(winner.category)}</strong> es la categoría con mejor engagement promedio (${fmt(Math.round(winner.mean))}). ` +
+      (ratio !== "—" && ratio > 2 ? `${ratio}× sobre <strong>${cap(loser.category)}</strong> (${fmt(Math.round(loser.mean))}). ` : "") +
+      `Diferencias grandes entre mediana y promedio (ej. ${cap(winner.category)}: med ${winner.median} vs prom ${Math.round(winner.mean)}) indican alta variabilidad — pocos hits muy grandes.`;
+  }
+
+  // C) Heatmap Categoria x Red
+  function drawHeatmap(hostId, learnId, mat, rowLabels, colLabels, label) {
+    const host = document.getElementById(hostId);
+    if (!host || !mat || !mat.matrix) return;
+    const m = mat.matrix; let maxV = 0;
+    m.forEach(row => row.forEach(v => { if (v > maxV) maxV = v; }));
+    const rows = mat.categories; const cols = mat[colLabels];
+    let html = `<div class="hm-grid" style="grid-template-columns: 120px repeat(${cols.length}, 1fr);">`;
+    html += '<div class="hm-cell hm-corner"></div>';
+    cols.forEach(c => { html += `<div class="hm-cell hm-h" style="text-transform:capitalize">${c}</div>`; });
+    rows.forEach((r, i) => {
+      html += `<div class="hm-cell hm-d" style="text-transform:capitalize">${r}</div>`;
+      for (let j = 0; j < cols.length; j++) {
+        const v = m[i][j];
+        const intensity = maxV > 0 ? Math.min(1, v / maxV) : 0;
+        const alpha = intensity > 0 ? (0.15 + intensity * 0.85) : 0;
+        const title = v > 0 ? `${r} en ${cols[j]} → ${v} eng. prom.` : `${r} en ${cols[j]} → sin posts`;
+        html += `<div class="hm-cell hm-v" style="background:rgba(219,6,50,${alpha})" title="${title}">${v > 0 ? Math.round(v) : ''}</div>`;
+      }
+    });
+    html += '</div>';
+    host.innerHTML = html;
+    // hallazgo: best combination
+    let bi = 0, bj = 0, bv = 0;
+    for (let i = 0; i < rows.length; i++) {
+      for (let j = 0; j < cols.length; j++) {
+        if (m[i][j] > bv) { bv = m[i][j]; bi = i; bj = j; }
+      }
+    }
+    const learn = document.getElementById(learnId);
+    if (learn && bv > 0) {
+      learn.innerHTML = `Mejor combinación: <strong>${cap(rows[bi])}</strong> en <strong>${cap(cols[bj])}</strong> con ${fmt(Math.round(bv))} interacciones promedio.`;
+    }
+  }
+  drawHeatmap("h-cat-plat", "l-cat-plat", ca.by_platform, "categories", "platforms");
+  drawHeatmap("h-cat-type", "l-cat-type", ca.by_type, "categories", "types");
+
+  // E) Gaps estratégicos — tabla
+  const gapsHost = document.getElementById("tbl-cat-gaps");
+  if (gapsHost) {
+    if (!ca.gaps || !ca.gaps.length) {
+      gapsHost.innerHTML = '<p style="padding:20px; color:#6a6a6a;">No se detectaron gaps significativos: las categorías sub-utilizadas no superan el promedio global.</p>';
+    } else {
+      let html = '<table style="width:100%; margin:0; border-collapse:collapse"><thead><tr style="background:#FBFAF7"><th style="text-align:left; padding:10px;">Categoría</th><th style="text-align:right; padding:10px;">% del mix</th><th style="text-align:right; padding:10px;">Posts</th><th style="text-align:right; padding:10px;">Eng. prom.</th><th style="text-align:right; padding:10px;">vs Global</th></tr></thead><tbody>';
+      ca.gaps.forEach(g => {
+        html += `<tr><td style="padding:10px; text-transform:capitalize"><strong>${cap(g.category)}</strong></td><td style="text-align:right; padding:10px;">${g.pct_of_mix}%</td><td style="text-align:right; padding:10px;">${g.count}</td><td style="text-align:right; padding:10px;">${fmt(Math.round(g.avg_engagement))}</td><td style="text-align:right; padding:10px; color:#5BAC47; font-weight:700;">${g.vs_global}×</td></tr>`;
+      });
+      html += '</tbody></table>';
+      gapsHost.innerHTML = html;
+    }
+  }
+})();
+
 
 // IG hashtags
 const igh = document.getElementById("ig-hashtags");

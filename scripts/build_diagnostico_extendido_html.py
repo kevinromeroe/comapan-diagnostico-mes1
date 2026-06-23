@@ -338,6 +338,135 @@ def gemini_tag_posts_batched(data, api_key, sb=None, batch_size=25):
         print(f"  {plat}: {len(plat_tagged)} posts taggeados → {len(block['tag_summary'])} categorias")
 
 
+def compute_category_analysis(data, sb):
+    """Aggrega los 298 posts por categoria para el nuevo tab de Analisis por categorias.
+
+    Usa los tags persistidos en posts.tag_primary. Computa:
+      A) Mix global: distribucion porcentual de las 12 categorias
+      B) Performance: mean, median, p75 de engagement por categoria
+      C) Categoria x Red: matriz engagement promedio
+      D) Categoria x Tipo de media: matriz engagement promedio
+      E) Gaps: categorias <5% del mix con engagement por encima de la mediana global
+    """
+    from datetime import datetime as _dt, timezone as _tz, timedelta as _td
+    from collections import defaultdict
+    import statistics as _stats
+
+    BG = _tz(_td(hours=-5))
+    START = _dt(2026, 1, 1,  tzinfo=BG)
+    END   = _dt(2026, 5, 31, 23, 59, 59, tzinfo=BG)
+
+    def _to_bg(s):
+        if not s: return None
+        try:
+            t = _dt.fromisoformat(s.replace("Z", "+00:00")) if s.endswith("Z") else _dt.fromisoformat(s)
+            if t.tzinfo is None: t = t.replace(tzinfo=_tz.utc)
+            return t.astimezone(BG)
+        except Exception:
+            return None
+
+    posts = sb.select("posts", filter=f"client_id=eq.{CLIENT_ID}")
+    posts_in = []
+    for r in posts:
+        ts = _to_bg(r.get("posted_at"))
+        if not ts or ts < START or ts > END:
+            continue
+        if not r.get("tag_primary"):
+            continue
+        posts_in.append({
+            "category": r["tag_primary"],
+            "platform": r.get("platform") or "",
+            "type":     r.get("type") or "post",
+            "engagement": r.get("engagement") or 0,
+        })
+
+    if not posts_in:
+        data["category_analysis"] = {}
+        return
+
+    total = len(posts_in)
+    global_mean = sum(p["engagement"] for p in posts_in) / total
+
+    # A) Mix global
+    cat_counts = defaultdict(int)
+    for p in posts_in:
+        cat_counts[p["category"]] += 1
+    mix_global = sorted([
+        {"category": c, "count": n, "pct": round(n / total * 100, 1)}
+        for c, n in cat_counts.items()
+    ], key=lambda x: -x["count"])
+
+    # B) Performance por categoria (n, mean, median, p75)
+    cat_engs = defaultdict(list)
+    for p in posts_in:
+        cat_engs[p["category"]].append(p["engagement"])
+    performance = []
+    for c, engs in cat_engs.items():
+        engs_sorted = sorted(engs)
+        n = len(engs)
+        performance.append({
+            "category": c,
+            "n":        n,
+            "mean":     round(sum(engs) / n, 1),
+            "median":   _stats.median(engs),
+            "p75":      engs_sorted[int(n * 0.75)] if n > 1 else engs_sorted[0],
+        })
+    performance.sort(key=lambda x: -x["mean"])
+
+    # C) Categoria x Red — engagement promedio
+    plats = ["instagram", "facebook", "tiktok", "linkedin"]
+    cat_plat_eng = defaultdict(lambda: defaultdict(list))
+    for p in posts_in:
+        cat_plat_eng[p["category"]][p["platform"]].append(p["engagement"])
+    categories_ordered = [m["category"] for m in mix_global]
+    matrix_plat = []
+    for c in categories_ordered:
+        row = []
+        for plat in plats:
+            engs = cat_plat_eng[c].get(plat, [])
+            row.append(round(sum(engs) / len(engs), 1) if engs else 0)
+        matrix_plat.append(row)
+
+    # D) Categoria x Tipo de media
+    types_set = sorted({p["type"] for p in posts_in if p["type"]})
+    cat_type_eng = defaultdict(lambda: defaultdict(list))
+    for p in posts_in:
+        cat_type_eng[p["category"]][p["type"]].append(p["engagement"])
+    matrix_type = []
+    for c in categories_ordered:
+        row = []
+        for t in types_set:
+            engs = cat_type_eng[c].get(t, [])
+            row.append(round(sum(engs) / len(engs), 1) if engs else 0)
+        matrix_type.append(row)
+
+    # E) Gaps estrategicos: categorias <5% del mix CON engagement > promedio global
+    gaps = []
+    for m in mix_global:
+        if m["pct"] < 5.0:
+            cat_avg = next((pf["mean"] for pf in performance if pf["category"] == m["category"]), 0)
+            if cat_avg > global_mean:
+                gaps.append({
+                    "category":       m["category"],
+                    "pct_of_mix":     m["pct"],
+                    "count":          m["count"],
+                    "avg_engagement": cat_avg,
+                    "vs_global":      round(cat_avg / global_mean, 1),
+                })
+    gaps.sort(key=lambda x: -x["avg_engagement"])
+
+    data["category_analysis"] = {
+        "total_posts":   total,
+        "global_mean":   round(global_mean, 1),
+        "mix_global":    mix_global,
+        "performance":   performance,
+        "by_platform":   {"categories": categories_ordered, "platforms": plats, "matrix": matrix_plat},
+        "by_type":       {"categories": categories_ordered, "types": types_set,  "matrix": matrix_type},
+        "gaps":          gaps,
+    }
+    print(f"  ✓ category_analysis: {total} posts, {len(mix_global)} categorias, {len(gaps)} gaps")
+
+
 def propagate_tags_to_data(data, sb):
     """Despues del tagging, re-pull tags desde Supabase y aplicar a top5/atipicos/worst5.
 
@@ -689,6 +818,8 @@ def main() -> int:
         # no se enteran. Aqui forzamos pull desde Supabase + fallback "marca" para garantizar
         # que ningun post se muestre sin etiqueta.
         propagate_tags_to_data(data, sb)
+        # Analisis por categorias (cross-platform aggregations)
+        compute_category_analysis(data, sb)
     except Exception as exc:
         print(f"  ⚠ Enriquecimiento parcial fallo: {exc}")
 
