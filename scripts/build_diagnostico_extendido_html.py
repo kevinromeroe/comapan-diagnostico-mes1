@@ -467,20 +467,24 @@ def compute_category_analysis(data, sb):
             row.append(round(sum(engs) / len(engs), 1) if engs else 0)
         matrix_type.append(row)
 
-    # E) Gaps estrategicos: categorias <5% del mix CON engagement > promedio global
+    # E) Gaps estrategicos: oportunidades de escalar contenido
+    # Criterio mas inclusivo: top 4 categorias por engagement entre las que tienen
+    # mix bajo (<10%). Permite ver oportunidades aunque no superen el promedio global.
     gaps = []
-    for m in mix_global:
-        if m["pct"] < 5.0:
-            cat_avg = next((pf["mean"] for pf in performance if pf["category"] == m["category"]), 0)
-            if cat_avg > global_mean:
-                gaps.append({
-                    "category":       m["category"],
-                    "pct_of_mix":     m["pct"],
-                    "count":          m["count"],
-                    "avg_engagement": cat_avg,
-                    "vs_global":      round(cat_avg / global_mean, 1),
-                })
-    gaps.sort(key=lambda x: -x["avg_engagement"])
+    perf_by_cat = {pf["category"]: pf["mean"] for pf in performance}
+    # Sortear por engagement promedio descendente, filtrando mix < 10%
+    candidates = [m for m in mix_global if m["pct"] < 10.0]
+    candidates_with_eng = [
+        {"category": m["category"], "pct_of_mix": m["pct"], "count": m["count"],
+         "avg_engagement": perf_by_cat.get(m["category"], 0)}
+        for m in candidates
+    ]
+    candidates_with_eng.sort(key=lambda x: -x["avg_engagement"])
+    # Tomamos hasta 5 — siempre que tengan engagement > 0
+    for c in candidates_with_eng[:5]:
+        if c["avg_engagement"] > 0:
+            c["vs_global"] = round(c["avg_engagement"] / global_mean, 2)
+            gaps.append(c)
 
     data["category_analysis"] = {
         "total_posts":   total,
@@ -641,10 +645,22 @@ def build_data_dict(sb: Supabase) -> dict:
         prom = round(total_eng / n, 1)
         med = sorted(engs)[n // 2]
 
-        # by_type
+        # PRIMERO: identificar atipicos (engagement > 5x mediana, piso 5)
+        med_floor = max(med, 5)
+        outlier_threshold = med_floor * 5
+        atipicos = sorted(
+            [p for p in ps if p["engagement"] > outlier_threshold],
+            key=lambda p: -p["engagement"]
+        )
+        atipicos_set = {p["id"] for p in atipicos}
+        # POSTS TIPICOS: ps SIN atipicos → usados en TODOS los aggregates de gráficas
+        ps_typical = [p for p in ps if p["id"] not in atipicos_set]
+        n_typical = len(ps_typical) or 1  # evitar /0
+
+        # by_type SOLO con tipicos
         type_counts = _Counter()
         type_engs   = _Counter()
-        for p in ps:
+        for p in ps_typical:
             t = p["type"] or "post"
             type_counts[t] += 1
             type_engs[t]   += p["engagement"]
@@ -656,10 +672,10 @@ def build_data_dict(sb: Supabase) -> dict:
             "engagement_promedio": [round(type_engs[t]/type_counts[t], 1) for t in type_labels],
         }
 
-        # by_day (0=Lun)
+        # by_day (0=Lun) SOLO con tipicos
         day_counts = [0]*7
         day_engs   = [0]*7
-        for p in ps:
+        for p in ps_typical:
             d = p["ts"].weekday()
             day_counts[d] += 1
             day_engs[d]   += p["engagement"]
@@ -669,10 +685,10 @@ def build_data_dict(sb: Supabase) -> dict:
             "engagement_promedio": [round(day_engs[i]/day_counts[i], 1) if day_counts[i] else 0 for i in range(7)],
         }
 
-        # by_hour (Bogota) - solo horas con posts, ordenadas
+        # by_hour (Bogota) SOLO con tipicos
         h_counts = _Counter()
         h_engs   = _Counter()
-        for p in ps:
+        for p in ps_typical:
             h = p["ts"].hour
             h_counts[h] += 1
             h_engs[h]   += p["engagement"]
@@ -684,10 +700,10 @@ def build_data_dict(sb: Supabase) -> dict:
             "_timezone": "America/Bogota",
         }
 
-        # by_week (formato 2026-Sxx)
+        # by_week SOLO con tipicos
         week_counts = _Counter()
         week_engs   = _Counter()
-        for p in ps:
+        for p in ps_typical:
             iso = p["ts"].isocalendar()
             wk = f"{iso[0]}-S{iso[1]:02d}"
             week_counts[wk] += 1
@@ -699,29 +715,19 @@ def build_data_dict(sb: Supabase) -> dict:
             "engagement": [week_engs[w] for w in wk_sorted],
         }
 
-        # top_hashtags
+        # top_hashtags SOLO con tipicos
         hash_count = _Counter()
-        for p in ps:
+        for p in ps_typical:
             for tag in (p.get("hashtags") or []):
                 if tag: hash_count[tag] += 1
         top_hashtags = hash_count.most_common(10)
 
-        # captions_avg_len
-        captions_avg_len = round(sum(len(p["caption"] or "") for p in ps) / n, 1)
+        # captions_avg_len (sobre tipicos)
+        captions_avg_len = round(sum(len(p["caption"] or "") for p in ps_typical) / n_typical, 1)
 
-        # Regla atipicos: engagement > 5x mediana (con piso de 5 para evitar division por 0)
-        med_floor = max(med, 5)
-        outlier_threshold = med_floor * 5
-        atipicos = sorted(
-            [p for p in ps if p["engagement"] > outlier_threshold],
-            key=lambda p: -p["engagement"]
-        )
-        # Top 5 EXCLUYENDO atipicos
-        atipicos_set = {p["id"] for p in atipicos}
-        normales = [p for p in ps if p["id"] not in atipicos_set]
-        top5_normales = sorted(normales, key=lambda p: -p["engagement"])[:5]
-        # Peores 5: bottom 5 excluyendo engagement 0 (posts inactivos / borrados)
-        worst_candidates = [p for p in ps if p["engagement"] > 0]
+        # Top5 y worst5 sobre tipicos (manteniendo lo que ya teniamos)
+        top5_normales = sorted(ps_typical, key=lambda p: -p["engagement"])[:5]
+        worst_candidates = [p for p in ps_typical if p["engagement"] > 0]
         worst5 = sorted(worst_candidates, key=lambda p: p["engagement"])[:5]
 
         def _post_dict(p):
