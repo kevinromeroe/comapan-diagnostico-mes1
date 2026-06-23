@@ -36,6 +36,50 @@ from scripts.ingest_to_supabase import (
     _filter_window, _platform_aggregates,
     _account_row, _post_rows, _aggregate_rows,
 )
+import hashlib as _hashlib
+import io as _io
+import urllib.request as _urlreq
+import urllib.error as _urlerr
+from pathlib import Path as _Path
+try:
+    from PIL import Image as _Image
+    _PIL_OK = True
+except ImportError:
+    _PIL_OK = False
+
+# Carpeta para thumbnails locales (siempre se intentan bajar al ingest mientras URL viva)
+_THUMBS = _Path(__file__).resolve().parent.parent / "assets" / "thumbs"
+_THUMBS.mkdir(parents=True, exist_ok=True)
+
+
+def _dl_thumb(url: str, plat: str, post_id: str) -> str | None:
+    """Descarga, comprime y guarda thumbnail. Retorna path local o None."""
+    if not url or not _PIL_OK:
+        return None
+    h = _hashlib.sha1(str(post_id).encode()).hexdigest()[:12]
+    fname = f"{plat}-{h}.jpg"
+    dest = _THUMBS / fname
+    if dest.exists():
+        return f"/assets/thumbs/{fname}"
+    try:
+        req = _urlreq.Request(url, headers={
+            "User-Agent": "Mozilla/5.0 (compatible; DataliticaBot/1.0)",
+            "Referer": "https://www.google.com/",
+        })
+        with _urlreq.urlopen(req, timeout=8) as r:
+            data = r.read()
+        if len(data) < 200:
+            return None
+        img = _Image.open(_io.BytesIO(data))
+        if img.mode in ("RGBA", "LA", "P"):
+            img = img.convert("RGB")
+        if img.width > 400:
+            r2 = 400 / img.width
+            img = img.resize((400, int(img.height * r2)), _Image.LANCZOS)
+        img.save(dest, "JPEG", quality=60, optimize=True)
+        return f"/assets/thumbs/{fname}"
+    except Exception:
+        return None
 
 log = get_logger("ingest-junio-full")
 CLIENT_ID = "comapan"
@@ -203,6 +247,25 @@ def main() -> int:
             sb.upsert("aggregates", _aggregate_rows(PERIOD_ID, platform, aggs),
                       on_conflict="client_id,period_id,platform,metric_name")
             print(f"  ✓ {platform}: {len(posts)} posts + {len(aggs)} aggregates")
+
+            # Descargar thumbnails INMEDIATAMENTE (URLs CDN expiran en horas)
+            from datetime import datetime as _dtnow, timezone as _tznow
+            now_iso_dl = _dtnow.now(_tznow.utc).isoformat()
+            dl_ok = 0; dl_fail = 0
+            for p in posts:
+                local = _dl_thumb(p.get("media_url"), platform, p.get("id"))
+                if local:
+                    try:
+                        sb.update("posts", f"id=eq.{p['id']}", {
+                            "media_url_local":         local,
+                            "thumbnail_downloaded_at": now_iso_dl,
+                        })
+                        dl_ok += 1
+                    except Exception:
+                        dl_fail += 1
+                else:
+                    dl_fail += 1
+            print(f"    └ thumbnails: ✓{dl_ok}  ✗{dl_fail}")
         else:
             print(f"  ⚠ {platform}: sin posts en junio (cuenta sí guardada si existe)")
 

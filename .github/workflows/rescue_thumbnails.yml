@@ -1,0 +1,39 @@
+name: Rescue thumbnails (re-scrape + download al instante)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  rescue:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    env:
+      APIFY_TOKEN:           ${{ secrets.APIFY_TOKEN }}
+      SUPABASE_URL:          ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_KEY:  ${{ secrets.SUPABASE_SERVICE_KEY }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11", cache: pip }
+      - name: Install deps
+        run: pip install -r requirements.txt
+
+      - name: Rescue thumbnails (re-scrape Apify + descarga inmediata)
+        run: python scripts/rescue_thumbnails.py
+
+      - name: Commit + push thumbs nuevos
+        run: |
+          git config user.email "bot@datalitica.com.co"
+          git config user.name "Datalitica Bot"
+          git add assets/thumbs/ || true
+          git diff --quiet --cached && echo "Sin thumbs nuevos" && exit 0
+          git commit -m "Rescue thumbnails: $(ls assets/thumbs/ | wc -l) imágenes locales"
+          git pull --rebase origin main || true
+          for i in 1 2 3; do
+            git push && break
+            git pull --rebase origin main || true
+            sleep 2
+          done
