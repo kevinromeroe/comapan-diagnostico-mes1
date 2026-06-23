@@ -339,15 +339,7 @@ def gemini_tag_posts_batched(data, api_key, sb=None, batch_size=25):
 
 
 def compute_category_analysis(data, sb):
-    """Aggrega los 298 posts por categoria para el nuevo tab de Analisis por categorias.
-
-    Usa los tags persistidos en posts.tag_primary. Computa:
-      A) Mix global: distribucion porcentual de las 12 categorias
-      B) Performance: mean, median, p75 de engagement por categoria
-      C) Categoria x Red: matriz engagement promedio
-      D) Categoria x Tipo de media: matriz engagement promedio
-      E) Gaps: categorias <5% del mix con engagement por encima de la mediana global
-    """
+    """Aggrega los 298 posts por categoria para el nuevo tab de Analisis por categorias."""
     from datetime import datetime as _dt, timezone as _tz, timedelta as _td
     from collections import defaultdict
     import statistics as _stats
@@ -365,22 +357,57 @@ def compute_category_analysis(data, sb):
         except Exception:
             return None
 
+    print("\n→ Computando category_analysis…")
     posts = sb.select("posts", filter=f"client_id=eq.{CLIENT_ID}")
+    print(f"  sb.select(\"posts\") → {len(posts)} filas")
+    if posts:
+        sample = posts[0]
+        print(f"  Muestra fila[0]: keys={list(sample.keys())[:10]}")
+        print(f"    posted_at = {sample.get('posted_at')!r}")
+        print(f"    tag_primary = {sample.get('tag_primary')!r}")
+        print(f"    engagement = {sample.get('engagement')!r}")
+
     posts_in = []
+    skipped_no_ts = 0
+    skipped_out_window = 0
+    skipped_no_tag = 0
     for r in posts:
         ts = _to_bg(r.get("posted_at"))
-        if not ts or ts < START or ts > END:
-            continue
+        if not ts:
+            skipped_no_ts += 1; continue
+        if ts < START or ts > END:
+            skipped_out_window += 1; continue
         if not r.get("tag_primary"):
-            continue
+            skipped_no_tag += 1; continue
         posts_in.append({
             "category": r["tag_primary"],
             "platform": r.get("platform") or "",
             "type":     r.get("type") or "post",
             "engagement": r.get("engagement") or 0,
         })
+    print(f"  posts_in: {len(posts_in)} | skip(sin ts)={skipped_no_ts} | skip(fuera ventana)={skipped_out_window} | skip(sin tag)={skipped_no_tag}")
+
+    # FALLBACK: si Supabase no devuelve posts taggeados, usar lo que ya está en DATA
+    # (top5+atipicos+worst5 fueron taggeados via propagate_tags_to_data y tienen fallback "marca")
+    if not posts_in:
+        print("  ⚠ posts_in vacío. Activando fallback desde DATA (top5+atipicos+worst5).")
+        for plat in ("instagram", "facebook", "tiktok", "linkedin"):
+            block = data.get(plat) or {}
+            for lst_name in ("top5", "atipicos", "worst5"):
+                for post in (block.get(lst_name) or []):
+                    primary = post.get("tag_primary")
+                    if not primary:
+                        continue
+                    posts_in.append({
+                        "category": primary,
+                        "platform": plat,
+                        "type":     post.get("tipo") or "post",
+                        "engagement": post.get("engagement") or 0,
+                    })
+        print(f"  Fallback: {len(posts_in)} posts desde DATA")
 
     if not posts_in:
+        print("  ⚠ Sin posts con tag_primary en ningún lado. category_analysis quedará vacío.")
         data["category_analysis"] = {}
         return
 
