@@ -422,6 +422,8 @@ def build_data_dict(sb: Supabase) -> dict:
                 "by_hour": {"labels": [], "counts": [], "engagement_promedio": [], "_timezone": "America/Bogota"},
                 "by_week": {"labels": [], "counts": [], "engagement": []},
                 "captions_avg_len": 0, "top_hashtags": [], "top5": [],
+                "atipicos": [], "worst5": [], "outlier_threshold": 0,
+                "outlier_rule": "engagement > 5x mediana del periodo",
             }
             continue
 
@@ -498,20 +500,38 @@ def build_data_dict(sb: Supabase) -> dict:
         # captions_avg_len
         captions_avg_len = round(sum(len(p["caption"] or "") for p in ps) / n, 1)
 
-        # top5 por engagement
-        ps_sorted = sorted(ps, key=lambda p: -p["engagement"])[:5]
-        top5 = [{
-            "url":         p["url"],
-            "tipo":        p["type"],
-            "fecha":       p["ts"].strftime("%Y-%m-%d"),
-            "likes":       p["likes"],
-            "caption":     p["caption"],
-            "media_url":   p["media_url"],
-            "engagement":  p["engagement"],
-            "comentarios": p["comments"],
-            "tags":        p.get("tags"),
-            "tag_primary": p.get("tag_primary"),
-        } for p in ps_sorted]
+        # Regla atipicos: engagement > 5x mediana (con piso de 5 para evitar division por 0)
+        med_floor = max(med, 5)
+        outlier_threshold = med_floor * 5
+        atipicos = sorted(
+            [p for p in ps if p["engagement"] > outlier_threshold],
+            key=lambda p: -p["engagement"]
+        )
+        # Top 5 EXCLUYENDO atipicos
+        atipicos_set = {p["id"] for p in atipicos}
+        normales = [p for p in ps if p["id"] not in atipicos_set]
+        top5_normales = sorted(normales, key=lambda p: -p["engagement"])[:5]
+        # Peores 5: bottom 5 excluyendo engagement 0 (posts inactivos / borrados)
+        worst_candidates = [p for p in ps if p["engagement"] > 0]
+        worst5 = sorted(worst_candidates, key=lambda p: p["engagement"])[:5]
+
+        def _post_dict(p):
+            return {
+                "url":         p["url"],
+                "tipo":        p["type"],
+                "fecha":       p["ts"].strftime("%Y-%m-%d"),
+                "likes":       p["likes"],
+                "caption":     p["caption"],
+                "media_url":   p["media_url"],
+                "engagement":  p["engagement"],
+                "comentarios": p["comments"],
+                "tags":        p.get("tags"),
+                "tag_primary": p.get("tag_primary"),
+            }
+
+        top5 = [_post_dict(p) for p in top5_normales]
+        atipicos_list = [_post_dict(p) for p in atipicos]
+        worst5_list = [_post_dict(p) for p in worst5]
 
         blocks[plat] = {
             "n_posts": n,
@@ -525,6 +545,10 @@ def build_data_dict(sb: Supabase) -> dict:
             "captions_avg_len": captions_avg_len,
             "top_hashtags": top_hashtags,
             "top5": top5,
+            "atipicos": atipicos_list,
+            "worst5":   worst5_list,
+            "outlier_threshold": outlier_threshold,
+            "outlier_rule":      "engagement > 5x mediana del periodo",
         }
 
     # --- consolidated (una fila por red) ---
