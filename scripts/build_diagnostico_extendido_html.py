@@ -400,7 +400,8 @@ def build_data_dict(sb: Supabase) -> dict:
             "comments":   r.get("comments") or 0,
             "shares":     r.get("shares") or 0,
             "engagement": r.get("engagement") or 0,
-            "media_url":  r.get("media_url") or "",
+            # Preferir thumbnail local si existe (CDN URLs expiran)
+            "media_url":  r.get("media_url_local") or r.get("media_url") or "",
             "ts":         ts,
             # Tags persistidos previamente (si los hay)
             "tags":         r.get("tags"),

@@ -1,0 +1,38 @@
+name: Download thumbnails (persist locally)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  download:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    env:
+      SUPABASE_URL:          ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_KEY:  ${{ secrets.SUPABASE_SERVICE_KEY }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11", cache: pip }
+      - name: Install deps
+        run: pip install -r requirements.txt
+
+      - name: Download + compress thumbnails
+        run: python scripts/download_thumbnails.py
+
+      - name: Commit thumbs + push
+        run: |
+          git config user.email "bot@datalitica.com.co"
+          git config user.name "Datalitica Bot"
+          git add assets/thumbs/ || true
+          git diff --quiet --cached && echo "Sin thumbs nuevos" && exit 0
+          git commit -m "Persistir thumbnails localmente (calidad baja)"
+          git pull --rebase origin main || true
+          for i in 1 2 3; do
+            git push && break
+            git pull --rebase origin main || true
+            sleep 2
+          done
