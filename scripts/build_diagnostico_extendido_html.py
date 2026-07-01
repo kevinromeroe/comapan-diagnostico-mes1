@@ -736,10 +736,25 @@ def build_data_dict(sb: Supabase, period: str = "diagnostico") -> dict:
         # captions_avg_len (sobre tipicos)
         captions_avg_len = round(sum(len(p["caption"] or "") for p in ps_typical) / n_typical, 1)
 
-        # Top5 y worst5 sobre tipicos (manteniendo lo que ya teniamos)
-        top5_normales = sorted(ps_typical, key=lambda p: -p["engagement"])[:5]
-        worst_candidates = [p for p in ps_typical if p["engagement"] > 0]
-        worst5 = sorted(worst_candidates, key=lambda p: p["engagement"])[:5]
+        # Top5 y worst5 sin duplicados (fix: en plataformas con pocos posts los mismos
+        # aparecian en ambas tablas). Regla adaptativa:
+        #   n <= 5:  solo top (los pocos que hay), NO hay peores separados
+        #   6-10:    top 5 + peores = los que sobren (sin overlap)
+        #   > 10:    top 5 + peores 5, garantizado sin overlap
+        sorted_typical = sorted(ps_typical, key=lambda p: -p["engagement"])
+        n_t = len(sorted_typical)
+        if n_t <= 5:
+            top5_normales = sorted_typical
+            worst5 = []
+        elif n_t <= 10:
+            top5_normales = sorted_typical[:5]
+            # los que sobran, ordenados de menor a mayor engagement (peores primero)
+            remaining = [p for p in sorted_typical[5:] if p["engagement"] > 0]
+            worst5 = sorted(remaining, key=lambda p: p["engagement"])
+        else:
+            top5_normales = sorted_typical[:5]
+            remaining = [p for p in sorted_typical[5:] if p["engagement"] > 0]
+            worst5 = sorted(remaining, key=lambda p: p["engagement"])[:5]
 
         def _post_dict(p):
             return {

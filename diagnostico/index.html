@@ -1541,8 +1541,20 @@ function buildPlatform(prefix, key, color) {
   // 2) Top 5 (sin atipicos)
   renderPostList(`#t-${prefix}-top`, data.top5 || []);
 
-  // 3) Peores 5
-  renderPostList(`#t-${prefix}-worst`, data.worst5 || []);
+  // 3) Peores 5 (solo si hay posts distintos del top)
+  const worstList = data.worst5 || [];
+  if (worstList.length > 0) {
+    renderPostList(`#t-${prefix}-worst`, worstList);
+  } else {
+    // Ocultar seccion completa (h3 + card) cuando no hay peores separados
+    const worstCard = document.querySelector(`#t-${prefix}-worst`)?.closest(".chart-card");
+    if (worstCard) {
+      worstCard.style.display = "none";
+      // ocultar tambien el h3 previo
+      const prev = worstCard.previousElementSibling;
+      if (prev && prev.tagName === "H3") prev.style.display = "none";
+    }
+  }
 
   // === Charts de TAGS (mix de contenido + engagement por categoria) ===
   if (data.tag_summary && Object.keys(data.tag_summary).length) {
