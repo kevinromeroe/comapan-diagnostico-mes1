@@ -540,7 +540,7 @@ def propagate_tags_to_data(data, sb):
 
 
 
-def build_data_dict(sb: Supabase) -> dict:
+def build_data_dict(sb: Supabase, period: str = "diagnostico") -> dict:
     """Construye DATA desde la tabla `posts` (no depende de aggregates).
 
     Lee:
@@ -553,8 +553,15 @@ def build_data_dict(sb: Supabase) -> dict:
     from collections import Counter as _Counter
 
     BG = _tz(_td_local(hours=-5))  # America/Bogota
-    START = _dt(2026, 1, 1,  tzinfo=BG)
-    END   = _dt(2026, 5, 31, 23, 59, 59, tzinfo=BG)
+    if period == "diagnostico":
+        START = _dt(2026, 1, 1,  tzinfo=BG)
+        END   = _dt(2026, 5, 31, 23, 59, 59, tzinfo=BG)
+    else:
+        y, m = period.split("-")
+        import calendar as _cal
+        yi, mi = int(y), int(m)
+        START = _dt(yi, mi, 1, tzinfo=BG)
+        END   = _dt(yi, mi, _cal.monthrange(yi, mi)[1], 23, 59, 59, tzinfo=BG)
 
     def _to_bg(s):
         if not s: return None
@@ -565,9 +572,13 @@ def build_data_dict(sb: Supabase) -> dict:
         except Exception:
             return None
 
-    # --- accounts (snapshot vigente) ---
+    # --- accounts: preferir snapshot del periodo, fallback al de diagnostico ---
     accounts_rows = sb.select("accounts",
-        filter=f"client_id=eq.{CLIENT_ID}&period_id=eq.diagnostico")
+        filter=f"client_id=eq.{CLIENT_ID}&period_id=eq.{period}")
+    if not accounts_rows and period != "diagnostico":
+        print(f"  Sin accounts para {period}, usando snapshot de diagnostico")
+        accounts_rows = sb.select("accounts",
+            filter=f"client_id=eq.{CLIENT_ID}&period_id=eq.diagnostico")
     accounts: dict = {}
     for a in accounts_rows:
         cap = PLATFORM_CAPS.get(a["platform"], a["platform"].capitalize())
@@ -814,8 +825,8 @@ def build_data_dict(sb: Supabase) -> dict:
             })
     return {
         "_all_posts_for_tagging": all_for_tag,
-        "generated_at": "17/06/2026",
-        "ventana": {"desde": "2026-01-01", "hasta": "2026-05-31"},
+        "generated_at": _dt.now().strftime("%d/%m/%Y"),
+        "ventana": {"desde": START.strftime("%Y-%m-%d"), "hasta": END.strftime("%Y-%m-%d")},
         "accounts": accounts,
         "consolidated": consolidated,
         "instagram": blocks["instagram"],
@@ -825,15 +836,46 @@ def build_data_dict(sb: Supabase) -> dict:
         "fb_undated": 0,
         "fb_total":   blocks["facebook"].get("n_posts") or 0,
         "snapshots_history": snapshots,
-        "periodo_label": "Diagnóstico ampliado · Ene-May 2026",
-        "periodo_id":    "diagnostico-extendido",
+        "periodo_label": PERIOD_LABEL if "PERIOD_LABEL" in globals() else "Diagnóstico (Ene-May 2026)",
+        "periodo_id":    period,
     }
 
 
 def main() -> int:
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--period", default="diagnostico",
+                        help="ID del periodo (diagnostico | 2026-06 | 2026-07 ...)")
+    args = parser.parse_args()
+
+    global PERIOD_LABEL, VENTANA_DESDE, VENTANA_HASTA, TARGET_DIR, TARGET_HTML, ROOT_TARGET
+    period = args.period
+    # Ventana + labels + output path segun el periodo
+    if period == "diagnostico":
+        VENTANA_DESDE = "2026-01-01"
+        VENTANA_HASTA = "2026-05-31"
+        PERIOD_LABEL  = "Diagnóstico (Ene-May 2026)"
+        TARGET_DIR    = ROOT / "diagnostico"
+        ROOT_TARGET   = ROOT / "index.html"  # tambien copiar a landing
+    else:  # 2026-06, 2026-07, etc.
+        y, m = period.split("-")
+        yi, mi = int(y), int(m)
+        VENTANA_DESDE = f"{yi:04d}-{mi:02d}-01"
+        # ultimo dia del mes (simple: dia 28 seguro; para exactitud podriamos usar calendar)
+        import calendar
+        last_day = calendar.monthrange(yi, mi)[1]
+        VENTANA_HASTA = f"{yi:04d}-{mi:02d}-{last_day:02d}"
+        month_names = ["", "Enero","Febrero","Marzo","Abril","Mayo","Junio",
+                       "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"]
+        PERIOD_LABEL  = f"{month_names[mi]} {yi}"
+        TARGET_DIR    = ROOT / period
+        ROOT_TARGET   = None  # los periodos mensuales NO sobreescriben la landing
+
+    TARGET_HTML = TARGET_DIR / "index.html"
+    print(f"→ Construyendo periodo '{period}' → {TARGET_HTML.relative_to(ROOT)}")
+
     sb = Supabase()
-    print("→ Construyendo DATA desde Supabase…")
-    data = build_data_dict(sb)
+    data = build_data_dict(sb, period)
 
     # Heatmap (matriz dia x hora) + tagging de TODOS los posts via Gemini batched
     print("→ Generando heatmap dia x hora + tagging LLM (batched)…")

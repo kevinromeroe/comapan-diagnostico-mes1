@@ -2,6 +2,11 @@ name: Build diagnóstico extendido HTML (gratis)
 
 on:
   workflow_dispatch:
+    inputs:
+      period:
+        description: "Periodo a construir (diagnostico | 2026-06 | 2026-07 ...)"
+        required: true
+        default: "diagnostico"
 
 jobs:
   build:
@@ -26,13 +31,13 @@ jobs:
         run: python scripts/generate_narratives.py --period diagnostico-extendido
 
       - name: 2) Construir HTML estático con DATA embebida
-        run: python scripts/build_diagnostico_extendido_html.py
+        run: python scripts/build_diagnostico_extendido_html.py --period "${{ github.event.inputs.period }}"
 
       - name: 3) Commit & push (con retry si hay diff)
         run: |
           git config user.email "bot@datalitica.com.co"
           git config user.name "Datalitica Bot"
-          git add diagnostico/index.html index.html
+          git add "${{ github.event.inputs.period }}/index.html" diagnostico/index.html index.html || git add diagnostico/index.html index.html || true
           git diff --quiet --cached && echo "Sin cambios — nada que pushear" && exit 0
           git commit -m "Build automático: diagnóstico extendido (Ene-May 2026)"
           # Rebase sobre lo último por si alguien commiteó en paralelo
