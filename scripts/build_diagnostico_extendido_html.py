@@ -142,6 +142,63 @@ TAG_TAXONOMY = [
 ]
 
 
+def _guess_tag_from_caption(caption: str) -> str:
+    """Fallback inteligente: intenta deducir la categoria por keywords del caption.
+    Solo se usa cuando Gemini falla — para que ningun post quede como 'marca' vacio.
+    """
+    c = (caption or "").lower()
+    # Recetas: mencion de preparar/cocinar con el producto
+    if any(w in c for w in ["receta", "ingredientes", "preparacion", "preparación", "prepara",
+                             "mezclar", "cocina", "hornea", "unta", "rellena", "sirve", "combinar"]):
+        return "receta"
+    # Promocional: descuentos, ofertas, concursos
+    if any(w in c for w in ["descuento", "promo", "% off", "oferta", "gratis", "concurso",
+                             "gana", "sorteo", "$"]):
+        return "promocional"
+    # Interaccion: preguntas a la audiencia
+    if any(w in c for w in ["cuentanos", "cuéntanos", "cual es tu", "cuál es tu", "coméntanos",
+                             "comentanos", "cual prefieres", "cuál prefieres", "responde",
+                             "opinen", "opinas"]):
+        return "interaccion"
+    # Estacional: dia especial o efeméride
+    if any(w in c for w in ["dia de", "día de", "dia mundial", "día mundial", "dia internacional",
+                             "día internacional", "feliz cumple", "san valentin", "san valentín",
+                             "amor y amistad", "navidad", "halloween", "mundial", "final",
+                             "champions"]):
+        return "estacional"
+    # UGC: repost / gracias
+    if any(w in c for w in ["repost", "reposteo", "@usuario", "muchas gracias por", "compartes con",
+                             "muestrenos", "muéstrennos"]):
+        return "ugc"
+    # Educativo: tips / datos
+    if any(w in c for w in ["sabias que", "sabías que", "sabías", "sabias", "dato curioso",
+                             "tip", "trucos", "como hacer", "cómo hacer"]):
+        return "educativo"
+    # Cultura: equipo, colaboradores, oficina
+    if any(w in c for w in ["equipo", "colaboradores", "oficina", "planta", "trabajadores",
+                             "empleados", "nuestra gente"]):
+        return "cultura"
+    # Producto: mencion de producto especifico Comapan
+    if any(w in c for w in ["comapan", "pan tajado", "pancake", "brownie", "mantecada", "muffin",
+                             "sanduche", "sandwich", "arepa", "caladitos", "ponque", "ponqué",
+                             "pastel", "torta", "galleta"]):
+        return "producto"
+    # Ultimo recurso
+    return "marca"
+
+
+def _apply_keyword_fallback(batch):
+    """Aplica _guess_tag_from_caption a cada post del batch (cuando Gemini fallo)."""
+    counts = {}
+    for it in batch:
+        tag = _guess_tag_from_caption(it.get("caption", ""))
+        it["ref"]["tags"] = [tag]
+        it["ref"]["tag_primary"] = tag
+        counts[tag] = counts.get(tag, 0) + 1
+    top = ", ".join(f"{k}={v}" for k, v in sorted(counts.items(), key=lambda x: -x[1]))
+    print(f"       Fallback keyword: {len(batch)} posts distribuidos → {top}")
+
+
 def gemini_tag_posts_batched(data, api_key, sb=None, batch_size=25):
     """Etiqueta posts NO etiquetados aun. Persiste tags en Supabase para reuso."""
     if not api_key:
@@ -213,9 +270,16 @@ def gemini_tag_posts_batched(data, api_key, sb=None, batch_size=25):
             )
 
         prompt = (
-            "Clasifica cada publicacion de Comapan (panaderia colombiana). "
+            "Clasifica cada publicacion de Comapan (panaderia colombiana en Colombia). "
             "Asigna UNA etiqueta primaria obligatoria y entre 0 y 2 secundarias. "
             "TAXONOMIA CERRADA (no inventes): " + taxonomy_str + ". "
+            "REGLA IMPORTANTE: usa 'marca' SOLO cuando el post sea storytelling corporativo "
+            "sobre historia, valores o mision (ej. 'llevamos 75 anos endulzando hogares'). "
+            "Si el post menciona un producto especifico usar en el caption (pan tajado, "
+            "brownie, pancake, mantecada, muffin, arepa, sanduche, etc.) usa 'producto'. "
+            "Si describe como preparar algo usando el producto → 'receta'. "
+            "Si es sobre Mundial, dia especial, fecha conmemorativa → 'estacional' o 'tendencia'. "
+            "Si es pregunta o encuesta → 'interaccion'. "
             "Definiciones rapidas: producto=showcase de un item especifico; "
             "receta=cocinar con el producto; ugc=repost de cliente; "
             "estacional=fechas especiales (Dia Mujer, etc); tendencia=meme/pop; "
@@ -275,7 +339,8 @@ def gemini_tag_posts_batched(data, api_key, sb=None, batch_size=25):
                     idx = it.get("i")
                     if idx is None or idx >= len(batch): continue
                     primary = (it.get("primary") or "").lower().strip()
-                    if primary not in TAG_TAXONOMY: primary = "marca"
+                    if primary not in TAG_TAXONOMY:
+                        primary = _guess_tag_from_caption(batch[idx].get("caption", ""))
                     secondary = [t.lower().strip() for t in (it.get("secondary") or [])
                                  if t.lower().strip() in TAG_TAXONOMY and t.lower().strip() != primary][:2]
                     full_tags = [primary] + secondary
@@ -303,17 +368,10 @@ def gemini_tag_posts_batched(data, api_key, sb=None, batch_size=25):
             err_body = e.read().decode("utf-8", errors="ignore")[:600]
             print(f"    ⚠ Batch {batch_num}: HTTPError {e.code}")
             print(f"       Body: {err_body}")
-            # Fallback: marcar TODOS los posts del batch con tag default 'marca' para que no queden vacios
-            for it in batch:
-                it["ref"]["tags"] = ["marca"]
-                it["ref"]["tag_primary"] = "marca"
-            print(f"       Aplicado fallback: {len(batch)} posts marcados como 'marca'")
+            _apply_keyword_fallback(batch)
         except Exception as exc:
             print(f"    ⚠ Batch {batch_num}: {type(exc).__name__}: {exc}")
-            for it in batch:
-                it["ref"]["tags"] = ["marca"]
-                it["ref"]["tag_primary"] = "marca"
-            print(f"       Aplicado fallback: {len(batch)} posts marcados como 'marca'")
+            _apply_keyword_fallback(batch)
 
     # Pre-agregar usando TODOS los posts en queue (no solo top5)
     from collections import defaultdict

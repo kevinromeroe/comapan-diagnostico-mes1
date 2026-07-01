@@ -26,11 +26,7 @@ jobs:
       - name: Install deps
         run: pip install -r requirements.txt
 
-      - name: 1) Generar narrativas LLM (Gemini, gratis)
-        continue-on-error: true
-        run: python scripts/generate_narratives.py --period diagnostico-extendido
-
-      - name: 2) Construir HTML estático con DATA embebida
+      - name: Construir HTML estático con DATA embebida
         run: python scripts/build_diagnostico_extendido_html.py --period "${{ github.event.inputs.period }}"
 
       - name: 3) Commit & push (con retry si hay diff)
