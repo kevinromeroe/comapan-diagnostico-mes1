@@ -898,9 +898,22 @@ const fmt = n => {
   return new Intl.NumberFormat("es-CO").format(num);
 };
 
-const kpi = (label, value, sub, accent, tip) => {
+// Delta MoM badge: verde ↑ / rojo ↓ / gris = si es despreciable
+function deltaBadge(pct) {
+  if (pct === null || pct === undefined) return "";
+  const p = parseFloat(pct);
+  if (isNaN(p)) return "";
+  const arrow = p > 0.5 ? "▲" : (p < -0.5 ? "▼" : "▬");
+  const color = p > 0.5 ? "#3d8f3d" : (p < -0.5 ? "#c33" : "#8a8a8a");
+  const bg = p > 0.5 ? "#e8f2e2" : (p < -0.5 ? "#fbe6e6" : "#f0f0f0");
+  const sign = p > 0 ? "+" : "";
+  return `<span style="display:inline-block; margin-left:6px; padding:2px 7px; border-radius:10px; font-size:10px; font-weight:700; background:${bg}; color:${color}; letter-spacing:0.2px;" title="vs mes anterior">${arrow} ${sign}${p.toFixed(1)}%</span>`;
+}
+
+const kpi = (label, value, sub, accent, tip, deltaPct) => {
   const tipHtml = tip ? ` <i class="info-icon" data-tip="${tip.replace(/"/g, '&quot;')}">i</i>` : "";
-  return `<div class="kpi ${accent ? 'accent' : ''}"><div class="label">${label}${tipHtml}</div><div class="value">${value}</div>${sub ? `<div class="sub">${sub}</div>` : ""}</div>`;
+  const badgeHtml = (typeof deltaPct === "number") ? deltaBadge(deltaPct) : "";
+  return `<div class="kpi ${accent ? 'accent' : ''}"><div class="label">${label}${tipHtml}</div><div class="value">${value}${badgeHtml}</div>${sub ? `<div class="sub">${sub}</div>` : ""}</div>`;
 };
 
 // Header window
@@ -1103,14 +1116,17 @@ const totalEng = DATA.instagram.engagement_total + DATA.facebook.engagement_tota
 const postsPorSemana = (totalPosts / 13).toFixed(1);
 
 document.getElementById("kpi-hero").innerHTML =
-  kpi("Publicaciones totales", fmt(totalPosts), "en 4 redes · Ene-May 2026", true,
-    "Suma de todas las publicaciones (posts, reels, videos) en Instagram, Facebook, TikTok y LinkedIn durante Ene-May 2026.") +
+  kpi("Publicaciones totales", fmt(totalPosts), "en 4 redes", true,
+    "Suma de todas las publicaciones (posts, reels, videos) en las 4 redes en el periodo.",
+    DATA.deltas && DATA.deltas.global ? DATA.deltas.global.total_posts_pct : undefined) +
   kpi("Engagement total", fmt(totalEng), "likes + coments + shares", false,
-    "Engagement = la suma de likes + comentarios + shares públicos de todas las publicaciones del periodo en las 4 redes.") +
+    "Engagement = la suma de likes + comentarios + shares públicos de todas las publicaciones del periodo en las 4 redes.",
+    DATA.deltas && DATA.deltas.global ? DATA.deltas.global.total_engagement_pct : undefined) +
   kpi("Engagement por post", fmt(Math.round(totalEng / totalPosts)), "promedio global", false,
-    "Engagement total dividido entre el número de publicaciones. Indica qué tan eficiente fue cada pieza en promedio.") +
+    "Engagement total dividido entre el número de publicaciones.",
+    DATA.deltas && DATA.deltas.global ? DATA.deltas.global.engagement_por_post_pct : undefined) +
   kpi("Cadencia", `${postsPorSemana}`, "posts por semana en promedio", false,
-    "Posts por semana en promedio durante Ene-May 2026. Refleja el ritmo del calendario editorial.");
+    "Posts por semana en promedio durante el periodo.");
 
 // ── AUDIENCIA DIGITAL ACTUAL — métricas nativas por red ──
 const audienciaCards = document.getElementById("audiencia-cards");
@@ -1296,14 +1312,18 @@ function buildPlatform(prefix, key, color) {
         "Personas que dieron 'me gusta' a la página de Facebook. Históricamente equivale al concepto de seguidores.")
     : kpi("Seguidores", fmt(acc.seguidores), "", false,
         "Personas que siguen la cuenta y reciben sus publicaciones en su feed.");
+  const dPlat = (DATA.deltas && DATA.deltas[key]) || {};
   document.getElementById("kpi-" + prefix).innerHTML =
     kpiPrincipal +
     kpi("Posts (periodo)", fmt(data.n_posts), "", false,
-      "Cantidad de publicaciones realizadas en Ene-May 2026 en esta red.") +
+      "Cantidad de publicaciones realizadas en el periodo en esta red.",
+      dPlat.n_posts_pct) +
     kpi("Engagement total", fmt(data.engagement_total), "", false,
-      "Suma de likes + comentarios + shares de todos los posts del periodo en esta red.") +
+      "Suma de likes + comentarios + shares de todos los posts del periodo en esta red.",
+      dPlat.engagement_total_pct) +
     kpi("Eng. por post", fmt(data.engagement_promedio), `mediana: ${fmt(data.engagement_mediana)}`, false,
-      "Engagement total dividido entre la cantidad de posts. La mediana muestra el valor del post 'del medio' — útil cuando hay posts virales que distorsionan el promedio.");
+      "Engagement total dividido entre la cantidad de posts.",
+      dPlat.engagement_promedio_pct);
 
   // weekly
   if (data.by_week.labels.length) {
