@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       period:
-        description: "Periodo a construir (diagnostico | 2026-06 | 2026-07 ...)"
+        description: "Periodo a construir (all = todos | diagnostico | 2026-06 | ...)"
         required: true
-        default: "diagnostico"
+        default: "all"
 
 jobs:
   build:
@@ -37,9 +37,9 @@ jobs:
         run: |
           git config user.email "bot@datalitica.com.co"
           git config user.name "Datalitica Bot"
-          git add "${{ github.event.inputs.period }}/index.html" diagnostico/index.html index.html || git add diagnostico/index.html index.html || true
+          git add -A diagnostico/ 2026-*/ index.html 2>/dev/null || true
           git diff --quiet --cached && echo "Sin cambios — nada que pushear" && exit 0
-          git commit -m "Build automático: diagnóstico extendido (Ene-May 2026)"
+          git commit -m "Build automatico: periodos regenerados ($(date -u +%Y-%m-%d))"
           # Rebase sobre lo último por si alguien commiteó en paralelo
           git pull --rebase origin main || (git rebase --abort && exit 1)
           # Intentar push, con un retry si falla

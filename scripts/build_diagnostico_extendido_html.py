@@ -841,27 +841,30 @@ def build_data_dict(sb: Supabase, period: str = "diagnostico") -> dict:
     }
 
 
-def main() -> int:
-    import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--period", default="diagnostico",
-                        help="ID del periodo (diagnostico | 2026-06 | 2026-07 ...)")
-    args = parser.parse_args()
+def _get_all_periods(sb) -> list[str]:
+    """Lee los periodos disponibles en Supabase (tabla periods)."""
+    rows = sb.select("periods", filter=f"client_id=eq.{CLIENT_ID}")
+    ids = [r["id"] for r in rows]
+    # Ordenar: diagnostico primero, luego meses ascendente
+    def _key(pid):
+        if pid == "diagnostico": return (0, "")
+        return (1, pid)
+    return sorted(ids, key=_key)
 
+
+def _setup_period(period: str):
+    """Configura globals para el periodo. Retorna (target_html, root_target o None)."""
     global PERIOD_LABEL, VENTANA_DESDE, VENTANA_HASTA, TARGET_DIR, TARGET_HTML, ROOT_TARGET
-    period = args.period
-    # Ventana + labels + output path segun el periodo
     if period == "diagnostico":
         VENTANA_DESDE = "2026-01-01"
         VENTANA_HASTA = "2026-05-31"
         PERIOD_LABEL  = "Diagnóstico (Ene-May 2026)"
         TARGET_DIR    = ROOT / "diagnostico"
-        ROOT_TARGET   = ROOT / "index.html"  # tambien copiar a landing
-    else:  # 2026-06, 2026-07, etc.
+        ROOT_TARGET   = ROOT / "index.html"
+    else:
         y, m = period.split("-")
         yi, mi = int(y), int(m)
         VENTANA_DESDE = f"{yi:04d}-{mi:02d}-01"
-        # ultimo dia del mes (simple: dia 28 seguro; para exactitud podriamos usar calendar)
         import calendar
         last_day = calendar.monthrange(yi, mi)[1]
         VENTANA_HASTA = f"{yi:04d}-{mi:02d}-{last_day:02d}"
@@ -869,13 +872,102 @@ def main() -> int:
                        "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"]
         PERIOD_LABEL  = f"{month_names[mi]} {yi}"
         TARGET_DIR    = ROOT / period
-        ROOT_TARGET   = None  # los periodos mensuales NO sobreescriben la landing
-
+        ROOT_TARGET   = None
     TARGET_HTML = TARGET_DIR / "index.html"
-    print(f"→ Construyendo periodo '{period}' → {TARGET_HTML.relative_to(ROOT)}")
+
+
+def _build_one_period(sb, period: str) -> bool:
+    """Builda UN periodo. Retorna True si escribio archivo."""
+    _setup_period(period)
+    print(f"\n═══ Construyendo periodo '{period}' → {TARGET_HTML.relative_to(ROOT)} ═══")
+    try:
+        data = build_data_dict(sb, period)
+    except Exception as exc:
+        print(f"  ✗ build_data_dict fallo: {exc}")
+        return False
+
+    # Enriquecimientos (heatmap + tags + category_analysis)
+    print("→ Enriqueciendo…")
+    try:
+        posts = sb.select("posts", filter=f"client_id=eq.{CLIENT_ID}")
+        enrich_by_day_hour_heatmap(data, posts)
+        all_for_tag = data.pop("_all_posts_for_tagging", [])
+        data["__all_posts_for_tagging"] = all_for_tag
+        import os
+        gemini_tag_posts_batched(data, os.environ.get("GEMINI_API_KEY"), sb=sb, batch_size=25)
+        data.pop("__all_posts_for_tagging", None)
+        propagate_tags_to_data(data, sb)
+        compute_category_analysis(data, sb)
+    except Exception as exc:
+        print(f"  ⚠ Enriquecimiento parcial fallo: {exc}")
+
+    # Renderizar HTML clonando el template fuente
+    src = SOURCE_HTML.read_text()
+    data_json = json.dumps(data, ensure_ascii=False, separators=(", ", ": "))
+    src = re.sub(r"const DATA = \{.*?\};", lambda m: f"const DATA = {data_json};", src, count=1, flags=re.DOTALL)
+    # REPORT_META dinamico segun periodos disponibles
+    all_periods = _get_all_periods(sb)
+    def _label(pid):
+        if pid == "diagnostico": return "Diagnóstico (Ene-May 2026)"
+        y, m = pid.split("-")
+        month_names = ["", "Enero","Febrero","Marzo","Abril","Mayo","Junio",
+                       "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"]
+        return f"{month_names[int(m)]} {y}"
+    new_meta = {
+        "current": period,
+        "available": [{"id": pid, "label": _label(pid), "url": f"/{pid}/" if pid != "diagnostico" else "/diagnostico/"}
+                      for pid in all_periods],
+    }
+    meta_json = json.dumps(new_meta, ensure_ascii=False)
+    src = re.sub(r"const REPORT_META = \{.*?\};", lambda m: f"const REPORT_META = {meta_json};", src, count=1, flags=re.DOTALL)
+
+    # Post-process (unificar fechas viejas, etc.)
+    for old_s, new_s in [
+        ("Feb a Abr 2026", "Ene a May 2026"),
+        ("Feb-Abr 2026",   "Ene-May 2026"),
+        ("feb a abr 2026", "ene a may 2026"),
+        ("feb-abr 2026",   "ene-may 2026"),
+        ("Feb-Abr",        "Ene-May"),
+    ]:
+        src = src.replace(old_s, new_s)
+    src = src.replace(
+        'kpi("Posts publicados", fmt(d.n_posts)',
+        'kpi("Posts publicados", fmt(data.n_posts)'
+    )
+
+    TARGET_DIR.mkdir(parents=True, exist_ok=True)
+    TARGET_HTML.write_text(src)
+    print(f"  ✓ Generado: {TARGET_HTML.relative_to(ROOT)} ({len(src):,} bytes)")
+    if ROOT_TARGET is not None:
+        ROOT_TARGET.write_text(src)
+        print(f"  ✓ Sincronizado a landing: {ROOT_TARGET.relative_to(ROOT)}")
+    return True
+
+
+def main() -> int:
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--period", default="all",
+                        help="ID del periodo o 'all' para regenerar todos los disponibles")
+    args = parser.parse_args()
 
     sb = Supabase()
-    data = build_data_dict(sb, period)
+
+    if args.period == "all":
+        periods = _get_all_periods(sb)
+        print(f"═══ MODO ALL — {len(periods)} periodos detectados: {periods} ═══")
+        results = {}
+        for pid in periods:
+            results[pid] = _build_one_period(sb, pid)
+        ok = sum(1 for v in results.values() if v)
+        print(f"\n═══ RESUMEN: {ok}/{len(periods)} periodos generados ═══")
+        for pid, v in results.items():
+            print(f"  {'✓' if v else '✗'} {pid}")
+        return 0 if ok == len(periods) else 1
+
+    # Modo single-period (compat con uso anterior)
+    ok = _build_one_period(sb, args.period)
+    return 0 if ok else 1
 
     # Heatmap (matriz dia x hora) + tagging de TODOS los posts via Gemini batched
     print("→ Generando heatmap dia x hora + tagging LLM (batched)…")
