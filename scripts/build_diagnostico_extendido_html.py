@@ -636,6 +636,22 @@ def compute_deltas(data, sb, period):
 
     deltas = {"global": {}, "instagram": {}, "facebook": {}, "tiktok": {}, "linkedin": {}}
 
+    # Leer accounts del periodo anterior (para comparar seguidores)
+    PLAT_CAP = {"instagram":"Instagram", "facebook":"Facebook", "tiktok":"TikTok", "linkedin":"LinkedIn"}
+    prev_accounts_rows = sb.select("accounts",
+        filter=f"client_id=eq.{CLIENT_ID}&period_id=eq.{prev}")
+    if not prev_accounts_rows:
+        # Fallback: si el mes anterior no tiene accounts registrados, usar el snapshot del diagnostico
+        prev_accounts_rows = sb.select("accounts",
+            filter=f"client_id=eq.{CLIENT_ID}&period_id=eq.diagnostico")
+        print(f"  (accounts prev no encontrados en '{prev}', usando snapshot de diagnostico)")
+    prev_audience = {}
+    for a in prev_accounts_rows:
+        plat = a["platform"]
+        # Facebook: comparar page_likes; el resto: followers
+        val = a.get("page_likes") if plat == "facebook" else a.get("followers")
+        prev_audience[plat] = val
+
     # Per platform
     total_cur_posts = 0
     total_cur_eng = 0
@@ -653,11 +669,31 @@ def compute_deltas(data, sb, period):
         prev_ep = prev_b.get("engagement_promedio") or 0
         prev_em = prev_b.get("engagement_mediana") or 0
 
+        # Audiencia (seguidores o page_likes)
+        cap = PLAT_CAP[plat]
+        acc_cur = (data.get("accounts") or {}).get(cap) or {}
+        cur_aud = None
+        try:
+            key = "page_likes" if plat == "facebook" else "seguidores"
+            v = acc_cur.get(key)
+            if v not in (None, ""):
+                cur_aud = int(v)
+        except Exception:
+            cur_aud = None
+        prev_aud = prev_audience.get(plat)
+        # Prev viene como int/None desde Supabase
+        try:
+            prev_aud = int(prev_aud) if prev_aud not in (None, "") else None
+        except Exception:
+            prev_aud = None
+        audience_pct = _pct(cur_aud, prev_aud) if (cur_aud is not None and prev_aud is not None) else None
+
         deltas[plat] = {
             "n_posts_pct":            _pct(cur_n,  prev_n),
             "engagement_total_pct":   _pct(cur_et, prev_et),
             "engagement_promedio_pct":_pct(cur_ep, prev_ep),
             "engagement_mediana_pct": _pct(cur_em, prev_em),
+            "audience_pct":           audience_pct,
         }
         total_cur_posts += cur_n
         total_cur_eng   += cur_et

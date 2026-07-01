@@ -1304,14 +1304,18 @@ function buildPlatform(prefix, key, color) {
   // KPI principal varía por plataforma:
   // - IG/FB/LI: Seguidores
   // - TikTok: Views totales (el actor no entrega followers)
+  const audiencePct = (DATA.deltas && DATA.deltas[key]) ? DATA.deltas[key].audience_pct : undefined;
   const kpiPrincipal = prefix === "tt"
-    ? kpi("Posts publicados", fmt(data.n_posts), "en Ene-May 2026", false,
-        "Número de videos publicados por @comapanco en el periodo analizado. TikTok no expone seguidores en su API pública.")
+    ? kpi("Posts publicados", fmt(data.n_posts), "en el periodo", false,
+        "Número de videos publicados por @comapanco en el periodo analizado. TikTok no expone seguidores en su API pública.",
+        (DATA.deltas && DATA.deltas[key]) ? DATA.deltas[key].n_posts_pct : undefined)
     : prefix === "fb"
     ? kpi("Seguidores", fmt(acc.page_likes), "audiencia FB", false,
-        "Personas que dieron 'me gusta' a la página de Facebook. Históricamente equivale al concepto de seguidores.")
+        "Personas que dieron 'me gusta' a la página de Facebook. Históricamente equivale al concepto de seguidores.",
+        audiencePct)
     : kpi("Seguidores", fmt(acc.seguidores), "", false,
-        "Personas que siguen la cuenta y reciben sus publicaciones en su feed.");
+        "Personas que siguen la cuenta y reciben sus publicaciones en su feed.",
+        audiencePct);
   const dPlat = (DATA.deltas && DATA.deltas[key]) || {};
   document.getElementById("kpi-" + prefix).innerHTML =
     kpiPrincipal +
