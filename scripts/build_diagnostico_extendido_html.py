@@ -921,6 +921,56 @@ def _build_one_period(sb, period: str) -> bool:
     meta_json = json.dumps(new_meta, ensure_ascii=False)
     src = re.sub(r"const REPORT_META = \{.*?\};", lambda m: f"const REPORT_META = {meta_json};", src, count=1, flags=re.DOTALL)
 
+    # RESUMEN EJECUTIVO dinamico por periodo (reemplaza el hardcoded Ene-May)
+    def _plat_line(plat_key, plat_cap):
+        b = data.get(plat_key) or {}
+        return {"n": b.get("n_posts") or 0, "et": b.get("engagement_total") or 0,
+                "ep": b.get("engagement_promedio") or 0, "cap": plat_cap}
+    plats = [_plat_line("instagram","Instagram"), _plat_line("facebook","Facebook"),
+             _plat_line("tiktok","TikTok"),       _plat_line("linkedin","LinkedIn")]
+    total_posts = sum(x["n"] for x in plats)
+    total_eng   = sum(x["et"] for x in plats)
+    top_vol = max(plats, key=lambda x: x["n"]) if total_posts > 0 else None
+    top_eng = max(plats, key=lambda x: x["ep"]) if total_posts > 0 else None
+    acc = data.get("accounts") or {}
+    fb_audi = int((acc.get("Facebook") or {}).get("page_likes") or 0)
+    ig_audi = int((acc.get("Instagram") or {}).get("seguidores") or 0)
+    top_audi_plat, top_audi_val = ("Facebook", fb_audi) if fb_audi > ig_audi else ("Instagram", ig_audi)
+
+    if total_posts > 0:
+        p1 = (f"<strong>{total_posts}</strong> publicaciones en 4 redes durante "
+              f"<strong>{PERIOD_LABEL}</strong>, con un engagement total de "
+              f"<strong>{total_eng:,}</strong> interacciones. "
+              f"{top_vol['cap']} lidera en volumen ({top_vol['n']} posts) "
+              f"y {top_audi_plat} concentra la mayor audiencia ({top_audi_val:,}).")
+        p2 = (f"{top_eng['cap']} entrega el mejor engagement por post promedio "
+              f"(<strong>{round(top_eng['ep'])}</strong> interacciones por publicación). "
+              f"Es una señal para calibrar la mezcla editorial hacia lo que mejor conecta con la audiencia.")
+        # 3er parrafo: red con menos actividad
+        low_vol = min([x for x in plats if x["n"] > 0], key=lambda x: x["n"]) if any(x["n"]>0 for x in plats) else None
+        if low_vol and low_vol["cap"] != top_vol["cap"]:
+            p3 = (f"{low_vol['cap']} mantiene la cadencia más baja ({low_vol['n']} posts en el período) "
+                  f"y un engagement promedio de {round(low_vol['ep'])} por post. "
+                  f"Espacio para explorar si conviene aumentar frecuencia o replantear formato.")
+        else:
+            p3 = "Los patrones semanales y por hora del reporte permiten refinar el calendario editorial del próximo período."
+    else:
+        p1 = f"Sin actividad registrada en el período <strong>{PERIOD_LABEL}</strong> para las 4 redes analizadas."
+        p2 = "El equipo puede aprovechar este espacio para planificar el calendario del siguiente ciclo."
+        p3 = ""
+
+    resumen_html = (
+        f'<p style="margin: 0 0 8px;">{p1}</p>'
+        f'<p style="margin: 0 0 8px;">{p2}</p>' +
+        (f'<p style="margin: 0;">{p3}</p>' if p3 else "")
+    )
+    # Reemplazar el bloque de 3 <p> hardcoded dentro de la caja .resumen-corp
+    src = re.sub(
+        r'(<div style="font-size: 14\.5px;[^"]*color: #2a2a2a;[^"]*">)(.*?)(</div>\s*</div>)',
+        lambda m: m.group(1) + "\n      " + resumen_html + "\n    " + m.group(3),
+        src, count=1, flags=re.DOTALL
+    )
+
     # Post-process (unificar fechas viejas, etc.)
     for old_s, new_s in [
         ("Feb a Abr 2026", "Ene a May 2026"),
