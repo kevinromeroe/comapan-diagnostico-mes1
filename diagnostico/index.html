@@ -1605,7 +1605,14 @@ buildPlatform("li", "linkedin", COLORS.li);
 // =================================================================
 (function renderCategoryAnalysis() {
   const ca = (typeof DATA !== "undefined") ? DATA.category_analysis : null;
-  if (!ca || !ca.mix_global || !ca.mix_global.length) return;
+  const nCats = ca && ca.mix_global ? ca.mix_global.length : 0;
+  // Ocultar el tab entero cuando no hay data suficiente (< 3 categorias distintas)
+  if (nCats < 3) {
+    document.querySelectorAll('[data-tab="categorias"]').forEach(b => b.style.display = "none");
+    const sec = document.getElementById("tab-categorias");
+    if (sec) sec.style.display = "none";
+    return;
+  }
 
   const palette = ["#DB0632", "#F5DA6C", "#FFBC7D", "#5BAC47", "#19AAB2",
                    "#1a1a1a", "#8a8a8a", "#e1306c", "#1877f2", "#000000", "#0a66c2", "#F8E0E5"];
