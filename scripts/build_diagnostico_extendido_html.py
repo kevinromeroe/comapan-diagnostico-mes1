@@ -1081,8 +1081,9 @@ def _build_one_period(sb, period: str) -> bool:
         print(f"  ✗ build_data_dict fallo: {exc}")
         return False
 
-    # Enriquecimientos (heatmap + tags + category_analysis)
+    # Enriquecimientos: aislados por función para que un fallo no cascada
     print("→ Enriqueciendo…")
+    # 1) Heatmap + tagging + propagación
     try:
         posts = sb.select("posts", filter=f"client_id=eq.{CLIENT_ID}")
         enrich_by_day_hour_heatmap(data, posts)
@@ -1092,9 +1093,27 @@ def _build_one_period(sb, period: str) -> bool:
         gemini_tag_posts_batched(data, os.environ.get("GEMINI_API_KEY"), sb=sb, batch_size=25)
         data.pop("__all_posts_for_tagging", None)
         propagate_tags_to_data(data, sb)
+    except Exception as exc:
+        import traceback
+        print(f"  ⚠ Enriquecimiento (tags+heatmap) fallo: {exc}")
+        traceback.print_exc()
+
+    # 2) Análisis por categorías (aislado)
+    try:
         compute_category_analysis(data, sb)
     except Exception as exc:
-        print(f"  ⚠ Enriquecimiento parcial fallo: {exc}")
+        import traceback
+        print(f"  ⚠ compute_category_analysis fallo: {exc}")
+        traceback.print_exc()
+
+    # 3) Deltas MoM (aislado, con fallback explícito a None)
+    try:
+        compute_deltas(data, sb, period)
+    except Exception as exc:
+        import traceback
+        print(f"  ⚠ compute_deltas fallo: {exc}")
+        traceback.print_exc()
+        data["deltas"] = None
 
     # Renderizar HTML clonando el template fuente
     src = SOURCE_HTML.read_text()
@@ -1216,33 +1235,7 @@ def main() -> int:
 
     # Heatmap (matriz dia x hora) + tagging de TODOS los posts via Gemini batched
     print("→ Generando heatmap dia x hora + tagging LLM (batched)…")
-    try:
-        posts = sb.select("posts", filter=f"client_id=eq.{CLIENT_ID}")
-        enrich_by_day_hour_heatmap(data, posts)
-        print("  ✓ by_day_hour heatmap agregado (Bogota)")
-        # Mover _all_posts_for_tagging de data a estructura para tagging
-        all_for_tag = data.pop("_all_posts_for_tagging", [])
-        data["__all_posts_for_tagging"] = all_for_tag
-        import os
-        gemini_tag_posts_batched(data, os.environ.get("GEMINI_API_KEY"), sb=sb, batch_size=25)
-        data.pop("__all_posts_for_tagging", None)
-        # Propagacion de tags: top5 ya los tiene via ref; atipicos/worst5 son copias y
-        # no se enteran. Aqui forzamos pull desde Supabase + fallback "marca" para garantizar
-        # que ningun post se muestre sin etiqueta.
-        propagate_tags_to_data(data, sb)
-        compute_category_analysis(data, sb)
-        compute_deltas(data, sb, period)
-    except Exception as exc:
-        print(f"  ⚠ Enriquecimiento parcial fallo: {exc}")
 
-
-    print(f"  IG posts: {data['instagram'].get('n_posts')}")
-    print(f"  FB posts: {data['facebook'].get('n_posts')}")
-    print(f"  TT posts: {data['tiktok'].get('n_posts')}")
-    print(f"  LI posts: {data['linkedin'].get('n_posts')}")
-
-    # Leer template fuente (el HTML actual de /diagnostico/ que ya funciona)
-    src = SOURCE_HTML.read_text()
 
     # Reemplazar el bloque `const DATA = {...};`
     data_json = json.dumps(data, ensure_ascii=False, separators=(', ', ': '))
