@@ -556,6 +556,128 @@ def compute_category_analysis(data, sb):
     print(f"  ✓ category_analysis: {total} posts, {len(mix_global)} categorias, {len(gaps)} gaps")
 
 
+def _previous_period(period: str) -> str | None:
+    """Retorna el ID del mes anterior. None si es diagnostico o formato invalido."""
+    if period == "diagnostico":
+        return None
+    try:
+        y, m = period.split("-")
+        yi, mi = int(y), int(m)
+        if mi == 1:
+            return f"{yi-1}-12"
+        return f"{yi:04d}-{mi-1:02d}"
+    except Exception:
+        return None
+
+
+def _aggregate_posts_for_window(sb, start, end) -> dict:
+    """Lee posts en ventana Bogota y devuelve totales por plataforma."""
+    from datetime import datetime as _dt, timezone as _tz, timedelta as _td
+    from collections import defaultdict
+    BG = _tz(_td(hours=-5))
+    def _to_bg(s):
+        if not s: return None
+        try:
+            t = _dt.fromisoformat(s.replace("Z", "+00:00")) if s.endswith("Z") else _dt.fromisoformat(s)
+            if t.tzinfo is None: t = t.replace(tzinfo=_tz.utc)
+            return t.astimezone(BG)
+        except Exception:
+            return None
+    posts = sb.select("posts", filter=f"client_id=eq.{CLIENT_ID}")
+    by_plat = defaultdict(list)
+    for r in posts:
+        ts = _to_bg(r.get("posted_at"))
+        if not ts or ts < start or ts > end:
+            continue
+        by_plat[r.get("platform")].append(r.get("engagement") or 0)
+    out = {}
+    for plat, engs in by_plat.items():
+        n = len(engs)
+        te = sum(engs)
+        out[plat] = {
+            "n_posts": n,
+            "engagement_total": te,
+            "engagement_promedio": round(te / n, 1) if n else 0,
+            "engagement_mediana": sorted(engs)[n // 2] if n else 0,
+        }
+    return out
+
+
+def compute_deltas(data, sb, period):
+    """Calcula deltas MoM vs el mes anterior. Diagnostico → sin deltas.
+
+    Attach a data["deltas"] con:
+      { "global":   {"total_posts_pct": +X, "total_engagement_pct": +X, ...},
+        "instagram":{"n_posts_pct": +X, "engagement_total_pct": +X, "followers_pct": +X, ...},
+        ...
+      }
+    """
+    prev = _previous_period(period)
+    if not prev:
+        data["deltas"] = None
+        print("  Sin periodo anterior — deltas omitidos (baseline)")
+        return
+
+    from datetime import datetime as _dt, timezone as _tz, timedelta as _td
+    import calendar as _cal
+    BG = _tz(_td(hours=-5))
+    y, m = prev.split("-")
+    yi, mi = int(y), int(m)
+    START_PREV = _dt(yi, mi, 1, tzinfo=BG)
+    END_PREV   = _dt(yi, mi, _cal.monthrange(yi, mi)[1], 23, 59, 59, tzinfo=BG)
+
+    prev_metrics = _aggregate_posts_for_window(sb, START_PREV, END_PREV)
+    print(f"  Deltas vs {prev}: {sum(v['n_posts'] for v in prev_metrics.values())} posts en periodo anterior")
+
+    def _pct(cur, prev):
+        if prev is None or prev == 0:
+            return None if cur == 0 else 100.0  # infinito → 100 (arriba desde cero)
+        return round(((cur - prev) / prev) * 100, 1)
+
+    deltas = {"global": {}, "instagram": {}, "facebook": {}, "tiktok": {}, "linkedin": {}}
+
+    # Per platform
+    total_cur_posts = 0
+    total_cur_eng = 0
+    total_prev_posts = 0
+    total_prev_eng = 0
+    for plat in ("instagram","facebook","tiktok","linkedin"):
+        cur_b = data.get(plat) or {}
+        cur_n = cur_b.get("n_posts") or 0
+        cur_et = cur_b.get("engagement_total") or 0
+        cur_ep = cur_b.get("engagement_promedio") or 0
+        cur_em = cur_b.get("engagement_mediana") or 0
+        prev_b = prev_metrics.get(plat) or {}
+        prev_n = prev_b.get("n_posts") or 0
+        prev_et = prev_b.get("engagement_total") or 0
+        prev_ep = prev_b.get("engagement_promedio") or 0
+        prev_em = prev_b.get("engagement_mediana") or 0
+
+        deltas[plat] = {
+            "n_posts_pct":            _pct(cur_n,  prev_n),
+            "engagement_total_pct":   _pct(cur_et, prev_et),
+            "engagement_promedio_pct":_pct(cur_ep, prev_ep),
+            "engagement_mediana_pct": _pct(cur_em, prev_em),
+        }
+        total_cur_posts += cur_n
+        total_cur_eng   += cur_et
+        total_prev_posts += prev_n
+        total_prev_eng   += prev_et
+
+    # Global (resumen ejecutivo)
+    cur_prom = round(total_cur_eng / total_cur_posts, 1) if total_cur_posts else 0
+    prev_prom = round(total_prev_eng / total_prev_posts, 1) if total_prev_posts else 0
+    deltas["global"] = {
+        "total_posts_pct":         _pct(total_cur_posts, total_prev_posts),
+        "total_engagement_pct":    _pct(total_cur_eng, total_prev_eng),
+        "engagement_por_post_pct": _pct(cur_prom, prev_prom),
+    }
+
+    data["deltas"] = deltas
+    data["_prev_period_label"] = prev
+    print(f"  ✓ Deltas computados vs {prev}")
+
+
 def propagate_tags_to_data(data, sb):
     """Despues del tagging, re-pull tags desde Supabase y aplicar a top5/atipicos/worst5.
 
@@ -1108,8 +1230,8 @@ def main() -> int:
         # no se enteran. Aqui forzamos pull desde Supabase + fallback "marca" para garantizar
         # que ningun post se muestre sin etiqueta.
         propagate_tags_to_data(data, sb)
-        # Analisis por categorias (cross-platform aggregations)
         compute_category_analysis(data, sb)
+        compute_deltas(data, sb, period)
     except Exception as exc:
         print(f"  ⚠ Enriquecimiento parcial fallo: {exc}")
 

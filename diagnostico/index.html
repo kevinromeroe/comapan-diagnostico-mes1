@@ -1103,14 +1103,17 @@ const totalEng = DATA.instagram.engagement_total + DATA.facebook.engagement_tota
 const postsPorSemana = (totalPosts / 13).toFixed(1);
 
 document.getElementById("kpi-hero").innerHTML =
-  kpi("Publicaciones totales", fmt(totalPosts), "en 4 redes · Ene-May 2026", true,
-    "Suma de todas las publicaciones (posts, reels, videos) en Instagram, Facebook, TikTok y LinkedIn durante Ene-May 2026.") +
+  kpi("Publicaciones totales", fmt(totalPosts), "en 4 redes", true,
+    "Suma de todas las publicaciones (posts, reels, videos) en las 4 redes en el periodo.",
+    DATA.deltas && DATA.deltas.global ? DATA.deltas.global.total_posts_pct : undefined) +
   kpi("Engagement total", fmt(totalEng), "likes + coments + shares", false,
-    "Engagement = la suma de likes + comentarios + shares públicos de todas las publicaciones del periodo en las 4 redes.") +
+    "Engagement = la suma de likes + comentarios + shares públicos de todas las publicaciones del periodo en las 4 redes.",
+    DATA.deltas && DATA.deltas.global ? DATA.deltas.global.total_engagement_pct : undefined) +
   kpi("Engagement por post", fmt(Math.round(totalEng / totalPosts)), "promedio global", false,
-    "Engagement total dividido entre el número de publicaciones. Indica qué tan eficiente fue cada pieza en promedio.") +
+    "Engagement total dividido entre el número de publicaciones.",
+    DATA.deltas && DATA.deltas.global ? DATA.deltas.global.engagement_por_post_pct : undefined) +
   kpi("Cadencia", `${postsPorSemana}`, "posts por semana en promedio", false,
-    "Posts por semana en promedio durante Ene-May 2026. Refleja el ritmo del calendario editorial.");
+    "Posts por semana en promedio durante el periodo.");
 
 // ── AUDIENCIA DIGITAL ACTUAL — métricas nativas por red ──
 const audienciaCards = document.getElementById("audiencia-cards");
