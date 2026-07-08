@@ -2,6 +2,11 @@ name: Ingest junio 2026 FULL (4 plataformas con caps)
 
 on:
   workflow_dispatch:
+    inputs:
+      period:
+        description: "Mes a ingestar (formato YYYY-MM, ej: 2026-07)"
+        required: true
+        default: "2026-07"
 
 jobs:
   ingest:
@@ -21,7 +26,7 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Run full ingester (IG, FB, TT, LI)
-        run: python scripts/ingest_junio_full.py
+        run: python scripts/ingest_junio_full.py --period "${{ github.event.inputs.period }}"
 
       - name: Resumen
         if: always()

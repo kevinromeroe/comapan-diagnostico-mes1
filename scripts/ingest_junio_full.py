@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Ingester FULL para junio 2026: lanza los 4 actores con caps de seguridad,
-filtra a calendario junio (1-30), y persiste todo en Supabase.
+"""Ingester FULL mensual: lanza los 4 actores con caps de seguridad,
+filtra al calendario del mes indicado, y persiste todo en Supabase.
 
 Costo esperado: ~$0.80 USD. Cap total absoluto: ~$1.90 USD.
 
@@ -15,7 +15,8 @@ Caps por actor (max_total_charge_usd):
     TOTAL cap:     $2.10
 
 Uso (en workflow):
-    python scripts/ingest_junio_full.py
+    python scripts/ingest_junio_full.py --period 2026-06
+    python scripts/ingest_junio_full.py --period 2026-07
 """
 from __future__ import annotations
 
@@ -81,9 +82,9 @@ def _dl_thumb(url: str, plat: str, post_id: str) -> str | None:
     except Exception:
         return None
 
-log = get_logger("ingest-junio-full")
+log = get_logger("ingest-monthly")
 CLIENT_ID = "comapan"
-PERIOD_ID = "2026-06"
+PERIOD_ID = None  # se asigna desde --period en main()
 
 # Caps de seguridad por actor (en USD). Si Apify intenta cobrar más, devuelve error.
 CAPS = {
@@ -96,9 +97,14 @@ CAPS = {
 }
 
 
-def june_window() -> tuple[datetime, datetime]:
-    return (datetime(2026, 6, 1, tzinfo=timezone.utc),
-            datetime(2026, 6, 30, 23, 59, 59, tzinfo=timezone.utc))
+def month_window(period: str) -> tuple[datetime, datetime]:
+    """Devuelve (start, end) UTC del mes indicado por period ('YYYY-MM')."""
+    import calendar as _cal
+    y, m = period.split("-")
+    yi, mi = int(y), int(m)
+    last_day = _cal.monthrange(yi, mi)[1]
+    return (datetime(yi, mi, 1, tzinfo=timezone.utc),
+            datetime(yi, mi, last_day, 23, 59, 59, tzinfo=timezone.utc))
 
 
 def run_platform(name: str, label: str, fn) -> dict:
@@ -115,13 +121,25 @@ def run_platform(name: str, label: str, fn) -> dict:
 
 
 def main() -> int:
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--period", required=True,
+                        help="Periodo en formato YYYY-MM (ej: 2026-06, 2026-07)")
+    args = parser.parse_args()
+
+    global PERIOD_ID
+    PERIOD_ID = args.period
+    if not (len(PERIOD_ID) == 7 and PERIOD_ID[4] == "-"):
+        print(f"✗ Periodo invalido: '{PERIOD_ID}'. Usar formato YYYY-MM.")
+        return 1
+
     cfg = load_client(CLIENT_ID)["platforms"]
     sb = Supabase()
     apify = ApifyClient(token=require_env("APIFY_TOKEN"))
-    start, end = june_window()
+    start, end = month_window(PERIOD_ID)
 
     print(f"═══════════════════════════════════════════════")
-    print(f"  INGESTA FULL — junio 2026 ({start.date()} a {end.date()})")
+    print(f"  INGESTA FULL — {PERIOD_ID} ({start.date()} a {end.date()})")
     print(f"═══════════════════════════════════════════════")
 
     # Idempotencia: borrar lo viejo de junio antes
@@ -147,7 +165,7 @@ def main() -> int:
     if ig_run["ok"]:
         ig_run["data"]["posts"] = _filter_window(ig_run["data"]["posts"], start, end)
         platforms_data["instagram"] = ig_run["data"]
-        print(f"  Posts en junio: {len(ig_run['data']['posts'])}")
+        print(f"  Posts en el periodo: {len(ig_run['data']['posts'])}")
 
     # ── Facebook ── (2 actores: pages + posts)
     fb_account = None
@@ -178,7 +196,7 @@ def main() -> int:
     )
     if fb_posts_run["ok"]:
         fb_posts = fb_posts_run["data"]
-        print(f"  Posts en junio: {len(fb_posts)}")
+        print(f"  Posts en el periodo: {len(fb_posts)}")
 
     if fb_account or fb_posts:
         platforms_data["facebook"] = {"account": fb_account, "posts": fb_posts}
@@ -213,7 +231,7 @@ def main() -> int:
         if tt_profile:
             tt_posts_data["account"] = tt_profile  # priorizar perfil completo
         platforms_data["tiktok"] = tt_posts_data
-        print(f"  Posts en junio: {len(tt_posts_data['posts'])}")
+        print(f"  Posts en el periodo: {len(tt_posts_data['posts'])}")
 
     # ── LinkedIn ──
     li_run = run_platform("linkedin", "LinkedIn (harvestapi/linkedin-company-posts)", lambda:
@@ -228,7 +246,7 @@ def main() -> int:
     if li_run["ok"]:
         li_run["data"]["posts"] = _filter_window(li_run["data"]["posts"], start, end)
         platforms_data["linkedin"] = li_run["data"]
-        print(f"  Posts en junio: {len(li_run['data']['posts'])}")
+        print(f"  Posts en el periodo: {len(li_run['data']['posts'])}")
 
     # ── Persistir a Supabase ──
     print(f"\n═══════════════════════════════════════════════")
