@@ -48,3 +48,23 @@
 - URLs CDN de IG/FB expiran en 1-3 horas. Solución: descarga inmediata post-scrape (implementado).
 - URLs LinkedIn duran semanas — más tolerables.
 - Gemini 2.5 Flash usa "thinking tokens" internos. Con `thinkingConfig.thinkingBudget: 0` y `maxOutputTokens: 8000` funciona bien para batches de 25 posts.
+
+## Julio 2026 — Cierre de operatoria semanal
+
+### Estructura final
+- Ingest workflow renombrado a `ingest_monthly.yml` (antes junio-específico).
+- Script renombrado a `ingest_monthly.py`.
+- Eliminado `rescue_missing_thumbs` (bug del ingest ya está corregido).
+- Agregado `keepalive_supabase.yml` con cron semanal para prevenir auto-pause.
+
+### Fix crítico
+- Bug: el ingest descargaba thumbnails al runner efímero de GitHub Actions
+  pero no los commiteaba al repo. Los HTML apuntaban a archivos inexistentes
+  → imágenes rotas.
+- Fix: nuevo step `Commit thumbnails al repo` con permissions write al final
+  de cada ingest. **No vuelve a pasar.**
+
+### Julio 2026
+- Ingest del 8 de julio 2026 con 8 posts iniciales.
+- 8 thumbnails rescatados y persistidos.
+- Reporte visible en https://comapan.datalitica.com.co/2026-07/.

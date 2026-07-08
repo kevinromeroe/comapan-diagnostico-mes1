@@ -1,4 +1,4 @@
-name: Ingest junio 2026 FULL (4 plataformas con caps)
+name: Ingest mensual (4 plataformas con caps)
 
 on:
   workflow_dispatch:
@@ -28,7 +28,7 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Run full ingester (IG, FB, TT, LI)
-        run: python scripts/ingest_junio_full.py --period "${{ github.event.inputs.period }}"
+        run: python scripts/ingest_monthly.py --period "${{ github.event.inputs.period }}"
 
       - name: Commit thumbnails al repo (persistir imágenes descargadas)
         run: |
