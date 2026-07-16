@@ -1122,7 +1122,25 @@ def _build_one_period(sb, period: str) -> bool:
     # 1) Heatmap + tagging + propagación
     try:
         posts = sb.select("posts", filter=f"client_id=eq.{CLIENT_ID}")
-        enrich_by_day_hour_heatmap(data, posts)
+        # FIX 2026-07-16: filtrar posts al periodo antes de agregarlos al heatmap.
+        # Sin esto, el heatmap de cualquier mes agrega TODOS los historicos del
+        # cliente (ej: sandwich viral de enero salia en el heatmap de julio).
+        if VENTANA_DESDE and VENTANA_HASTA:
+            _start_iso = VENTANA_DESDE  # ej "2026-07-01"
+            _end_iso   = VENTANA_HASTA  # ej "2026-07-31"
+            _posts_periodo = []
+            for _p in posts:
+                _ts = _to_bogota(_parse_ts(_p.get("posted_at")))
+                if not _ts:
+                    continue
+                _d = _ts.strftime("%Y-%m-%d")
+                if _start_iso <= _d <= _end_iso:
+                    _posts_periodo.append(_p)
+            print(f"  posts filtrados al periodo [{_start_iso} -> {_end_iso}]: "
+                  f"{len(_posts_periodo)}/{len(posts)}")
+        else:
+            _posts_periodo = posts
+        enrich_by_day_hour_heatmap(data, _posts_periodo)
         all_for_tag = data.pop("_all_posts_for_tagging", [])
         data["__all_posts_for_tagging"] = all_for_tag
         import os
