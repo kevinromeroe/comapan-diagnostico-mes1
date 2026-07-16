@@ -1,12 +1,14 @@
 name: Ingest mensual (4 plataformas con caps)
 
 on:
+  schedule:
+    - cron: "0 12 * * 1"   # Lunes 07:00 Bogota (12:00 UTC) — ingest automático del mes en curso
   workflow_dispatch:
     inputs:
       period:
-        description: "Mes a ingestar (formato YYYY-MM, ej: 2026-07)"
-        required: true
-        default: "2026-07"
+        description: "Mes a ingestar (YYYY-MM). Vacío = mes actual detectado automáticamente"
+        required: false
+        default: ""
 
 jobs:
   ingest:
@@ -27,8 +29,19 @@ jobs:
       - name: Install deps
         run: pip install -r requirements.txt
 
+      - name: Determinar periodo (input o mes actual Bogota)
+        id: p
+        run: |
+          IN="${{ github.event.inputs.period }}"
+          if [ -z "$IN" ]; then
+            # Cron o dispatch sin input → mes actual en Bogota (UTC-5)
+            IN=$(TZ='America/Bogota' date +%Y-%m)
+          fi
+          echo "period=$IN" >> "$GITHUB_OUTPUT"
+          echo "→ Ingest para $IN"
+
       - name: Run full ingester (IG, FB, TT, LI)
-        run: python scripts/ingest_monthly.py --period "${{ github.event.inputs.period }}"
+        run: python scripts/ingest_monthly.py --period "${{ steps.p.outputs.period }}"
 
       - name: Commit thumbnails al repo (persistir imágenes descargadas)
         run: |
@@ -44,10 +57,18 @@ jobs:
             sleep 2
           done
 
+      - name: Trigger build automatico
+        if: success()
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: build_diagnostico_extendido.yml
+          token: ${{ secrets.GITHUB_TOKEN }}
+          inputs: '{"period":"all"}'
+
       - name: Resumen
         if: always()
         run: |
-          echo "### Ingest ${{ github.event.inputs.period }}" >> $GITHUB_STEP_SUMMARY
+          echo "### Ingest ${{ steps.p.outputs.period }}" >> $GITHUB_STEP_SUMMARY
           echo "- Posts + accounts + aggregates en Supabase" >> $GITHUB_STEP_SUMMARY
-          echo "- Thumbnails locales commiteados al repo" >> $GITHUB_STEP_SUMMARY
-          echo "- Siguiente: disparar build_diagnostico_extendido con period=all" >> $GITHUB_STEP_SUMMARY
+          echo "- Thumbnails locales commiteados" >> $GITHUB_STEP_SUMMARY
+          echo "- Build encadenado automaticamente" >> $GITHUB_STEP_SUMMARY

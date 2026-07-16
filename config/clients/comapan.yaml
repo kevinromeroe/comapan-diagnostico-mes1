@@ -114,18 +114,20 @@ platforms:
       posts:
         actor_id: GdWCkxBtKWOsKjdch     # clockworks/tiktok-scraper
         actor_name: clockworks/tiktok-scraper
-        # Schema del actor cambio 2026-06-30. Estos son todos los campos que ahora exige.
-        # Referencia: probe del 30-jun-2026 mostro el INPUT del ultimo run exitoso.
+        # Config ajustada 2026-07-16 tras devolver 0 posts con configuración anterior.
+        # Cambios: resultsPerPage 100→300, excludePinnedPosts false→true,
+        # videoSearchSorting MOST_RELEVANT→LATEST, videoSearchDateFilter ALL_TIME→ANY,
+        # profileSorting mantiene "latest" (más nuevos primero).
         input:
           profiles: ["comapanco"]
-          resultsPerPage: 100
+          resultsPerPage: 300
           profileScrapeSections: ["videos"]
           profileSorting: "latest"
-          excludePinnedPosts: false
+          excludePinnedPosts: true
           searchSection: ""
           maxProfilesPerQuery: 10
-          videoSearchSorting: "MOST_RELEVANT"
-          videoSearchDateFilter: "ALL_TIME"
+          videoSearchSorting: "LATEST"
+          videoSearchDateFilter: "ANY"
           scrapeRelatedVideos: false
           shouldDownloadVideos: false
           shouldDownloadCovers: false

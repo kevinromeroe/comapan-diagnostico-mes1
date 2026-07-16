@@ -98,13 +98,17 @@ CAPS = {
 
 
 def month_window(period: str) -> tuple[datetime, datetime]:
-    """Devuelve (start, end) UTC del mes indicado por period ('YYYY-MM')."""
+    """Devuelve (start, end) del mes indicado en HORA BOGOTA (UTC-5).
+    Un post publicado a las 22:00 Bogotá del último día del mes queda incluido.
+    """
     import calendar as _cal
+    from datetime import timedelta
+    BG = timezone(timedelta(hours=-5))
     y, m = period.split("-")
     yi, mi = int(y), int(m)
     last_day = _cal.monthrange(yi, mi)[1]
-    return (datetime(yi, mi, 1, tzinfo=timezone.utc),
-            datetime(yi, mi, last_day, 23, 59, 59, tzinfo=timezone.utc))
+    return (datetime(yi, mi, 1, tzinfo=BG),
+            datetime(yi, mi, last_day, 23, 59, 59, tzinfo=BG))
 
 
 def run_platform(name: str, label: str, fn) -> dict:
@@ -216,20 +220,33 @@ def main() -> int:
     if tt_prof_run["ok"]:
         tt_profile = tt_prof_run["data"].get("account")
 
-    tt_posts_run = run_platform("tt_posts", "TikTok posts (clockworks/tiktok-scraper)", lambda:
-        normalize.normalize_tiktok(
+    def _tt_actor_call(input_override=None):
+        base = cfg["tiktok"]["apify"]["posts"]["input"]
+        actor_input = {**base, **(input_override or {})}
+        return normalize.normalize_tiktok(
             apify.run_actor_sync(
                 cfg["tiktok"]["apify"]["posts"]["actor_id"],
-                cfg["tiktok"]["apify"]["posts"]["input"],
+                actor_input,
                 max_total_charge_usd=CAPS["tiktok_posts"],
             )
         )
-    )
+    tt_posts_run = run_platform("tt_posts", "TikTok posts (clockworks/tiktok-scraper)", _tt_actor_call)
+    # AUTO-RETRY: si primera corrida devuelve 0 posts en ventana, reintentamos con config diferente
     if tt_posts_run["ok"]:
         tt_posts_data = tt_posts_run["data"]
-        tt_posts_data["posts"] = _filter_window(tt_posts_data["posts"], start, end)
+        posts_in_window = _filter_window(tt_posts_data["posts"], start, end)
+        if len(posts_in_window) == 0 and len(tt_posts_data["posts"]) < 10:
+            print(f"  ⚠ TT devolvió {len(tt_posts_data['posts'])} posts totales, 0 en ventana. Retry con oldestPostDateUnified…")
+            oldest = start.strftime("%Y-%m-%d")
+            tt_posts_run2 = run_platform("tt_posts_retry", "TikTok posts (retry)", lambda:
+                _tt_actor_call({"oldestPostDateUnified": oldest, "resultsPerPage": 500}))
+            if tt_posts_run2["ok"]:
+                tt_posts_data = tt_posts_run2["data"]
+                posts_in_window = _filter_window(tt_posts_data["posts"], start, end)
+                print(f"  Retry OK: {len(tt_posts_data['posts'])} total, {len(posts_in_window)} en ventana")
+        tt_posts_data["posts"] = posts_in_window
         if tt_profile:
-            tt_posts_data["account"] = tt_profile  # priorizar perfil completo
+            tt_posts_data["account"] = tt_profile
         platforms_data["tiktok"] = tt_posts_data
         print(f"  Posts en el periodo: {len(tt_posts_data['posts'])}")
 
