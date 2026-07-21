@@ -109,3 +109,23 @@ Tiempo total: **5–8 minutos** entre el inicio del cron y el sitio actualizado.
 Datalítica Colombia S.A.S.
 comercial@datalitica.com.co
 +57 322 835 2172
+
+## Workflows disponibles
+
+El repo tiene 3 workflows activos, todos manuales (`workflow_dispatch`) excepto el keepalive que corre semanalmente por cron.
+
+| Workflow | Cuándo dispararlo | Qué hace |
+|---|---|---|
+| **`ingest_monthly.yml`** | Cuando quieres traer data fresca al mes actual | Corre los actores de Apify (IG, FB pages, FB posts, **TikTok profile únicamente**, LinkedIn), filtra al mes en curso (Bogotá), inserta/actualiza posts en Supabase, descarga miniaturas y hace commit |
+| **`build_diagnostico_extendido.yml`** | Después de una ingesta, o cuando cambias código del build | Lee Supabase, recomputa agregados y heatmaps filtrando al período, corre Gemini para taggear posts nuevos, regenera hallazgos + resumen y publica en `comapan.datalitica.com.co/<periodo>/` |
+| **`keepalive_supabase.yml`** | Automático (cron lunes 06:00 Bogotá) | Ping simple a Supabase para que no se pause por inactividad (plan free) |
+
+### Flujo típico para actualizar el dashboard
+
+1. Actions → **Ingest mensual** → Run workflow (~3 min)
+2. Actions → **Build diagnóstico extendido HTML** → Run workflow (~3 min)
+3. Verificar en `https://comapan.datalitica.com.co/<mes-actual>/`
+
+### Nota TikTok
+
+Desde el fix del 2026-07-21, la ingesta usa **solo** el actor `clockworks/tiktok-profile-scraper` (ID `0FXVyOXXEmdGcV88a`), que retorna cuenta + posts frescos en un mismo dataset. Se descartó `clockworks/tiktok-scraper` (`GdWCkxBtKWOsKjdch`) porque devolvía dataset stale de forma intermitente.

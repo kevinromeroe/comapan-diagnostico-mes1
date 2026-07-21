@@ -220,35 +220,21 @@ def main() -> int:
     if tt_prof_run["ok"]:
         tt_profile = tt_prof_run["data"].get("account")
 
-    def _tt_actor_call(input_override=None):
-        base = cfg["tiktok"]["apify"]["posts"]["input"]
-        actor_input = {**base, **(input_override or {})}
-        return normalize.normalize_tiktok(
-            apify.run_actor_sync(
-                cfg["tiktok"]["apify"]["posts"]["actor_id"],
-                actor_input,
-                max_total_charge_usd=CAPS["tiktok_posts"],
-            )
-        )
-    tt_posts_run = run_platform("tt_posts", "TikTok posts (clockworks/tiktok-scraper)", _tt_actor_call)
-    # AUTO-RETRY: si primera corrida devuelve 0 posts en ventana, reintentamos con config diferente
-    if tt_posts_run["ok"]:
-        tt_posts_data = tt_posts_run["data"]
+    # FIX 2026-07-21: TT posts vienen del profile-scraper (0FXVyOXXEmdGcV88a).
+    # Motivo: el posts-scraper (GdWCkxBtKWOsKjdch = clockworks/tiktok-scraper) devuelve
+    # dataset stale de forma intermitente. El profile-scraper ya se corre para el snapshot
+    # de la cuenta y retorna posts fresh en el mismo dataset.
+    if tt_prof_run["ok"]:
+        tt_posts_data = tt_prof_run["data"]  # ya incluye {account, posts}
         posts_in_window = _filter_window(tt_posts_data["posts"], start, end)
-        if len(posts_in_window) == 0 and len(tt_posts_data["posts"]) < 10:
-            print(f"  ⚠ TT devolvió {len(tt_posts_data['posts'])} posts totales, 0 en ventana. Retry con oldestPostDateUnified…")
-            oldest = start.strftime("%Y-%m-%d")
-            tt_posts_run2 = run_platform("tt_posts_retry", "TikTok posts (retry)", lambda:
-                _tt_actor_call({"oldestPostDateUnified": oldest, "resultsPerPage": 500}))
-            if tt_posts_run2["ok"]:
-                tt_posts_data = tt_posts_run2["data"]
-                posts_in_window = _filter_window(tt_posts_data["posts"], start, end)
-                print(f"  Retry OK: {len(tt_posts_data['posts'])} total, {len(posts_in_window)} en ventana")
         tt_posts_data["posts"] = posts_in_window
         if tt_profile:
             tt_posts_data["account"] = tt_profile
         platforms_data["tiktok"] = tt_posts_data
-        print(f"  Posts en el periodo: {len(tt_posts_data['posts'])}")
+        print(f"  Posts TT (via profile-scraper 0FXVyOXXEmdGcV88a): "
+              f"{len(posts_in_window)} en ventana / {len(tt_prof_run['data']['posts'])} totales")
+    else:
+        print("  ⚠ TT profile-scraper fallo - no hay data TT en este run")
 
     # ── LinkedIn ──
     li_run = run_platform("linkedin", "LinkedIn (harvestapi/linkedin-company-posts)", lambda:
