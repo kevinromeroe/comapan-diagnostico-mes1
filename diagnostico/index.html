@@ -1891,24 +1891,15 @@ findings.forEach((f, i) => {
 });
 
 // ── RECOMENDACIONES ──
-const recos = [
-  {
-    title: "Reactivar LinkedIn con un calendario fijo",
-    body: "Empezar con 2 publicaciones por semana en LinkedIn aprovechando contenido que ya se produce: hitos de los 75 años, cultura interna y productos para el canal HORECA. No requiere producción nueva, solo adaptar el copy al tono profesional de la red.",
-    tags: ["Esfuerzo bajo", "Impacto alto", "30 días"]
-  },
-  {
-    title: "Definir un sistema de hashtags para Instagram",
-    body: "Acordar 4-6 hashtags fijos para usar en todos los posts del mes (ejemplos: #ComapanEnCasa, #DesayunoColombiano, #PanchiRecomienda) y rotarlos según el tipo de pieza. Es la forma más barata de que más gente nueva descubra los posts.",
-    tags: ["Esfuerzo bajo", "Impacto medio", "30 días"]
-  },
-  {
-    title: "Llevar los reels de Instagram también a TikTok",
-    body: "Cada reel que se publica en Instagram se puede subir a TikTok cambiando el sonido y ajustando el formato — son 10 minutos extra por video. Pasar de 2 a 5 videos por semana en TikTok abre una audiencia nueva sin grabar nada adicional.",
-    tags: ["Esfuerzo medio", "Impacto medio", "30-60 días"]
-  }
-];
+/* Recomendaciones dinámicas del período (DATA.hallazgos_llm.recomendaciones) */
+const recos = (DATA.hallazgos_llm && Array.isArray(DATA.hallazgos_llm.recomendaciones))
+  ? DATA.hallazgos_llm.recomendaciones : [];
 const recosEl = document.getElementById("recos");
+if (!recos.length && recosEl) {
+  recosEl.style.display = "none";
+  var _rprev = recosEl.previousElementSibling;
+  if (_rprev && _rprev.tagName === "H3") _rprev.style.display = "none";
+}
 recos.forEach((r, i) => {
   recosEl.innerHTML += `
     <div class="reco">

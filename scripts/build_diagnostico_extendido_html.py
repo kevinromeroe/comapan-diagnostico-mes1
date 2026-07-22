@@ -1169,6 +1169,17 @@ def _build_one_period(sb, period: str) -> bool:
         traceback.print_exc()
         data["deltas"] = None
 
+    # 4) Hallazgos + recomendaciones LLM del periodo (aislado)
+    try:
+        import os as _os_hz
+        from pipeline.transform import hallazgos_llm as _hz
+        _hz.generate(data, PERIOD_LABEL, _os_hz.environ.get("GEMINI_API_KEY"))
+    except Exception as exc:
+        import traceback
+        print(f"  \u26a0 hallazgos_llm fallo: {exc}")
+        traceback.print_exc()
+        data["hallazgos_llm"] = None
+
     # Renderizar HTML clonando el template fuente
     src = SOURCE_HTML.read_text()
     data_json = json.dumps(data, ensure_ascii=False, separators=(", ", ": "))
