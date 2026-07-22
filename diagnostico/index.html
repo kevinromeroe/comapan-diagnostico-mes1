@@ -197,6 +197,14 @@
     .chart-wrap { page-break-inside: avoid; max-height: 240px; }
     .chart-card { page-break-inside: avoid; }
     .kpi, .ranking, .net-card, .finding, .reco-card { page-break-inside: avoid; }
+    /* FIX-PDF-PRINT-2026: evitar desbordes en A4 landscape */
+    canvas { max-width: 100% !important; }
+    .chart-wrap { height: 210px !important; max-height: 210px !important; }
+    .chart-grid.cols-2 { grid-template-columns: 1fr 1fr !important; }
+    table { font-size: 9.5px !important; }
+    table th, table td { padding: 6px 8px !important; }
+    .post-thumb, .post-thumb-placeholder { width: 64px !important; height: 64px !important; }
+    .hm-cell { font-size: 7px !important; min-height: 16px !important; }
     /* Tooltips no van al PDF */
     [data-tip]::after, [data-tip]::before { display: none !important; }
     /* Footer impreso con metadata */
@@ -2021,5 +2029,41 @@ recos.forEach((r, i) => {
 })();
 </script>
 
+<script>
+/* FIX-PDF-PRINT-2026: redibujar charts antes de imprimir para que el PDF salga bien */
+(function () {
+  function resizeAllCharts() {
+    document.querySelectorAll("canvas").forEach(function (cv) {
+      try {
+        var ch = (window.Chart && Chart.getChart) ? Chart.getChart(cv) : null;
+        if (ch) { ch.resize(); ch.update("none"); }
+      } catch (e) {}
+    });
+  }
+  function showAllTabs() {
+    document.querySelectorAll(".tab").forEach(function (t) { t.style.display = "block"; });
+  }
+  function restoreTabs() {
+    document.querySelectorAll(".tab").forEach(function (t) { t.style.display = ""; });
+  }
+  window.addEventListener("beforeprint", function () {
+    showAllTabs();
+    resizeAllCharts();   // sincrono: lee el layout de impresion ya aplicado
+  });
+  window.addEventListener("afterprint", function () {
+    restoreTabs();
+    resizeAllCharts();
+  });
+  // Safari / algunos navegadores usan matchMedia en vez de los eventos
+  if (window.matchMedia) {
+    try {
+      window.matchMedia("print").addListener(function (m) {
+        if (m.matches) { showAllTabs(); resizeAllCharts(); }
+        else { restoreTabs(); resizeAllCharts(); }
+      });
+    } catch (e) {}
+  }
+})();
+</script>
 </body>
 </html>
