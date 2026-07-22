@@ -50,6 +50,9 @@ def call(
             "temperature": temperature,
             "maxOutputTokens": max_tokens,
             "responseMimeType": "application/json",
+            # FIX thinkingBudget: gemini-2.5-flash gasta el presupuesto de tokens
+            # "pensando" y devuelve vacio. Con budget 0 responde directo.
+            "thinkingConfig": {"thinkingBudget": 0},
         },
     }
 
