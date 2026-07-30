@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<title>Comapan · Diagnóstico de Redes Sociales</title>
+<title>Comapan · Dashboard de Redes Sociales</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16.png">
@@ -503,7 +503,7 @@
     <div class="divider"></div>
     <div class="title-block">
       <span class="eyebrow">Inteligencia de redes</span>
-      <span class="title">Diagnóstico <em>Comapan</em></span>
+      <span class="title">Dashboard de Redes Sociales · <em>Comapan</em></span>
     </div>
     <div class="divider"></div>
     <div class="agency-box"><img src="/assets/logo-14dias.svg" alt="Catorce Días"></div>
@@ -547,7 +547,6 @@ const REPORT_META = {"current": "diagnostico", "available": [{"id": "diagnostico
     <button class="menu-close" id="menu-close" aria-label="Cerrar menú">×</button>
   </div>
   <button data-tab="resumen">Resumen ejecutivo</button>
-  <button data-tab="ranking">Ranking de redes</button>
   <button data-tab="instagram">Instagram</button>
   <button data-tab="facebook">Facebook</button>
   <button data-tab="tiktok">TikTok</button>
@@ -558,7 +557,6 @@ const REPORT_META = {"current": "diagnostico", "available": [{"id": "diagnostico
 
 <nav class="tabs">
   <button class="active" data-tab="resumen">Resumen ejecutivo</button>
-  <button data-tab="ranking">Ranking de redes</button>
   <button data-tab="instagram">Instagram</button>
   <button data-tab="facebook">Facebook</button>
   <button data-tab="tiktok">TikTok</button>
@@ -578,7 +576,7 @@ const REPORT_META = {"current": "diagnostico", "available": [{"id": "diagnostico
     </div>
   </div>
   <div class="hero">
-    <div class="eyebrow">Diagnóstico de redes sociales · Ene a May 2026</div>
+    <div class="eyebrow">Panorama general · Ene a May 2026</div>
     <h1>Cómo se comporta <em>Comapan</em> en redes hoy.</h1>
     <p class="lead">Una lectura descriptiva de la actividad y desempeño de las cuentas oficiales en Instagram, Facebook, TikTok y LinkedIn — basada únicamente en datos públicos.</p>
 
@@ -586,57 +584,14 @@ const REPORT_META = {"current": "diagnostico", "available": [{"id": "diagnostico
   </div>
 
   <div class="section-head">
-    <div class="num">01 · Audiencia digital actual</div>
-    <h2>El tamaño de la huella en cada red</h2>
-    <div class="desc">Snapshot de hoy. Cada red se mide con su métrica nativa — los seguidores de Instagram no equivalen a los seguidores de Facebook, ni se suman entre sí.</div>
-  </div>
-  <div class="ranking" id="audiencia-cards"></div>
-
-  <div class="section-head">
-    <div class="num">02 · El veredicto</div>
-    <h2>Lectura general de la cuenta</h2>
-    <div class="desc">Síntesis ejecutiva del estado actual antes de profundizar por red.</div>
-  </div>
-
-  <div class="verdict">
-    <div class="label">Veredicto en una frase</div>
-    <p id="verdict-text"></p>
-  </div>
-
-  <div class="section-head">
-    <div class="num">03 · Distribución del esfuerzo</div>
-    <h2>¿Dónde está hablando Comapan?</h2>
-    <div class="desc">Volumen de publicaciones y engagement por red en Ene-May 2026.</div>
-  </div>
-
-  <div class="chart-grid cols-2">
-    <div class="chart-card"><h3>Posts publicados por red <i class="info-icon" data-tip="Total de publicaciones (fotos, carruseles, reels o videos) que cada red tuvo durante Ene-May 2026.">i</i></h3><div class="chart-wrap"><canvas id="c-posts-red"></canvas></div><div class="learn" id="l-posts-red"></div></div>
-    <div class="chart-card"><h3>Engagement total por red <i class="info-icon" data-tip="Engagement = suma de likes + comentarios + shares públicos. Es la actividad que la marca generó en sus publicaciones, sin contar quién las vio.">i</i></h3><div class="chart-wrap"><canvas id="c-eng-red"></canvas></div><div class="learn" id="l-eng-red"></div></div>
-  </div>
-
-  <div class="section-head">
-    <div class="num">04 · Evolución</div>
-    <h2>Cómo se movió el engagement semana a semana</h2>
-    <div class="desc">Engagement total semanal por red en Ene-May 2026. Es el indicador más honesto de momentum cuando no hay histórico retroactivo de seguidores.</div>
-  </div>
-  <div class="chart-card">
-    <h3>Engagement semanal por red <i class="info-icon" data-tip="Engagement (likes + comentarios + shares) sumado por semana en cada red. La pendiente de la curva muestra si la red está ganando o perdiendo tracción.">i</i></h3>
-    <div class="chart-wrap" style="height:340px"><canvas id="c-eng-evolution"></canvas></div>
-    <div class="learn" id="l-eng-evolution"></div>
-  </div>
-</section>
-
-<!-- ============ RANKING ============ -->
-<section class="tab" id="tab-ranking">
-  <div class="section-head">
-    <div class="num">03 · Ranking</div>
+    <div class="num">02 · Ranking</div>
     <h2>Cómo rinde cada red, ordenada por desempeño.</h2>
     <div class="desc">Las redes están ordenadas por engagement total. La cifra grande corresponde al engagement por publicación promedio — el indicador más importante para entender eficiencia.</div>
   </div>
   <div class="ranking" id="ranking-cards"></div>
 
   <div class="section-head">
-    <div class="num">04 · Vista comparada</div>
+    <div class="num">03 · Vista comparada</div>
     <h2>Las cuatro cuentas en una sola tabla</h2>
   </div>
   <div class="chart-card" style="padding:0">
@@ -648,7 +603,49 @@ const REPORT_META = {"current": "diagnostico", "available": [{"id": "diagnostico
       <tbody id="t-accounts"></tbody>
     </table>
   </div>
+
+  <div class="section-head">
+    <div class="num">04 · Audiencia digital actual</div>
+    <h2>El tamaño de la huella en cada red</h2>
+    <div class="desc">Snapshot de hoy. Cada red se mide con su métrica nativa — los seguidores de Instagram no equivalen a los seguidores de Facebook, ni se suman entre sí.</div>
+  </div>
+  <div class="ranking" id="audiencia-cards"></div>
+
+  <div class="section-head">
+    <div class="num">05 · El veredicto</div>
+    <h2>Lectura general de la cuenta</h2>
+    <div class="desc">Síntesis ejecutiva del estado actual antes de profundizar por red.</div>
+  </div>
+
+  <div class="verdict">
+    <div class="label">Veredicto en una frase</div>
+    <p id="verdict-text"></p>
+  </div>
+
+  <div class="section-head">
+    <div class="num">06 · Distribución del esfuerzo</div>
+    <h2>¿Dónde está hablando Comapan?</h2>
+    <div class="desc">Volumen de publicaciones y engagement por red en Ene-May 2026.</div>
+  </div>
+
+  <div class="chart-grid cols-2">
+    <div class="chart-card"><h3>Posts publicados por red <i class="info-icon" data-tip="Total de publicaciones (fotos, carruseles, reels o videos) que cada red tuvo durante Ene-May 2026.">i</i></h3><div class="chart-wrap"><canvas id="c-posts-red"></canvas></div><div class="learn" id="l-posts-red"></div></div>
+    <div class="chart-card"><h3>Engagement total por red <i class="info-icon" data-tip="Engagement = suma de likes + comentarios + shares públicos. Es la actividad que la marca generó en sus publicaciones, sin contar quién las vio.">i</i></h3><div class="chart-wrap"><canvas id="c-eng-red"></canvas></div><div class="learn" id="l-eng-red"></div></div>
+  </div>
+
+  <div class="section-head">
+    <div class="num">07 · Evolución</div>
+    <h2>Cómo se movió el engagement semana a semana</h2>
+    <div class="desc">Engagement total semanal por red en Ene-May 2026. Es el indicador más honesto de momentum cuando no hay histórico retroactivo de seguidores.</div>
+  </div>
+  <div class="chart-card">
+    <h3>Engagement semanal por red <i class="info-icon" data-tip="Engagement (likes + comentarios + shares) sumado por semana en cada red. La pendiente de la curva muestra si la red está ganando o perdiendo tracción.">i</i></h3>
+    <div class="chart-wrap" style="height:340px"><canvas id="c-eng-evolution"></canvas></div>
+    <div class="learn" id="l-eng-evolution"></div>
+  </div>
 </section>
+
+
 
 <!-- ============ INSTAGRAM ============ -->
 <section class="tab" id="tab-instagram">
