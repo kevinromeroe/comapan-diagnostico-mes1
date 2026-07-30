@@ -1216,39 +1216,36 @@ def _build_one_period(sb, period: str) -> bool:
     ig_audi = int((acc.get("Instagram") or {}).get("seguidores") or 0)
     top_audi_plat, top_audi_val = ("Facebook", fb_audi) if fb_audi > ig_audi else ("Instagram", ig_audi)
 
+    periodo_txt = "el periodo Ene-May 2026" if period == "diagnostico" else PERIOD_LABEL
     if total_posts > 0:
-        p1 = (f"<strong>{total_posts}</strong> publicaciones en 4 redes durante "
-              f"<strong>{PERIOD_LABEL}</strong>, con un engagement total de "
-              f"<strong>{total_eng:,}</strong> interacciones. "
-              f"{top_vol['cap']} lidera en volumen ({top_vol['n']} posts) "
-              f"y {top_audi_plat} concentra la mayor audiencia ({top_audi_val:,}).")
-        p2 = (f"{top_eng['cap']} entrega el mejor engagement por post promedio "
-              f"(<strong>{round(top_eng['ep'])}</strong> interacciones por publicación). "
-              f"Es una señal para calibrar la mezcla editorial hacia lo que mejor conecta con la audiencia.")
-        # 3er parrafo: red con menos actividad
-        low_vol = min([x for x in plats if x["n"] > 0], key=lambda x: x["n"]) if any(x["n"]>0 for x in plats) else None
-        if low_vol and low_vol["cap"] != top_vol["cap"]:
-            p3 = (f"{low_vol['cap']} mantiene la cadencia más baja ({low_vol['n']} posts en el período) "
-                  f"y un engagement promedio de {round(low_vol['ep'])} por post. "
-                  f"Espacio para explorar si conviene aumentar frecuencia o replantear formato.")
-        else:
-            p3 = "Los patrones semanales y por hora del reporte permiten refinar el calendario editorial del próximo período."
+        low_cand = [x for x in plats if x["n"] > 0]
+        low_vol = min(low_cand, key=lambda x: x["n"]) if low_cand else None
+        partes = [
+            f"<strong>En {periodo_txt}, Comapan publico {total_posts} piezas en 4 redes "
+            f"({total_eng:,} interacciones).</strong>",
+            f"{top_eng['cap']} es el motor de eficiencia -mejor engagement por post "
+            f"({round(top_eng['ep'])})-",
+            f"{top_audi_plat} aporta el mayor alcance ({top_audi_val:,} de audiencia)",
+        ]
+        if low_vol and low_vol["cap"] != top_eng["cap"]:
+            partes.append(f"y {low_vol['cap']} queda subutilizado ({low_vol['n']} "
+                          f"post{'s' if low_vol['n'] != 1 else ''})")
+        one = partes[0] + " " + ", ".join(partes[1:]) + f". Prioridad: sostener cadencia en {top_eng['cap']}."
     else:
-        p1 = f"Sin actividad registrada en el período <strong>{PERIOD_LABEL}</strong> para las 4 redes analizadas."
-        p2 = "El equipo puede aprovechar este espacio para planificar el calendario del siguiente ciclo."
-        p3 = ""
+        one = f"Sin actividad registrada en el periodo <strong>{periodo_txt}</strong> para las 4 redes analizadas."
 
-    resumen_html = (
-        f'<p style="margin: 0 0 8px;">{p1}</p>'
-        f'<p style="margin: 0 0 8px;">{p2}</p>' +
-        (f'<p style="margin: 0;">{p3}</p>' if p3 else "")
-    )
+    resumen_html = f'<p style="margin: 0; font-size: 15px; line-height: 1.7;">{one}</p>'
     # Reemplazar el bloque de 3 <p> hardcoded dentro de la caja .resumen-corp
     src = re.sub(
         r'(<div style="font-size: 14\.5px;[^"]*color: #2a2a2a;[^"]*">)(.*?)(</div>\s*</div>)',
         lambda m: m.group(1) + "\n      " + resumen_html + "\n    " + m.group(3),
         src, count=1, flags=re.DOTALL
     )
+
+    # Eyebrow dinamico del panorama (reemplaza fecha fija segun periodo)
+    panorama_label = "Ene a May 2026" if period == "diagnostico" else PERIOD_LABEL
+    src = src.replace("Panorama general \u00b7 Ene a May 2026",
+                      f"Panorama general \u00b7 {panorama_label}", 1)
 
     # Post-process (unificar fechas viejas, etc.)
     for old_s, new_s in [
