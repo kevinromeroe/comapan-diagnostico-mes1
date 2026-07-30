@@ -1216,15 +1216,15 @@ def _build_one_period(sb, period: str) -> bool:
     ig_audi = int((acc.get("Instagram") or {}).get("seguidores") or 0)
     top_audi_plat, top_audi_val = ("Facebook", fb_audi) if fb_audi > ig_audi else ("Instagram", ig_audi)
 
-    periodo_txt = "el periodo Ene-May 2026" if period == "diagnostico" else PERIOD_LABEL
+    periodo_txt = "el periodo Ene–May 2026" if period == "diagnostico" else PERIOD_LABEL
     if total_posts > 0:
         low_cand = [x for x in plats if x["n"] > 0]
         low_vol = min(low_cand, key=lambda x: x["n"]) if low_cand else None
         partes = [
-            f"<strong>En {periodo_txt}, Comapan publico {total_posts} piezas en 4 redes "
+            f"<strong>En {periodo_txt}, Comapan publicó {total_posts} piezas en 4 redes "
             f"({total_eng:,} interacciones).</strong>",
-            f"{top_eng['cap']} es el motor de eficiencia -mejor engagement por post "
-            f"({round(top_eng['ep'])})-",
+            f"{top_eng['cap']} es el motor de eficiencia —mejor engagement por post "
+            f"({round(top_eng['ep'])})—",
             f"{top_audi_plat} aporta el mayor alcance ({top_audi_val:,} de audiencia)",
         ]
         if low_vol and low_vol["cap"] != top_eng["cap"]:
@@ -1232,7 +1232,7 @@ def _build_one_period(sb, period: str) -> bool:
                           f"post{'s' if low_vol['n'] != 1 else ''})")
         one = partes[0] + " " + ", ".join(partes[1:]) + f". Prioridad: sostener cadencia en {top_eng['cap']}."
     else:
-        one = f"Sin actividad registrada en el periodo <strong>{periodo_txt}</strong> para las 4 redes analizadas."
+        one = f"Sin actividad registrada en el período <strong>{periodo_txt}</strong> para las 4 redes analizadas."
 
     resumen_html = f'<p style="margin: 0; font-size: 15px; line-height: 1.7;">{one}</p>'
     # Reemplazar el bloque de 3 <p> hardcoded dentro de la caja .resumen-corp
