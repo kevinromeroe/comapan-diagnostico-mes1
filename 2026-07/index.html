@@ -572,7 +572,7 @@ const REPORT_META = {"current": "2026-07", "available": [{"id": "diagnostico", "
   <div class="resumen-corp" style="margin: 0 0 40px; padding: 22px 26px; background: #FBFAF7; border: 1px solid #E8E4DA; border-radius: 4px;">
     <div style="font-size: 10px; color: #8a8a8a; text-transform: uppercase; letter-spacing: 1.4px; font-weight: 600; margin-bottom: 10px;">Resumen ejecutivo</div>
     <div style="font-size: 14.5px; line-height: 1.65; color: #2a2a2a; font-family: 'Roboto', sans-serif;">
-      <p style="margin: 0; font-size: 15px; line-height: 1.7;"><strong>En Julio 2026, Comapan publico 30 piezas en 4 redes (585 interacciones).</strong> TikTok es el motor de eficiencia -mejor engagement por post (26)-, Facebook aporta el mayor alcance (119,244 de audiencia), y LinkedIn queda subutilizado (1 post). Prioridad: sostener cadencia en TikTok.</p>
+      <p style="margin: 0; font-size: 15px; line-height: 1.7;"><strong>En Julio 2026, Comapan publicó 30 piezas en 4 redes (585 interacciones).</strong> TikTok es el motor de eficiencia —mejor engagement por post (26)—, Facebook aporta el mayor alcance (119,244 de audiencia), y LinkedIn queda subutilizado (1 post). Prioridad: sostener cadencia en TikTok.</p>
     </div>
   </div>
   <div class="hero">
@@ -605,36 +605,7 @@ const REPORT_META = {"current": "2026-07", "available": [{"id": "diagnostico", "
   </div>
 
   <div class="section-head">
-    <div class="num">04 · Audiencia digital actual</div>
-    <h2>El tamaño de la huella en cada red</h2>
-    <div class="desc">Snapshot de hoy. Cada red se mide con su métrica nativa — los seguidores de Instagram no equivalen a los seguidores de Facebook, ni se suman entre sí.</div>
-  </div>
-  <div class="ranking" id="audiencia-cards"></div>
-
-  <div class="section-head">
-    <div class="num">05 · El veredicto</div>
-    <h2>Lectura general de la cuenta</h2>
-    <div class="desc">Síntesis ejecutiva del estado actual antes de profundizar por red.</div>
-  </div>
-
-  <div class="verdict">
-    <div class="label">Veredicto en una frase</div>
-    <p id="verdict-text"></p>
-  </div>
-
-  <div class="section-head">
-    <div class="num">06 · Distribución del esfuerzo</div>
-    <h2>¿Dónde está hablando Comapan?</h2>
-    <div class="desc">Volumen de publicaciones y engagement por red en Ene-May 2026.</div>
-  </div>
-
-  <div class="chart-grid cols-2">
-    <div class="chart-card"><h3>Posts publicados por red <i class="info-icon" data-tip="Total de publicaciones (fotos, carruseles, reels o videos) que cada red tuvo durante Ene-May 2026.">i</i></h3><div class="chart-wrap"><canvas id="c-posts-red"></canvas></div><div class="learn" id="l-posts-red"></div></div>
-    <div class="chart-card"><h3>Engagement total por red <i class="info-icon" data-tip="Engagement = suma de likes + comentarios + shares públicos. Es la actividad que la marca generó en sus publicaciones, sin contar quién las vio.">i</i></h3><div class="chart-wrap"><canvas id="c-eng-red"></canvas></div><div class="learn" id="l-eng-red"></div></div>
-  </div>
-
-  <div class="section-head">
-    <div class="num">07 · Evolución</div>
+    <div class="num">04 · Evolución</div>
     <h2>Cómo se movió el engagement semana a semana</h2>
     <div class="desc">Engagement total semanal por red en Ene-May 2026. Es el indicador más honesto de momentum cuando no hay histórico retroactivo de seguidores.</div>
   </div>
@@ -1133,78 +1104,10 @@ document.getElementById("kpi-hero").innerHTML =
   kpi("Cadencia", `${postsPorSemana}`, "posts por semana en promedio", false,
     "Posts por semana en promedio durante el periodo.");
 
-// ── AUDIENCIA DIGITAL ACTUAL — métricas nativas por red ──
-const audienciaCards = document.getElementById("audiencia-cards");
-const audienciaConfig = [
-  { name: "Instagram", color: COLORS.ig, value: parseInt(DATA.accounts.Instagram?.seguidores || 0), label: "seguidores", note: "@" + (DATA.accounts.Instagram?.username || "comapan_co"), tip: "Seguidores = personas que siguen la cuenta y ven sus posts en su feed de Instagram." },
-  { name: "Facebook", color: COLORS.fb, value: parseInt(DATA.accounts.Facebook?.page_likes || 0), label: "seguidores", note: "ComapanCo", tip: "Seguidores = personas que dieron 'me gusta' a la página de Comapan en Facebook. Históricamente equivale al concepto de seguidores." },
-  { name: "TikTok", color: COLORS.tt, value: DATA.tiktok.n_posts, label: "posts publicados", note: "@comapanco · Ene-May", tip: "La API pública de TikTok no expone número de seguidores. Mostramos publicaciones del periodo como referencia de actividad." },
-  { name: "LinkedIn", color: COLORS.li, value: parseInt(DATA.accounts.LinkedIn?.seguidores || 0), label: "seguidores", note: "Comapan S.A.", tip: "Seguidores = personas y empresas que siguen la página corporativa de Comapan en LinkedIn." },
-];
-audienciaConfig.forEach(c => {
-  audienciaCards.innerHTML += `
-    <div class="net-card">
-      <div class="net-name"><span class="dot" style="background:${c.color}"></span>${c.name}</div>
-      <div class="stat-label">${c.label} <i class="info-icon" data-tip="${c.tip.replace(/"/g, '&quot;')}">i</i></div>
-      <div class="stat">${c.value ? fmt(c.value) : "n/d"}</div>
-      <div class="row" style="border-top:0; padding-top:12px"><span class="k">${c.note}</span></div>
-    </div>`;
-});
-
 // ── VEREDICTO ──
 const ig = DATA.instagram, fb = DATA.facebook, tt = DATA.tiktok, li = DATA.linkedin;
 const ratioIgFb = (ig.engagement_promedio / Math.max(fb.engagement_promedio, 1)).toFixed(1);
 
-document.getElementById("verdict-text").innerHTML =
-  `Comapan está activa en sus 4 redes y le apuesta fuerte a los reels y videos cortos. ` +
-  `<strong>Instagram es donde pasa todo</strong>: ${fmt(ig.n_posts)} publicaciones generaron ${fmt(ig.engagement_total)} interacciones de la gente — la audiencia que reacciona está ahí. ` +
-  `<strong>LinkedIn y TikTok están casi sin trabajar</strong> y son las dos oportunidades más claras del trimestre.`;
-
-// ── COMPARATIVO ──
-new Chart(document.getElementById("c-posts-red"), {
-  type: "bar",
-  data: {
-    labels: ["Instagram","Facebook","TikTok","LinkedIn"],
-    datasets: [{
-      data: [ig.n_posts, fb.n_posts, tt.n_posts, li.n_posts],
-      backgroundColor: [COLORS.ig, COLORS.fb, COLORS.tt, COLORS.li],
-      borderRadius: 4
-    }]
-  },
-  options: {
-    plugins: { legend: { display: false } },
-    maintainAspectRatio: false,
-    scales: { y: { beginAtZero: true, grid: { color: "#f0f0f0" } }, x: { grid: { display: false } } }
-  }
-});
-new Chart(document.getElementById("c-eng-red"), {
-  type: "bar",
-  data: {
-    labels: ["Instagram","Facebook","TikTok","LinkedIn"],
-    datasets: [{
-      data: [ig.engagement_total, fb.engagement_total, tt.engagement_total, li.engagement_total],
-      backgroundColor: [COLORS.ig, COLORS.fb, COLORS.tt, COLORS.li],
-      borderRadius: 4
-    }]
-  },
-  options: {
-    plugins: { legend: { display: false } },
-    maintainAspectRatio: false,
-    scales: { y: { beginAtZero: true, grid: { color: "#f0f0f0" } }, x: { grid: { display: false } } }
-  }
-});
-
-// Learns del comparativo de redes
-const networkPosts = [ig.n_posts, fb.n_posts, tt.n_posts, li.n_posts];
-const networkEng = [ig.engagement_total, fb.engagement_total, tt.engagement_total, li.engagement_total];
-const networkNames = ["Instagram", "Facebook", "TikTok", "LinkedIn"];
-const topPostNet = networkNames[maxIdx(networkPosts)];
-const topEngNet = networkNames[maxIdx(networkEng)];
-const lowEngNet = networkNames[minIdx(networkEng)];
-learn("l-posts-red",
-  `<strong>${topPostNet}</strong> concentra el mayor volumen de publicación con <strong>${fmt(Math.max(...networkPosts))} posts</strong> en el periodo. La distribución revela dónde está enfocado el esfuerzo editorial actual.`);
-learn("l-eng-red",
-  `<strong>${topEngNet}</strong> capta el grueso del engagement (${fmt(Math.max(...networkEng))} interacciones), mientras que <strong>${lowEngNet}</strong> muestra el desempeño más bajo (${fmt(Math.min(...networkEng))}). El gap entre la primera y la última red es de ${(Math.max(...networkEng)/Math.max(Math.min(...networkEng),1)).toFixed(1)}x.`);
 
 // ── EVOLUCIÓN SEMANAL DEL ENGAGEMENT (multi-línea por red) ──
 const evolutionWeeks = [...new Set([
