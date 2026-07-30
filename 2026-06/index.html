@@ -569,7 +569,7 @@ const REPORT_META = {"current": "2026-06", "available": [{"id": "diagnostico", "
 
 <!-- ============ RESUMEN EJECUTIVO ============ -->
 <section class="tab active" id="tab-resumen">
-  <div class="resumen-corp" style="margin: 0 0 40px; padding: 22px 26px; background: #FBFAF7; border: 1px solid #E8E4DA; border-radius: 4px;">
+  <div class="resumen-corp" style="margin: 0 0 18px; padding: 22px 26px; background: #FBFAF7; border: 1px solid #E8E4DA; border-radius: 4px;">
     <div style="font-size: 10px; color: #8a8a8a; text-transform: uppercase; letter-spacing: 1.4px; font-weight: 600; margin-bottom: 10px;">Resumen ejecutivo</div>
     <div style="font-size: 14.5px; line-height: 1.65; color: #2a2a2a; font-family: 'Roboto', sans-serif;">
       <p style="margin: 0; font-size: 15px; line-height: 1.7;"><strong>En Junio 2026, Comapan publicó 38 piezas en 4 redes (575 interacciones).</strong> TikTok es el motor de eficiencia —mejor engagement por post (22)—, Facebook aporta el mayor alcance (119,452 de audiencia). Prioridad: sostener cadencia en TikTok.</p>
@@ -613,6 +613,11 @@ const REPORT_META = {"current": "2026-06", "available": [{"id": "diagnostico", "
     <h3>Engagement semanal por red <i class="info-icon" data-tip="Engagement (likes + comentarios + shares) sumado por semana en cada red. La pendiente de la curva muestra si la red está ganando o perdiendo tracción.">i</i></h3>
     <div class="chart-wrap" style="height:340px"><canvas id="c-eng-evolution"></canvas></div>
     <div class="learn" id="l-eng-evolution"></div>
+  </div>
+  <div class="chart-card">
+    <h3>Publicaciones por red — semana a semana <i class="info-icon" data-tip="Número de publicaciones por red en cada semana del periodo. Muestra la cadencia de publicación de cada plataforma.">i</i></h3>
+    <div class="chart-wrap" style="height:340px"><canvas id="c-posts-evolution"></canvas></div>
+    <div class="learn" id="l-posts-evolution"></div>
   </div>
 </section>
 
@@ -834,14 +839,13 @@ const REPORT_META = {"current": "2026-06", "available": [{"id": "diagnostico", "
   <div class="footer-grid">
     <div style="flex:1; min-width:280px">
       <div class="powered">
-        © 2026 <strong>Datalítica Colombia S.A.S.</strong> (NIT 901.957.313-6) · Entregable confidencial para <strong>Catorce Días</strong> (D14S) · Datos de fuentes públicas
+        © 2026 <strong>Datalítica Colombia S.A.S.</strong> · Entregable confidencial para <strong>Catorce Días</strong> (D14S) · Datos de fuentes públicas
       </div>
       <details class="legal-details">
         <summary>Aviso legal y tratamiento de datos</summary>
         <div class="legal-content">
-          <p>Reporte confidencial; el acceso, copia o distribución no autorizada está prohibida.</p>
-          <p>Datalítica Colombia S.A.S. trata los datos públicos analizados conforme a la <strong>Ley 1581 de 2012</strong> (Colombia). Catorce Días, S.A. de C.V., destinatario del informe, opera conforme a la <strong>LFPDPPP</strong> (México) — política en <a href="https://catorcedias.com/politica-privacidad/" target="_blank" rel="noopener">catorcedias.com/politica-privacidad</a>.</p>
-          <p>Habeas data y consultas sobre tratamiento: <a href="mailto:informacion@catorcedias.com">informacion@catorcedias.com</a>.</p>
+          <p>Reporte confidencial — acceso o distribución no autorizada prohibida. Tratamiento de datos conforme a la <strong>Ley 1581/2012</strong> (Colombia) y la <strong>LFPDPPP</strong> (México).</p>
+          <p>Consultas: <a href="mailto:informacion@catorcedias.com">informacion@catorcedias.com</a> · Política: <a href="https://catorcedias.com/politica-privacidad/" target="_blank" rel="noopener">catorcedias.com/politica-privacidad</a>.</p>
         </div>
       </details>
     </div>
@@ -1159,6 +1163,22 @@ const trendLi = trendOf(alignToWeeks(li.by_week));
 learn("l-eng-evolution",
   `Tendencias del engagement semanal en el periodo — IG: <strong>${trendIg}</strong>, FB: <strong>${trendFb}</strong>, TT: <strong>${trendTt}</strong>, LI: <strong>${trendLi}</strong>. La curva revela qué red está ganando o perdiendo tracción independientemente del tamaño de la audiencia.`);
 
+function alignCountsToWeeks(byWeek) {
+  return evolutionWeeks.map(w => { const idx = byWeek.labels.indexOf(w); return idx >= 0 ? byWeek.counts[idx] : null; });
+}
+new Chart(document.getElementById("c-posts-evolution"), {
+  type: "line",
+  data: { labels: evolutionWeeks, datasets: [
+    { label: "Instagram", data: alignCountsToWeeks(ig.by_week), borderColor: COLORS.ig, backgroundColor: COLORS.ig+"11", tension:0.3, borderWidth:2.5, pointRadius:3 },
+    { label: "Facebook", data: alignCountsToWeeks(fb.by_week), borderColor: COLORS.fb, backgroundColor: COLORS.fb+"11", tension:0.3, borderWidth:2.5, pointRadius:3 },
+    { label: "TikTok", data: alignCountsToWeeks(tt.by_week), borderColor: COLORS.tt, backgroundColor: COLORS.tt+"11", tension:0.3, borderWidth:2.5, pointRadius:3 },
+    { label: "LinkedIn", data: alignCountsToWeeks(li.by_week), borderColor: COLORS.li, backgroundColor: COLORS.li+"11", tension:0.3, borderWidth:2.5, pointRadius:3 },
+  ]},
+  options: { plugins: { legend: { position:"bottom", labels:{boxWidth:12,padding:16} } }, maintainAspectRatio:false, interaction:{mode:"index",intersect:false}, scales:{ y:{beginAtZero:true,grid:{color:"#f0f0f0"}}, x:{grid:{display:false}} } }
+});
+learn("l-posts-evolution",
+  `Volumen total del periodo — IG: <strong>${ig.n_posts}</strong>, FB: <strong>${fb.n_posts}</strong>, TT: <strong>${tt.n_posts}</strong>, LI: <strong>${li.n_posts}</strong>. La curva muestra la cadencia de publicación semana a semana por red.`);
+
 // ── RANKING CARDS ──
 const ordered = [
   { name: "Instagram", color: COLORS.ig, key: "instagram", acc: DATA.accounts.Instagram },
@@ -1193,13 +1213,15 @@ DATA.consolidated.forEach(c => {
   const tr = document.createElement("tr");
   let audiencia;
   if (c.plataforma === "TikTok") {
-    audiencia = `${fmt(DATA.tiktok.n_posts)} <span style="color:var(--muted);font-size:11px">posts</span>`;
+    audiencia = `<span style="color:var(--muted)" title="La API pública de TikTok no expone seguidores.">n/d</span>`;
   } else if (c.plataforma === "Facebook") {
     audiencia = `${fmt(parseInt(DATA.accounts.Facebook?.page_likes || 0))} <span style="color:var(--muted);font-size:11px">seguidores</span>`;
   } else {
     audiencia = `${fmt(c.seguidores)} <span style="color:var(--muted);font-size:11px">seguidores</span>`;
   }
-  tr.innerHTML = `<td><strong>${c.plataforma}</strong></td><td>${c.username || "—"}</td><td>${audiencia}</td><td>${c["posts del periodo"]}</td><td>${fmt(c["engagement total"])}</td><td>${fmt(c.engagement_promedio_post)}</td><td><a href="${c.top_post_url}" target="_blank">ver →</a></td>`;
+  const _purl = {Instagram:u=>`https://instagram.com/${u}`,Facebook:u=>`https://facebook.com/${u}`,TikTok:u=>`https://tiktok.com/@${u}`,LinkedIn:u=>`https://linkedin.com/company/${u}`}[c.plataforma];
+  const _platCell = (c.username && _purl) ? `<a href="${_purl(c.username)}" target="_blank"><strong>${c.plataforma}</strong></a>` : `<strong>${c.plataforma}</strong>`;
+  tr.innerHTML = `<td>${_platCell}</td><td>${c.username || "—"}</td><td>${audiencia}</td><td>${c["posts del periodo"]}</td><td>${fmt(c["engagement total"])}</td><td>${fmt(c.engagement_promedio_post)}</td><td><a href="${c.top_post_url}" target="_blank">ver →</a></td>`;
   tbody.appendChild(tr);
 });
 
