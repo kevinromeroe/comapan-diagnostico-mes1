@@ -1190,6 +1190,7 @@ const ordered = [
 const ranking = document.getElementById("ranking-cards");
 ordered.forEach((n, i) => {
   const d = DATA[n.key];
+  const dl = (DATA.deltas && DATA.deltas[n.key]) || {};
   // TikTok usa "Views" como métrica de alcance; el resto usa "Seguidores"
   const alcanceLabel = n.key === "tiktok" ? "Posts publicados" : "Seguidores";
   const alcanceValue = n.key === "tiktok"
@@ -1200,10 +1201,10 @@ ordered.forEach((n, i) => {
       <div class="rank">#${i+1}</div>
       <div class="net-name"><span class="dot" style="background:${n.color}"></span>${n.name}</div>
       <div class="stat-label">Engagement por post</div>
-      <div class="stat">${fmt(d.engagement_promedio)}</div>
+      <div class="stat">${fmt(d.engagement_promedio)}${deltaBadge(dl.engagement_promedio_pct)}</div>
       <div class="row"><span class="k">${alcanceLabel}</span><span class="v">${alcanceValue}</span></div>
-      <div class="row"><span class="k">Posts (periodo)</span><span class="v">${fmt(d.n_posts)}</span></div>
-      <div class="row"><span class="k">Engagement total</span><span class="v">${fmt(d.engagement_total)}</span></div>
+      <div class="row"><span class="k">Posts (periodo)</span><span class="v">${fmt(d.n_posts)}${deltaBadge(dl.n_posts_pct)}</span></div>
+      <div class="row"><span class="k">Engagement total</span><span class="v">${fmt(d.engagement_total)}${deltaBadge(dl.engagement_total_pct)}</span></div>
     </div>`;
 });
 
