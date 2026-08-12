@@ -4,14 +4,22 @@ on:
   workflow_dispatch:
     inputs:
       period:
-        description: "Mes a ingestar (formato YYYY-MM, ej: 2026-07)"
-        required: true
-        default: "2026-07"
+        description: "Mes a ingestar (YYYY-MM). Déjalo vacío = mes actual (Bogotá)."
+        required: false
+        default: ""
+  schedule:
+    # Martes 21:00 Bogotá (UTC-5)  ==  Miércoles 02:00 UTC
+    - cron: "0 2 * * 3"
+
+# No permitir que se solapen dos ingestas
+concurrency:
+  group: comapan-ingest
+  cancel-in-progress: false
 
 jobs:
   ingest:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     permissions:
       contents: write
     env:
@@ -27,8 +35,25 @@ jobs:
       - name: Install deps
         run: pip install -r requirements.txt
 
-      - name: Run full ingester (IG, FB, TT, LI)
-        run: python scripts/ingest_monthly.py --period "${{ github.event.inputs.period }}"
+      - name: Resolver período (mes actual de Bogotá si viene vacío)
+        id: p
+        run: |
+          P="${{ github.event.inputs.period }}"
+          if [ -z "$P" ]; then P="$(TZ=America/Bogota date +%Y-%m)"; fi
+          echo "period=$P" >> "$GITHUB_OUTPUT"
+          echo "Período a ingestar: $P"
+
+      - name: Run full ingester (IG, FB, TT, LI) con reintentos
+        run: |
+          P="${{ steps.p.outputs.period }}"
+          ok=0
+          for i in 1 2 3; do
+            echo "== Intento $i de ingesta para $P =="
+            if python scripts/ingest_monthly.py --period "$P"; then ok=1; break; fi
+            echo "Ingesta falló (intento $i). Reintento en 60s… (útil para el cache de TikTok)"
+            sleep 60
+          done
+          [ "$ok" = "1" ] || { echo "::error::Ingesta falló tras 3 intentos"; exit 1; }
 
       - name: Commit thumbnails al repo (persistir imágenes descargadas)
         run: |
@@ -36,7 +61,7 @@ jobs:
           git config user.name "Datalitica Bot"
           git add assets/thumbs/ || true
           git diff --quiet --cached && echo "Sin thumbs nuevos" && exit 0
-          git commit -m "Ingest ${{ github.event.inputs.period }}: thumbnails persistidos"
+          git commit -m "Ingest ${{ steps.p.outputs.period }}: thumbnails persistidos"
           git pull --rebase origin main || true
           for i in 1 2 3; do
             git push && break
@@ -47,7 +72,58 @@ jobs:
       - name: Resumen
         if: always()
         run: |
-          echo "### Ingest ${{ github.event.inputs.period }}" >> $GITHUB_STEP_SUMMARY
+          echo "### Ingest ${{ steps.p.outputs.period }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Disparo: ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
           echo "- Posts + accounts + aggregates en Supabase" >> $GITHUB_STEP_SUMMARY
-          echo "- Thumbnails locales commiteados al repo" >> $GITHUB_STEP_SUMMARY
-          echo "- Siguiente: disparar build_diagnostico_extendido con period=all" >> $GITHUB_STEP_SUMMARY
+          echo "- El build se dispara automáticamente al terminar OK (cadena workflow_run)" >> $GITHUB_STEP_SUMMARY
+
+      # ---- Registrar el consumo de Apify (compute units + USD) en un archivo del repo ----
+      - name: Registrar consumo de Apify en archivo
+        if: always()
+        env:
+          APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
+          PERIOD: ${{ steps.p.outputs.period }}
+        run: |
+          python - <<'PY'
+          import os, json, urllib.request, datetime, pathlib
+          tok = os.environ["APIFY_TOKEN"]
+          url = f"https://api.apify.com/v2/actor-runs?token={tok}&limit=50&desc=true"
+          try:
+              items = json.load(urllib.request.urlopen(url, timeout=30)).get("data", {}).get("items", [])
+          except Exception as e:
+              items = []; print("No se pudo leer usage de Apify:", e)
+          hoy = datetime.datetime.utcnow().date().isoformat()   # el run corre ~02:00 UTC
+          cu = usd = 0.0; n = 0
+          for r in items:
+              if (r.get("startedAt") or "")[:10] != hoy:
+                  continue
+              cu  += (r.get("stats") or {}).get("computeUnits", 0) or 0
+              usd += r.get("usageTotalUsd", 0) or 0
+              n   += 1
+          ruta = pathlib.Path("documentacion/consumo_apify.md")
+          ruta.parent.mkdir(parents=True, exist_ok=True)
+          nuevo = not ruta.exists()
+          with ruta.open("a", encoding="utf-8") as out:
+              if nuevo:
+                  out.write("# Consumo de Apify por corrida\n\n")
+                  out.write("Se agrega una fila cada vez que corre la ingesta (automática o manual).\n\n")
+                  out.write("| Fecha (UTC) | Período | Runs | Compute units | Costo USD |\n")
+                  out.write("|---|---|---|---|---|\n")
+              out.write(f"| {hoy} | {os.environ.get('PERIOD','')} | {n} | {cu:.3f} | ${usd:.4f} |\n")
+          print(f"Registrado en documentacion/consumo_apify.md → {hoy} · {n} runs · {cu:.3f} CU · ${usd:.4f}")
+          PY
+
+      - name: Commit del registro de consumo
+        if: always()
+        run: |
+          git config user.email "bot@datalitica.com.co"
+          git config user.name "Datalitica Bot"
+          git add documentacion/consumo_apify.md || true
+          git diff --quiet --cached && echo "Sin cambios en el registro de consumo" && exit 0
+          git commit -m "Registro consumo Apify ${{ steps.p.outputs.period }}"
+          git pull --rebase origin main || true
+          for i in 1 2 3; do
+            git push && break
+            git pull --rebase origin main || true
+            sleep 2
+          done
