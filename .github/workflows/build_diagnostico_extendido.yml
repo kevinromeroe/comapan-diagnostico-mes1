@@ -4,14 +4,24 @@ on:
   workflow_dispatch:
     inputs:
       period:
-        description: "Periodo a construir (all = todos | diagnostico | 2026-06 | ...)"
-        required: true
+        description: "Periodo a construir (all | diagnostico | 2026-08 | ...)"
+        required: false
         default: "all"
+  # CADENA: se ejecuta solo cuando termina la ingesta mensual
+  workflow_run:
+    workflows: ["Ingest mensual (4 plataformas con caps)"]
+    types: [completed]
+
+concurrency:
+  group: comapan-build
+  cancel-in-progress: false
 
 jobs:
   build:
+    # CAPA DE SEGURIDAD: si viene en cadena, solo construir si la ingesta terminó OK
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 12
     permissions:
       contents: write
     env:
@@ -21,27 +31,48 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with: { ref: main }
       - uses: actions/setup-python@v5
         with: { python-version: "3.11", cache: pip }
       - name: Install deps
         run: pip install -r requirements.txt
 
-      - name: Construir HTML estático con DATA embebida
-        run: python scripts/build_diagnostico_extendido_html.py --period "${{ github.event.inputs.period }}"
+      - name: Resolver período (all por defecto / en cadena)
+        id: p
+        run: |
+          P="${{ github.event.inputs.period }}"
+          if [ -z "$P" ]; then P="all"; fi
+          echo "period=$P" >> "$GITHUB_OUTPUT"
+          echo "Build período: $P"
 
-      - name: 3) Commit & push (con retry si hay diff)
+      - name: Construir HTML estático con DATA embebida
+        run: python scripts/build_diagnostico_extendido_html.py --period "${{ steps.p.outputs.period }}"
+
+      - name: Commit & push (con retry si hay diff)
         run: |
           git config user.email "bot@datalitica.com.co"
           git config user.name "Datalitica Bot"
           git add -A diagnostico/ 2026-*/ index.html 2>/dev/null || true
           git diff --quiet --cached && echo "Sin cambios — nada que pushear" && exit 0
           git commit -m "Build automatico: periodos regenerados ($(date -u +%Y-%m-%d))"
-          # Rebase sobre lo último por si alguien commiteó en paralelo
           git pull --rebase origin main || (git rebase --abort && exit 1)
-          # Intentar push, con un retry si falla
           for i in 1 2 3; do
             git push && break
             echo "Push falló intento $i, re-rebase y reintento…"
             git pull --rebase origin main || true
             sleep 2
           done
+
+      - name: Smoke test — verificar que el mes actual publicó (capa de seguridad)
+        run: |
+          M="$(TZ=America/Bogota date +%Y-%m)"
+          URL="https://comapan.datalitica.com.co/$M/"
+          echo "Verificando publicación en $URL"
+          ok=0
+          for i in $(seq 1 8); do
+            sleep 45
+            code=$(curl -s -o /dev/null -w "%{http_code}" "$URL")
+            echo "Intento $i → HTTP $code"
+            if [ "$code" = "200" ]; then ok=1; break; fi
+          done
+          [ "$ok" = "1" ] || { echo "::error::El dashboard del mes $M no respondió 200 tras el build"; exit 1; }
