@@ -44,7 +44,16 @@ def render(periods):
                 page.goto(url, wait_until="networkidle", timeout=60000)
             except Exception as exc:
                 print(f"  ⚠ networkidle timeout ({exc}); continúo igual")
-            page.wait_for_timeout(3000)  # dejar que Chart.js dibuje
+            page.wait_for_timeout(3000)  # dejar que Chart.js dibuje la pestaña inicial
+            # 1) Hacer clic en CADA pestaña para que inicialice sus gráficos (Chart.js es perezoso)
+            for name in ["Resumen ejecutivo", "Instagram", "Facebook", "TikTok",
+                         "LinkedIn", "Categorías", "Conclusiones"]:
+                try:
+                    page.get_by_role("button", name=name, exact=True).first.click(timeout=4000)
+                    page.wait_for_timeout(900)
+                except Exception as exc:
+                    print(f"  ⚠ no pude activar pestaña '{name}': {exc}")
+            # 2) Mostrar TODAS las pestañas a la vez y redibujar todos los gráficos al tamaño de impresión
             page.evaluate(
                 """() => {
                     document.querySelectorAll('.tab').forEach(t => t.style.display = 'block');
@@ -56,7 +65,7 @@ def render(periods):
                     });
                 }"""
             )
-            page.wait_for_timeout(2000)
+            page.wait_for_timeout(2500)
             out = Path(per) / "reporte.pdf"
             out.parent.mkdir(parents=True, exist_ok=True)
             page.pdf(
