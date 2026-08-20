@@ -4,18 +4,29 @@ on:
   workflow_dispatch:
     inputs:
       periods:
-        description: "Períodos a renderizar, separados por espacio (ej: 2026-06 2026-07)"
-        required: true
-        default: "2026-06 2026-07"
+        description: "Períodos separados por espacio (vacío = todos: diagnostico + meses)"
+        required: false
+        default: ""
+  # CADENA: se ejecuta al terminar el build (que a su vez viene de la ingesta)
+  workflow_run:
+    workflows: ["Build diagnóstico extendido HTML (gratis)"]
+    types: [completed]
+
+concurrency:
+  group: comapan-render-pdf
+  cancel-in-progress: false
 
 jobs:
   render:
+    # Solo si el build terminó OK (o si se dispara manualmente)
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 15
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v4
+        with: { ref: main }
 
       - uses: actions/setup-python@v5
         with:
@@ -32,7 +43,7 @@ jobs:
           sleep 3
           curl -sI http://localhost:8000/ | head -1
 
-      - name: Renderizar PDFs
+      - name: Renderizar PDFs (vacío = todos los períodos)
         run: |
           python scripts/render_pdf.py ${{ github.event.inputs.periods }}
 
@@ -46,5 +57,9 @@ jobs:
           else
             git commit -m "docs(pdf): render de informes ($(date -u +%Y-%m-%d))"
             git pull --rebase origin main || (git rebase --abort && exit 1)
-            git push
+            for i in 1 2 3; do
+              git push && break
+              git pull --rebase origin main || true
+              sleep 2
+            done
           fi
