@@ -2111,5 +2111,98 @@ recos.forEach((r, i) => {
   }
 })();
 </script>
+<!-- ===== BLOQUE PDF: pegar ANTES de </body>. Ordena la impresión y oculta Evolución en los reportes mensuales (en el diagnóstico se mantiene). ===== -->
+<style>
+  @media print {
+    @page { size: A4 landscape; margin: 0.8cm; }
+    html, body { background:#fff !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    body { font-size: 10.5px !important; }
+
+    .menu-toggle, .menu-drawer, .menu-backdrop, .period-selector, .pdf-btn,
+    nav.tabs, .info-icon, .global-tooltip { display:none !important; }
+
+    /* Cada RED social arranca en página nueva */
+    section.tab { display:block !important; page-break-before: always; break-before: page; padding-top: 2px !important; }
+    section.tab:first-of-type { page-break-before: avoid; break-before: avoid; }
+
+    /* Sin hueco entre Resumen ejecutivo y Panorama */
+    .resumen-corp { margin: 0 0 8px !important; padding: 14px 18px !important; }
+    .hero { margin: 2px 0 8px !important; }
+    .hero h1 { font-size: 20px !important; line-height: 1.12 !important; margin: 4px 0 6px !important; }
+    .hero .lead { font-size: 11px !important; margin: 0 0 6px !important; }
+    .eyebrow { margin: 2px 0 !important; }
+    .kpi-grid { margin: 8px 0 !important; gap: 8px !important; }
+
+    /* Página 1 termina tras los KPIs del panorama → Ranking + Vista comparada quedan JUNTOS en la página 2 */
+    #kpi-hero { break-after: page !important; page-break-after: always !important; }
+    /* Tras la tabla comparada, salto de página (en el diagnóstico separa la Evolución; en mensual ya no hay) */
+    .chart-card:has(table) { break-after: page !important; page-break-after: always !important; }
+
+    /* Encabezados nunca huérfanos */
+    .section-head { margin: 0 0 8px !important; break-after: avoid !important; page-break-after: avoid !important; }
+    .section-head h2 { font-size: 15px !important; margin: 2px 0 !important; }
+    .section-head .desc { font-size: 10px !important; margin-top: 2px !important; }
+    h1, h2, h3 { break-after: avoid !important; page-break-after: avoid !important; }
+
+    /* Encabezado grande y diferenciado por red social */
+    .platform-header {
+      display:flex !important; align-items:center !important; gap:10px !important;
+      background:#F4F5F7 !important; border:1px solid #E3E3E6 !important; border-left:6px solid #999 !important;
+      padding:10px 14px !important; margin:0 0 10px !important; border-radius:4px !important;
+      break-after: avoid !important; page-break-after: avoid !important;
+    }
+    .platform-header h2 { font-size:20px !important; margin:0 !important; }
+    .platform-header .meta { font-size:11px !important; color:#6a6a6a !important; }
+    #tab-instagram .platform-header { border-left-color:#E1306C !important; }
+    #tab-facebook  .platform-header { border-left-color:#1877F2 !important; }
+    #tab-tiktok    .platform-header { border-left-color:#111111 !important; }
+    #tab-linkedin  .platform-header { border-left-color:#0A66C2 !important; }
+    .platform-header + .kpi-grid { margin-top: 10px !important; }
+
+    /* Unidades que NUNCA se parten */
+    .kpi-grid, .ranking, .chart-card, table, .net-card, .finding, .reco-card {
+      break-inside: avoid !important; page-break-inside: avoid !important;
+    }
+    .ranking { gap: 8px !important; margin: 6px 0 !important; }
+
+    /* Gráficos: cuadrícula 2 por fila + altura fija */
+    .chart-grid { display:grid !important; grid-template-columns: 1fr 1fr !important; gap: 10px !important; margin-top: 12px !important; }
+    .chart-card { margin: 0 0 8px !important; padding: 10px !important; }
+    .chart-wrap { height: 165px !important; max-height: 165px !important; }
+    canvas { max-width: 100% !important; max-height: 165px !important; }
+
+    table { font-size: 9px !important; }
+    table th, table td { padding: 4px 6px !important; }
+    .post-thumb, .post-thumb-placeholder { width: 54px !important; height: 54px !important; }
+    .hm-cell { font-size: 7px !important; min-height: 15px !important; }
+
+    .topbar { padding: 6px 0 10px !important; border-bottom: 2px solid var(--comapan-red) !important; }
+    [data-tip]::after, [data-tip]::before { display:none !important; }
+    main::after {
+      content: "Datalítica Colombia S.A.S. · Generado para Catorce Días — Comapan · Documento confidencial";
+      display:block; margin-top:14px; padding-top:10px; border-top:1px solid var(--line);
+      font-size:9px; color:var(--muted); text-align:center;
+    }
+  }
+</style>
+<script>
+  /* En los reportes MENSUALES ocultamos la sección Evolución (con 1 mes no aporta).
+     En el Diagnóstico (Ene-May) se mantiene. */
+  (function () {
+    try {
+      if (typeof REPORT_META === "undefined" || !REPORT_META.current || REPORT_META.current === "diagnostico") return;
+      var c1 = document.getElementById("c-eng-evolution");
+      var c2 = document.getElementById("c-posts-evolution");
+      var card1 = c1 && c1.closest(".chart-card");
+      var card2 = c2 && c2.closest(".chart-card");
+      var head = card1 && card1.previousElementSibling; // encabezado "04 · Evolución"
+      [head, card1, card2].forEach(function (el) {
+        if (el && el.classList && (el.classList.contains("section-head") || el.classList.contains("chart-card"))) {
+          el.style.display = "none";
+        }
+      });
+    } catch (e) {}
+  })();
+</script>
 </body>
 </html>
