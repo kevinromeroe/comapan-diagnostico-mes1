@@ -493,6 +493,66 @@
     .platform-header { flex-wrap: wrap; gap: 8px; }
     .platform-header h2 { font-size: 22px; }
   }
+/* ============================================================
+     IMPRESIÓN A PDF — v2 ORDENADO (cuadrícula estándar, sin cortes)
+     Este bloque va DESPUÉS del <style> existente y sobrescribe lo anterior.
+     ============================================================ */
+  @media print {
+    @page { size: A4 landscape; margin: 0.8cm; }
+    html, body { background: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body { font-size: 10.5px !important; }
+
+    /* Ocultar lo navegacional */
+    .menu-toggle, .menu-drawer, .menu-backdrop, .period-selector, .pdf-btn,
+    nav.tabs, .info-icon, .global-tooltip { display: none !important; }
+
+    /* Cada red arranca en página nueva (la primera no) */
+    section.tab { display: block !important; page-break-before: always; break-before: page; padding-top: 4px !important; }
+    section.tab:first-of-type { page-break-before: avoid; break-before: avoid; }
+
+    /* HERO compacto: que título + subtítulo + KPIs quepan JUNTOS en la misma página */
+    .hero { margin: 4px 0 8px !important; }
+    .hero h1 { font-size: 20px !important; line-height: 1.12 !important; margin: 4px 0 6px !important; }
+    .hero .lead { font-size: 11px !important; margin: 0 0 8px !important; }
+    .eyebrow { margin: 2px 0 !important; }
+
+    /* Encabezados NUNCA huérfanos: se quedan pegados a su contenido */
+    .section-head { margin: 8px 0 6px !important; break-after: avoid !important; page-break-after: avoid !important; }
+    .section-head h2 { font-size: 15px !important; margin: 2px 0 !important; }
+    .section-head .desc { font-size: 10px !important; margin-top: 2px !important; }
+    h1, h2, h3 { break-after: avoid !important; page-break-after: avoid !important; }
+
+    /* Unidades que NUNCA se parten entre páginas */
+    .kpi-grid, .ranking, .chart-card, table, .net-card, .finding, .reco-card {
+      break-inside: avoid !important; page-break-inside: avoid !important;
+    }
+
+    /* KPIs y ranking compactos */
+    .kpi-grid { gap: 8px !important; margin: 6px 0 !important; }
+    .ranking { gap: 8px !important; margin: 6px 0 !important; }
+
+    /* GRÁFICOS: altura fija que sí cabe + cuadrícula estándar 2 por fila */
+    .chart-grid { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 10px !important; }
+    .chart-card { margin: 0 0 8px !important; padding: 10px !important; }
+    .chart-wrap { height: 170px !important; max-height: 170px !important; }
+    canvas { max-width: 100% !important; max-height: 170px !important; }
+
+    /* Tablas legibles y compactas */
+    table { font-size: 9px !important; }
+    table th, table td { padding: 4px 6px !important; }
+    .post-thumb, .post-thumb-placeholder { width: 56px !important; height: 56px !important; }
+    .hm-cell { font-size: 7px !important; min-height: 15px !important; }
+
+    /* Topbar compacto + pie de página */
+    .topbar { padding: 6px 0 10px !important; border-bottom: 2px solid var(--comapan-red) !important; }
+    [data-tip]::after, [data-tip]::before { display: none !important; }
+    main::after {
+      content: "Datalítica Colombia S.A.S. · Generado para Catorce Días — Comapan · Documento confidencial";
+      display: block; margin-top: 14px; padding-top: 10px;
+      border-top: 1px solid var(--line);
+      font-size: 9px; color: var(--muted); text-align: center;
+    }
+  }
 </style>
 </head>
 <body>
