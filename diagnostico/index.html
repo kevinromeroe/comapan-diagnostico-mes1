@@ -513,7 +513,7 @@
     <span id="meta-window"></span>
     <select id="period-selector" class="period-selector" aria-label="Seleccionar periodo de reporte"
             onchange="if(this.value)window.location.href=this.value"></select>
-    <button class="pdf-btn" type="button" onclick="window.print()" aria-label="Descargar como PDF">
+    <button class="pdf-btn" type="button" onclick="window.open('reporte.pdf','_blank','noopener')" aria-label="Descargar el PDF del período">
       <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
         <path fill="currentColor" d="M5 1h6l4 4v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zm6 1.5V5h2.5L11 2.5zM6 10h4v1H6v-1zm0-2h4v1H6V8z"/>
       </svg>
