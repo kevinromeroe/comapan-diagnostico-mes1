@@ -694,6 +694,10 @@ def compute_deltas(data, sb, period):
             "engagement_promedio_pct":_pct(cur_ep, prev_ep),
             "engagement_mediana_pct": _pct(cur_em, prev_em),
             "audience_pct":           audience_pct,
+            # Cambio absoluto vs mes anterior (para el ranking en absolutos)
+            "n_posts_abs":            cur_n  - prev_n,
+            "engagement_total_abs":   cur_et - prev_et,
+            "engagement_promedio_abs":round(cur_ep - prev_ep, 1),
         }
         total_cur_posts += cur_n
         total_cur_eng   += cur_et
@@ -882,7 +886,14 @@ def build_data_dict(sb: Supabase, period: str = "diagnostico") -> dict:
         atipicos_set = {p["id"] for p in atipicos}
         # POSTS TIPICOS: ps SIN atipicos → usados en TODOS los aggregates de gráficas
         ps_typical = [p for p in ps if p["id"] not in atipicos_set]
-        cambio2_metricas_organicas.txt
+        n_typical = len(ps_typical) or 1  # evitar /0
+
+        # === MÉTRICAS 100% ORGÁNICAS: excluir atípicas/pauta del conteo y del engagement ===
+        _engs_typ = [p["engagement"] for p in ps_typical]
+        n = len(ps_typical)
+        total_eng = sum(_engs_typ)
+        prom = round(total_eng / n, 1) if n else 0
+        med = sorted(_engs_typ)[len(_engs_typ) // 2] if _engs_typ else 0
 
         # by_type SOLO con tipicos
         type_counts = _Counter()
