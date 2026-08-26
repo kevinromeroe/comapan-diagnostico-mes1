@@ -882,7 +882,7 @@ def build_data_dict(sb: Supabase, period: str = "diagnostico") -> dict:
         atipicos_set = {p["id"] for p in atipicos}
         # POSTS TIPICOS: ps SIN atipicos → usados en TODOS los aggregates de gráficas
         ps_typical = [p for p in ps if p["id"] not in atipicos_set]
-        n_typical = len(ps_typical) or 1  # evitar /0
+        cambio2_metricas_organicas.txt
 
         # by_type SOLO con tipicos
         type_counts = _Counter()
