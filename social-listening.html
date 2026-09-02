@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Escucha Social · Comapan</title>
+<meta name="theme-color" content="#DB0632">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16.png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@300;400;500;600;700;800&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --comapan-red: #DB0632;
+    --comapan-red-soft: #F8E0E5;
+    --sent-positive: #5BAC47;
+    --sent-critical: #DB0632;
+    --sent-mixed: #C8892F;
+    --sent-neutral: #19AAB2;
+    --ink: #1a1a1a;
+    --ink-2: #4a4a4a;
+    --ink-3: #6a6a6a;
+    --muted: #8a8a8a;
+    --line: #E8E4DA;
+    --line-2: #F0EDE4;
+    --ground: #FBFAF7;
+    --surface: #ffffff;
+    --surface-2: #F2E8D5;
+    --ig: #e1306c; --fb: #1877f2; --tt: #000000; --li: #0a66c2;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: 'Roboto', -apple-system, sans-serif;
+    font-size: 15px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* -------- Topbar (replicado del index) -------- */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 32px; background: #ffffff;
+    border-bottom: 1px solid var(--line);
+    gap: 20px; flex-wrap: wrap;
+  }
+  .brand { display: flex; align-items: center; gap: 16px; }
+  .logo-comapan { height: 34px; width: auto; }
+  .brand .divider { width: 1px; height: 26px; background: var(--line); }
+  .title-block { display: flex; flex-direction: column; line-height: 1.2; }
+  .title-block .eyebrow {
+    font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1.4px; font-weight: 600;
+  }
+  .title-block .title {
+    font-family: 'Roboto Slab', Georgia, serif;
+    font-size: 15px; color: var(--ink); font-weight: 600;
+  }
+  .title-block .title em { color: var(--comapan-red); font-style: normal; }
+  .agency-box img { height: 26px; width: auto; }
+  .back-link {
+    display: inline-flex; align-items: center; gap: 6px;
+    color: var(--ink-3); text-decoration: none; font-size: 13px; font-weight: 500;
+    padding: 6px 12px; border: 1px solid var(--line); border-radius: 4px;
+    background: var(--ground); transition: color 0.15s, border-color 0.15s;
+  }
+  .back-link:hover { color: var(--comapan-red); border-color: var(--comapan-red); }
+
+  /* -------- Wrap -------- */
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 40px 32px 80px; }
+
+  /* -------- Header de página -------- */
+  .page-eyebrow {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--comapan-red); margin-bottom: 8px;
+  }
+  .page-title {
+    font-family: 'Roboto Slab', Georgia, serif;
+    font-size: 40px; line-height: 1.05; font-weight: 700; letter-spacing: -0.01em;
+    color: var(--ink); text-wrap: balance; margin: 0 0 12px;
+  }
+  .page-meta {
+    color: var(--ink-3); font-size: 14px;
+    display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center;
+  }
+  .page-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: var(--muted); }
+  .page-meta strong { color: var(--ink); font-weight: 500; }
+
+  /* -------- KPI grid -------- */
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 32px; }
+  .kpi { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 18px 20px 16px; }
+  .kpi-label { font-size: 11px; letter-spacing: 0.10em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; margin-bottom: 10px; }
+  .kpi-value { font-family: 'Roboto Slab', serif; font-size: 32px; font-weight: 600; color: var(--ink); line-height: 1; font-variant-numeric: tabular-nums; }
+  .kpi-sub { color: var(--ink-3); font-size: 12px; margin-top: 8px; }
+
+  /* -------- Section -------- */
+  .section { margin-top: 56px; }
+  .section-head {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 16px;
+    border-bottom: 1px solid var(--line); padding-bottom: 10px; margin-bottom: 20px;
+  }
+  .section-title {
+    font-family: 'Roboto Slab', serif; font-size: 22px; font-weight: 600; color: var(--ink); margin: 0; letter-spacing: -0.005em;
+  }
+  .section-note { color: var(--ink-3); font-size: 13px; }
+  .section-intro { color: var(--ink-3); font-size: 14px; margin: -8px 0 20px; max-width: 65ch; }
+
+  /* -------- Highlight -------- */
+  .highlight-quote {
+    margin-top: 18px; padding: 22px 26px; background: var(--surface-2);
+    border-radius: 4px; border-left: 3px solid var(--comapan-red);
+  }
+  .highlight-quote p {
+    margin: 0; font-family: 'Roboto Slab', serif; font-size: 18px; line-height: 1.4;
+    color: var(--ink); font-weight: 400; letter-spacing: -0.005em;
+  }
+  .highlight-quote cite {
+    display: block; margin-top: 10px; font-style: normal; font-size: 12px; color: var(--ink-3); letter-spacing: 0.02em;
+  }
+
+  /* -------- Alerts -------- */
+  .alerts { display: flex; flex-direction: column; gap: 10px; }
+  .alert {
+    display: grid; grid-template-columns: 44px 1fr auto; gap: 16px; align-items: start;
+    background: var(--surface); border: 1px solid var(--line);
+    border-left: 4px solid var(--sent-critical); border-radius: 4px; padding: 16px 18px;
+  }
+  .alert-num { font-family: 'Roboto Slab', serif; font-size: 30px; font-weight: 700; line-height: 1; color: var(--sent-critical); font-variant-numeric: tabular-nums; }
+  .alert-body h3 { margin: 0 0 6px; font-family: 'Roboto Slab', serif; font-size: 17px; font-weight: 600; color: var(--ink); line-height: 1.25; }
+  .alert-desc { color: var(--ink-2); font-size: 14px; line-height: 1.5; }
+  .alert-body blockquote {
+    margin: 10px 0 0; padding: 8px 0 8px 12px; border-left: 2px solid var(--line);
+    color: var(--ink-3); font-style: italic; font-size: 13px; line-height: 1.45;
+  }
+  .alert-body blockquote cite {
+    display: block; margin-top: 4px; font-style: normal; font-size: 11px; color: var(--muted); letter-spacing: 0.04em;
+  }
+  .alert-badge {
+    font-size: 11px; color: var(--sent-critical); background: var(--comapan-red-soft);
+    padding: 4px 8px; border-radius: 3px; font-weight: 700; letter-spacing: 0.06em; white-space: nowrap;
+  }
+
+  /* -------- Platforms -------- */
+  .platforms { display: grid; grid-template-columns: 1fr; gap: 14px; }
+  .plat-row { display: grid; grid-template-columns: 90px 1fr 60px 90px; gap: 16px; align-items: center; font-size: 14px; }
+  .plat-label { display: flex; align-items: center; gap: 8px; color: var(--ink); font-weight: 500; }
+  .plat-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .plat-bar-track { height: 10px; background: var(--line-2); border-radius: 2px; overflow: hidden; }
+  .plat-bar-fill { height: 100%; border-radius: 2px; }
+  .plat-count { font-variant-numeric: tabular-nums; color: var(--ink); font-weight: 500; text-align: right; }
+  .plat-meta { color: var(--ink-3); font-size: 12px; text-align: right; }
+
+  /* -------- Topics -------- */
+  .topics { display: flex; flex-direction: column; gap: 6px; }
+  .topic {
+    display: grid; grid-template-columns: 6px 1fr 60px 80px; gap: 14px; align-items: center;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 12px 16px 12px 12px;
+  }
+  .topic-stripe { width: 6px; height: 100%; border-radius: 2px; margin: -12px 0; }
+  .topic-stripe.positive { background: var(--sent-positive); }
+  .topic-stripe.critical { background: var(--sent-critical); }
+  .topic-stripe.mixed { background: var(--sent-mixed); }
+  .topic-stripe.neutral { background: var(--sent-neutral); }
+  .topic-name { font-weight: 500; color: var(--ink); font-size: 15px; }
+  .topic-insight { color: var(--ink-3); font-size: 13px; line-height: 1.45; margin-top: 4px; max-width: 68ch; }
+  .topic-count { font-variant-numeric: tabular-nums; color: var(--ink); font-weight: 500; font-size: 15px; text-align: right; }
+  .topic-pct { font-variant-numeric: tabular-nums; color: var(--ink-3); font-size: 12px; text-align: right; }
+
+  /* -------- Objections -------- */
+  .objections { display: flex; flex-direction: column; gap: 22px; }
+  .objection {
+    background: var(--surface); border: 1px solid var(--line);
+    border-left: 4px solid var(--sent-mixed); border-radius: 4px; padding: 18px 22px 16px;
+  }
+  .objection h3 {
+    margin: 0 0 8px; font-family: 'Roboto Slab', serif; font-size: 17px; font-weight: 600;
+    color: var(--ink); line-height: 1.3; text-wrap: balance;
+  }
+  .objection p { margin: 0; color: var(--ink-2); font-size: 14px; line-height: 1.55; max-width: 70ch; }
+  .objection em { color: var(--ink); font-style: italic; }
+
+  /* -------- Distribution -------- */
+  .dist { display: flex; flex-direction: column; gap: 8px; }
+  .dist-row { display: grid; grid-template-columns: 12px 1fr 2.4fr 42px 52px; gap: 12px; align-items: center; font-size: 14px; }
+  .dist-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+  .dist-name { color: var(--ink); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .dist-bar-track { height: 12px; background: var(--line-2); border-radius: 2px; overflow: hidden; }
+  .dist-bar-fill { height: 100%; border-radius: 2px; }
+  .dist-count { font-variant-numeric: tabular-nums; color: var(--ink); font-weight: 500; text-align: right; }
+  .dist-pct { font-variant-numeric: tabular-nums; color: var(--ink-3); font-size: 12px; text-align: right; }
+  .dist-legend {
+    display: flex; gap: 18px; flex-wrap: wrap; margin-top: 18px; padding-top: 14px;
+    border-top: 1px dashed var(--line); font-size: 12px; color: var(--ink-3);
+  }
+  .dist-legend span { display: inline-flex; align-items: center; gap: 6px; }
+
+  /* -------- Method -------- */
+  .method-note {
+    margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--line);
+    color: var(--ink-3); font-size: 12px; line-height: 1.6;
+  }
+  .method-note strong { color: var(--ink-2); font-weight: 600; }
+
+  /* -------- Footer -------- */
+  footer {
+    padding: 32px; background: #ffffff; border-top: 1px solid var(--line);
+    color: var(--ink-3); font-size: 12px; margin-top: 40px;
+  }
+  .footer-grid { max-width: 1080px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
+  .footer-grid .powered { color: var(--ink-2); margin-bottom: 8px; }
+  .footer-grid .logos { display: flex; gap: 16px; align-items: center; }
+  .footer-grid .logos img { height: 22px; width: auto; }
+  .logo-comapan-foot { opacity: 0.85; }
+  details.legal-details summary { cursor: pointer; color: var(--comapan-red); font-weight: 500; font-size: 12px; }
+  details.legal-details .legal-content { padding: 10px 0 0; color: var(--ink-3); line-height: 1.55; }
+  details.legal-details .legal-content a { color: var(--comapan-red); }
+
+  @media (max-width: 780px) {
+    .topbar { padding: 12px 16px; }
+    .brand { gap: 10px; }
+    .brand .divider { display: none; }
+    .agency-box { display: none; }
+    .wrap { padding: 28px 20px 60px; }
+    .page-title { font-size: 30px; }
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .alert { grid-template-columns: 36px 1fr; }
+    .alert-badge { display: none; }
+    .plat-row { grid-template-columns: 76px 1fr 50px; }
+    .plat-meta { display: none; }
+    .topic { grid-template-columns: 6px 1fr auto; }
+    .topic-pct { display: none; }
+    .dist-row { grid-template-columns: 10px 1fr 44px; gap: 10px; }
+    .dist-bar-track, .dist-pct { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <img class="logo-comapan" src="/assets/logo-comapan.svg" alt="Comapan" onerror="this.src='/assets/logo-comapan.png'">
+    <div class="divider"></div>
+    <div class="title-block">
+      <span class="eyebrow">Inteligencia de redes</span>
+      <span class="title">Escucha Social · <em>Comapan</em></span>
+    </div>
+    <div class="divider"></div>
+    <div class="agency-box"><img src="/assets/logo-14dias.svg" alt="Catorce Días"></div>
+  </div>
+  <a href="/" class="back-link">← Volver al dashboard</a>
+</div>
+
+<div class="wrap">
+
+  <div class="page-eyebrow">Escucha social · H1 2026 · Comapan</div>
+  <h1 class="page-title">Lo que la gente le está diciendo a Comapan.</h1>
+  <div class="page-meta">
+    <span><strong>1.371</strong> comentarios</span>
+    <span class="dot"></span>
+    <span><strong>998</strong> autores únicos</span>
+    <span class="dot"></span>
+    <span><strong>4</strong> redes</span>
+    <span class="dot"></span>
+    <span>ventana <strong>1 dic 2025 – 1 sep 2026</strong></span>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi">
+      <div class="kpi-label">De qué se habla</div>
+      <div class="kpi-value">51</div>
+      <div class="kpi-sub">temas distintos en la conversación</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Cómo se siente la gente</div>
+      <div class="kpi-value" style="color: var(--sent-positive)">3 de 4</div>
+      <div class="kpi-sub">comentarios son positivos</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Post más comentado</div>
+      <div class="kpi-value">209</div>
+      <div class="kpi-sub">comentarios en un reel viral de IG</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Temas que urgen atención</div>
+      <div class="kpi-value" style="color: var(--sent-critical)">3</div>
+      <div class="kpi-sub">riesgos que la comunicación debe leer</div>
+    </div>
+  </div>
+
+  <div class="highlight-quote">
+    <p><strong>Los clientes fieles están abandonando el punto de venta.</strong> 26 comentarios de fans de 20+ años reportan no encontrar Comapan en tiendas donde Bimbo y Ramo sí están en el mismo estante. La comunicación por sí sola no resuelve esto — vale la pena escalarlo con el equipo comercial.</p>
+    <cite>— insight #1 del período</cite>
+  </div>
+
+  <section class="section">
+    <div class="section-head">
+      <h2 class="section-title">3 conversaciones que no pueden ignorarse</h2>
+      <span class="section-note">ordenadas por volumen</span>
+    </div>
+    <div class="alerts">
+      <article class="alert">
+        <div class="alert-num">01</div>
+        <div class="alert-body">
+          <h3>Distribución: la mayonesa y otros SKUs no se consiguen en supermercados</h3>
+          <div class="alert-desc">Clientes fieles de Bogotá, Valle y Cundinamarca reportan repetidamente que no encuentran la mayonesa, el pan de centeno y el ponqué navideño en tiendas y supermercados donde Bimbo y Ramo sí están presentes.</div>
+          <blockquote>
+            "Ayer entré a Carulla a comprar un ponqué navideño y en el estante habían solo dos de Comapan, mientras que de Bimbo y Ramo todo el mundo…"
+            <cite>Instagram · agosto 2026</cite>
+          </blockquote>
+        </div>
+        <div class="alert-badge">26 comentarios</div>
+      </article>
+      <article class="alert">
+        <div class="alert-num">02</div>
+        <div class="alert-body">
+          <h3>Ética: preguntas reiteradas sobre huevos de gallinas enjauladas</h3>
+          <div class="alert-desc">Usuarios preguntan por la política de bienestar animal y denuncian que la empresa no responde. Tema con carga reputacional creciente en Colombia.</div>
+          <blockquote>
+            "@comapan_co por qué UDS no cuentan con una política libre de jaulas que garantice que no elaboran sus productos con huevos de gallinas en jaulas?"
+            <cite>Instagram · mayo 2026 · sin respuesta</cite>
+          </blockquote>
+        </div>
+        <div class="alert-badge">10 comentarios</div>
+      </article>
+      <article class="alert">
+        <div class="alert-num">03</div>
+        <div class="alert-body">
+          <h3>Crisis reputacional: acusaciones de despido a empleados de toda la vida</h3>
+          <div class="alert-desc">9 comentarios casi textuales acusando de "despedir empleados como perros". Concentrados en un mismo post de Facebook, con patrón coordinado que podría escalar.</div>
+          <blockquote>
+            "La empresa que despide a sus empleados como perros. Gente que entregó toda su vida a una compañía que los saca sin ninguna compasión."
+            <cite>Facebook · abril 2026 · repetido 5 veces casi textual</cite>
+          </blockquote>
+        </div>
+        <div class="alert-badge">9 comentarios</div>
+      </article>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-head">
+      <h2 class="section-title">Dónde ocurre la conversación</h2>
+      <span class="section-note">1.371 comentarios · 9 meses</span>
+    </div>
+    <div class="platforms">
+      <div class="plat-row">
+        <div class="plat-label"><span class="plat-dot" style="background:var(--ig)"></span>Instagram</div>
+        <div class="plat-bar-track"><div class="plat-bar-fill" style="width:69.3%;background:var(--ig)"></div></div>
+        <div class="plat-count">950</div>
+        <div class="plat-meta">667 autores</div>
+      </div>
+      <div class="plat-row">
+        <div class="plat-label"><span class="plat-dot" style="background:var(--fb)"></span>Facebook</div>
+        <div class="plat-bar-track"><div class="plat-bar-fill" style="width:19.3%;background:var(--fb)"></div></div>
+        <div class="plat-count">265</div>
+        <div class="plat-meta">197 autores</div>
+      </div>
+      <div class="plat-row">
+        <div class="plat-label"><span class="plat-dot" style="background:var(--tt)"></span>TikTok</div>
+        <div class="plat-bar-track"><div class="plat-bar-fill" style="width:11.1%;background:var(--tt)"></div></div>
+        <div class="plat-count">152</div>
+        <div class="plat-meta">110 autores</div>
+      </div>
+      <div class="plat-row">
+        <div class="plat-label"><span class="plat-dot" style="background:var(--li)"></span>LinkedIn</div>
+        <div class="plat-bar-track"><div class="plat-bar-fill" style="width:0.5%;background:var(--li)"></div></div>
+        <div class="plat-count">4</div>
+        <div class="plat-meta">2 autores</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-head">
+      <h2 class="section-title">Lo que la audiencia ya está diciendo</h2>
+      <span class="section-note">10 temas positivos con más volumen</span>
+    </div>
+    <p class="section-intro">Frases e ideas que 5, 10 o 60 personas escribieron por su cuenta. Es lo que ya funciona en la conversación — se puede replicar en las próximas piezas.</p>
+    <div class="topics">
+      <div class="topic"><div class="topic-stripe positive"></div><div><div class="topic-name">Repiten "se ve delicioso"</div><div class="topic-insight">El copy visual del contenido está funcionando. Es la frase más usada por la audiencia.</div></div><div class="topic-count">62</div><div class="topic-pct">5.3%</div></div>
+      <div class="topic"><div class="topic-stripe positive"></div><div><div class="topic-name">Etiquetan a amigos en los posts</div><div class="topic-insight">El contenido se está compartiendo con círculos cercanos. Buen indicador de alcance orgánico.</div></div><div class="topic-count">62</div><div class="topic-pct">5.3%</div></div>
+      <div class="topic"><div class="topic-stripe positive"></div><div><div class="topic-name">Escriben "me encanta"</div><div class="topic-insight">La marca genera afecto explícito. No es solo consumo, hay identificación emocional.</div></div><div class="topic-count">44</div><div class="topic-pct">3.8%</div></div>
+      <div class="topic"><div class="topic-stripe positive"></div><div><div class="topic-name">Nombran panetón, ponqué de vino y brevas</div><div class="topic-insight">Estos son los productos que la audiencia menciona por nombre propio. Íconos de la marca en Q4.</div></div><div class="topic-count">34</div><div class="topic-pct">2.9%</div></div>
+      <div class="topic"><div class="topic-stripe positive"></div><div><div class="topic-name">Destacan la textura crocante</div><div class="topic-insight">La textura es un atributo memorable — vale la pena capitalizarlo en video (sonido incluido).</div></div><div class="topic-count">29</div><div class="topic-pct">2.5%</div></div>
+      <div class="topic"><div class="topic-stripe positive"></div><div><div class="topic-name">Asocian el producto al desayuno</div><div class="topic-insight">El desayuno está posicionado como momento natural de consumo. Territorio limpio para más piezas.</div></div><div class="topic-count">19</div><div class="topic-pct">1.6%</div></div>
+      <div class="topic"><div class="topic-stripe positive"></div><div><div class="topic-name">Expresan cariño por "Fortica"</div><div class="topic-insight">El personaje es un activo reputacional real — no es un logo más, es querido por nombre.</div></div><div class="topic-count">16</div><div class="topic-pct">1.4%</div></div>
+      <div class="topic"><div class="topic-stripe positive"></div><div><div class="topic-name">Extrañan a Comapan desde el exterior</div><div class="topic-insight">Audiencia migrante colombiana emerge sola en la conversación. Nicho no atendido hoy — oportunidad clara.</div></div><div class="topic-count">13</div><div class="topic-pct">1.1%</div></div>
+      <div class="topic"><div class="topic-stripe positive"></div><div><div class="topic-name">Piden acompañar con café / tinto</div><div class="topic-insight">El ritual café + producto aparece espontáneamente. Territorio de colombianidad ya validado.</div></div><div class="topic-count">10</div><div class="topic-pct">0.9%</div></div>
+      <div class="topic"><div class="topic-stripe positive"></div><div><div class="topic-name">Recuerdan a sus abuelos con el producto</div><div class="topic-insight">Comapan opera como puente emocional a la infancia. Vía natural para storytelling generacional.</div></div><div class="topic-count">9</div><div class="topic-pct">0.8%</div></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-head">
+      <h2 class="section-title">Objeciones que van a aparecer si no las atacamos primero</h2>
+      <span class="section-note">no son crisis, pero se están diciendo</span>
+    </div>
+    <div class="objections">
+      <article class="objection">
+        <h3>La masa madre no está convenciendo del todo.</h3>
+        <p><strong>17 personas</strong> cuestionan si el pan es realmente de masa madre porque ven levadura en la lista de ingredientes. Si el próximo brief habla de <em>artesanal</em> o <em>natural</em>, esta objeción va a salir. Vale la pena adelantarse con contenido de proceso y transparencia sobre la fórmula.</p>
+      </article>
+      <article class="objection">
+        <h3>Comparación silenciosa con Ramo en el ponqué navideño.</h3>
+        <p><strong>9 comentarios</strong> dicen que el ponqué navideño "cambió de receta y ahora se parece a Ramo". La marca perdió su distintivo de sabor en el segmento navideño. Territorio delicado para la comunicación de temporada Q4.</p>
+      </article>
+      <article class="objection">
+        <h3>Sospecha de calidad post-venta.</h3>
+        <p><strong>14 comentarios</strong> reportan hongo en el pan antes del vencimiento marcado. No es escándalo, pero se está diciendo repetidamente. Cualquier campaña que hable de <em>frescura</em> debe anticiparse a esta objeción antes de que aparezca en los comentarios de la pieza.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-head">
+      <h2 class="section-title">Cómo se reparten los 10 temas más comentados</h2>
+      <span class="section-note">400 de 1.371 comentarios · 29% del total</span>
+    </div>
+    <p class="section-intro">Menos de un tercio de la conversación se concentra en estos 10 temas. El resto está repartido en los 41 temas menores, señal de una conversación diversa y sin un solo eje dominante.</p>
+    <div class="dist">
+      <div class="dist-row"><span class="dist-dot" style="background:var(--sent-positive)"></span><div class="dist-name">Repiten "se ve delicioso"</div><div class="dist-bar-track"><div class="dist-bar-fill" style="width:100%;background:var(--sent-positive)"></div></div><div class="dist-count">62</div><div class="dist-pct">4.5%</div></div>
+      <div class="dist-row"><span class="dist-dot" style="background:var(--sent-positive)"></span><div class="dist-name">Etiquetan a amigos en los posts</div><div class="dist-bar-track"><div class="dist-bar-fill" style="width:100%;background:var(--sent-positive)"></div></div><div class="dist-count">62</div><div class="dist-pct">4.5%</div></div>
+      <div class="dist-row"><span class="dist-dot" style="background:var(--sent-positive)"></span><div class="dist-name">Escriben "me encanta"</div><div class="dist-bar-track"><div class="dist-bar-fill" style="width:71%;background:var(--sent-positive)"></div></div><div class="dist-count">44</div><div class="dist-pct">3.2%</div></div>
+      <div class="dist-row"><span class="dist-dot" style="background:var(--sent-mixed)"></span><div class="dist-name">Interacciones cortas y agradecimientos</div><div class="dist-bar-track"><div class="dist-bar-fill" style="width:66%;background:var(--sent-mixed)"></div></div><div class="dist-count">41</div><div class="dist-pct">3.0%</div></div>
+      <div class="dist-row"><span class="dist-dot" style="background:var(--sent-positive)"></span><div class="dist-name">Elogios y agradecimientos a Comapan</div><div class="dist-bar-track"><div class="dist-bar-fill" style="width:60%;background:var(--sent-positive)"></div></div><div class="dist-count">37</div><div class="dist-pct">2.7%</div></div>
+      <div class="dist-row"><span class="dist-dot" style="background:var(--sent-neutral)"></span><div class="dist-name">Respuestas cortas a retos ("Logrado")</div><div class="dist-bar-track"><div class="dist-bar-fill" style="width:55%;background:var(--sent-neutral)"></div></div><div class="dist-count">34</div><div class="dist-pct">2.5%</div></div>
+      <div class="dist-row"><span class="dist-dot" style="background:var(--sent-positive)"></span><div class="dist-name">Nombran panetón, ponqué de vino y brevas</div><div class="dist-bar-track"><div class="dist-bar-fill" style="width:55%;background:var(--sent-positive)"></div></div><div class="dist-count">34</div><div class="dist-pct">2.5%</div></div>
+      <div class="dist-row"><span class="dist-dot" style="background:var(--sent-positive)"></span><div class="dist-name">Reacciones emoji de amor 😍</div><div class="dist-bar-track"><div class="dist-bar-fill" style="width:47%;background:var(--sent-positive)"></div></div><div class="dist-count">29</div><div class="dist-pct">2.1%</div></div>
+      <div class="dist-row"><span class="dist-dot" style="background:var(--sent-positive)"></span><div class="dist-name">Destacan la textura crocante</div><div class="dist-bar-track"><div class="dist-bar-fill" style="width:47%;background:var(--sent-positive)"></div></div><div class="dist-count">29</div><div class="dist-pct">2.1%</div></div>
+      <div class="dist-row"><span class="dist-dot" style="background:var(--sent-positive)"></span><div class="dist-name">Risas + consultas de disponibilidad</div><div class="dist-bar-track"><div class="dist-bar-fill" style="width:45%;background:var(--sent-positive)"></div></div><div class="dist-count">28</div><div class="dist-pct">2.0%</div></div>
+    </div>
+    <div class="dist-legend">
+      <span><span class="dist-dot" style="background:var(--sent-positive)"></span> positivo</span>
+      <span><span class="dist-dot" style="background:var(--sent-mixed)"></span> tensión</span>
+      <span><span class="dist-dot" style="background:var(--sent-neutral)"></span> neutral</span>
+      <span><span class="dist-dot" style="background:var(--sent-critical)"></span> crítico</span>
+    </div>
+  </section>
+
+  <div class="method-note">
+    <strong>Cómo se hizo.</strong> Leímos 1.371 comentarios publicados entre el 1 de diciembre de 2025 y el 1 de septiembre de 2026 en las cuentas oficiales de Comapan en Instagram (@comapan_co), Facebook (ComapanCo), TikTok (@comapanco) y LinkedIn (comapan-s-a-). Los agrupamos automáticamente por similitud de significado en 51 temas de conversación, y curamos manualmente cada nombre y matiz. Un 12% de comentarios no encajó en ningún tema porque son demasiado únicos o cortos — quedaron aparte. Este reporte se actualiza semestralmente.
+  </div>
+
+</div>
+
+<footer>
+  <div class="footer-grid">
+    <div style="flex:1; min-width:280px">
+      <div class="powered">
+        © 2026 <strong>Datalítica Colombia S.A.S.</strong> · Entregable confidencial para <strong>Catorce Días</strong> (D14S) · Datos de fuentes públicas
+      </div>
+      <details class="legal-details">
+        <summary>Aviso legal y tratamiento de datos</summary>
+        <div class="legal-content">
+          <p>Reporte confidencial — acceso o distribución no autorizada prohibida. Tratamiento de datos conforme a la <strong>Ley 1581/2012</strong> (Colombia) y la <strong>LFPDPPP</strong> (México).</p>
+          <p>Consultas: <a href="mailto:informacion@catorcedias.com">informacion@catorcedias.com</a> · Política: <a href="https://catorcedias.com/politica-privacidad/" target="_blank" rel="noopener">catorcedias.com/politica-privacidad</a>.</p>
+        </div>
+      </details>
+    </div>
+    <div class="logos">
+      <div class="agency-box"><img src="/assets/logo-14dias.svg" alt="Catorce Días"></div>
+      <img class="logo-comapan-foot" src="/assets/logo-comapan.svg" alt="Comapan" onerror="this.src='/assets/logo-comapan.png'">
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

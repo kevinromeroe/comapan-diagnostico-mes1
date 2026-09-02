@@ -9,6 +9,7 @@
 # Deploy en GitHub Pages (artefactos públicos)
 # -------------------------------------------------------------
 !/index.html
+!/social-listening.html
 !/CNAME
 !/robots.txt
 !/.gitignore
