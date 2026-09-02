@@ -111,6 +111,32 @@ def month_window(period: str) -> tuple[datetime, datetime]:
             datetime(yi, mi, last_day, 23, 59, 59, tzinfo=BG))
 
 
+_MESES_ES = {1: "Enero", 2: "Febrero", 3: "Marzo", 4: "Abril", 5: "Mayo",
+             6: "Junio", 7: "Julio", 8: "Agosto", 9: "Septiembre",
+             10: "Octubre", 11: "Noviembre", 12: "Diciembre"}
+
+
+def ensure_period(sb, period_id: str, start: datetime, end: datetime) -> None:
+    """Crea/actualiza la fila del periodo en la tabla 'periods'.
+
+    accounts.period_id y aggregates.period_id son FK → periods.id, así que la
+    fila del mes DEBE existir antes de persistir cualquier cuenta. Sin esto la
+    ingesta falla con HTTP 409 (violación de FK) en meses nuevos.
+    """
+    y, m = period_id.split("-")
+    label = f"{_MESES_ES[int(m)]} {y}"
+    row = {
+        "id":          period_id,
+        "client_id":   CLIENT_ID,
+        "label":       label,
+        "starts_on":   start.date().isoformat(),
+        "ends_on":     end.date().isoformat(),
+        "is_baseline": False,
+    }
+    sb.upsert("periods", [row], on_conflict="id")
+    print(f"  ✓ periodo asegurado en 'periods': {period_id} ({label})")
+
+
 def run_platform(name: str, label: str, fn) -> dict:
     """Wrapper: corre el actor y captura errores sin tumbar todo el script."""
     print(f"\n── {label} ──")
@@ -146,8 +172,11 @@ def main() -> int:
     print(f"  INGESTA FULL — {PERIOD_ID} ({start.date()} a {end.date()})")
     print(f"═══════════════════════════════════════════════")
 
-    # Idempotencia: borrar lo viejo de junio antes
-    print("\n→ Limpiando registros previos de 2026-06…")
+    # El periodo DEBE existir en 'periods' antes de persistir cuentas (FK).
+    ensure_period(sb, PERIOD_ID, start, end)
+
+    # Idempotencia: borrar lo viejo del periodo antes
+    print(f"\n→ Limpiando registros previos de {PERIOD_ID}…")
     for table in ("accounts", "aggregates", "posts"):
         try:
             sb.delete(table, f"client_id=eq.{CLIENT_ID}&period_id=eq.{PERIOD_ID}")
@@ -299,8 +328,7 @@ def main() -> int:
         ok = "✓" if plat in platforms_data else "✗"
         print(f"  {ok} {plat:10s} {n:3d} posts en ventana")
 
-    print(f"\n✅ Ingesta junio terminada.")
-    print(f"   Siguiente paso: workflow 'Generate Narratives' con period=2026-06")
+    print(f"\n✅ Ingesta {PERIOD_ID} terminada.")
     return 0
 
 
