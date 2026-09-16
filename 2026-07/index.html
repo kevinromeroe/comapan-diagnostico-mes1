@@ -2051,11 +2051,6 @@ recos.forEach((r, i) => {
 
   var html = '<section class="llm-section" id="hallazgos-llm">';
   html += '<h2>Hallazgos automáticos del periodo</h2>';
-  var meta = llm._meta || {};
-  html += '<div class="llm-meta">Generado por '+esc(meta.model||"Claude")+' · '
-        + (meta.attempts||1) + ' intento'+((meta.attempts||1)>1?'s':'')+' · '
-        + esc((meta.generated_at||"").slice(0,10)) + '</div>';
-
   if (llm.resumen_ejecutivo) {
     html += '<div class="llm-resumen">' + esc(llm.resumen_ejecutivo) + '</div>';
   }

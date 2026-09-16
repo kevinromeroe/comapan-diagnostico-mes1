@@ -1790,11 +1790,6 @@ document.addEventListener("data-ready", function(){
 
   var html = '<section class="llm-section" id="hallazgos-llm">';
   html += '<h2>Hallazgos automáticos del periodo</h2>';
-  var meta = llm._meta || {};
-  if (meta.model || meta.generated_at) {
-    html += '<div class="llm-meta">Generado por '+esc(meta.model||"LLM")+' · '
-          + esc((meta.generated_at||"").slice(0,10)) + '</div>';
-  }
   if (llm.resumen_ejecutivo) {
     html += '<div class="llm-resumen"><strong>Resumen ejecutivo: </strong>' + esc(llm.resumen_ejecutivo) + '</div>';
   }

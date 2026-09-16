@@ -125,6 +125,16 @@
     color: var(--comapan-red); font-weight: 700;
     border-left: 3px solid var(--comapan-red); padding-left: 21px;
   }
+  .menu-drawer a.ext-tab {
+    background: transparent; border: 0; text-align: left; padding: 16px 24px;
+    font-size: 15px; color: var(--ink); cursor: pointer; font-family: inherit;
+    border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 8px;
+    width: 100%; text-decoration: none;
+  }
+  .menu-drawer a.ext-tab:hover { background: var(--bg-soft-2); color: var(--comapan-red); }
+  .menu-drawer a.ext-tab::after {
+    content: "↗"; margin-left: auto; font-size: 12px; color: var(--muted); font-weight: 400;
+  }
   h1, h2, h3, h4, .display { font-family: 'Roboto Slab', serif; font-weight: 700; }
 
   /* Top bar */
@@ -231,6 +241,15 @@
   }
   nav.tabs button.active { color: var(--comapan-red); border-bottom-color: var(--comapan-red); font-weight: 700; }
   nav.tabs button:hover { color: var(--ink); }
+  nav.tabs a.ext-tab {
+    background: transparent; color: var(--muted); text-decoration: none;
+    padding: 14px 22px; font-size: 13px; font-weight: 500;
+    border-bottom: 3px solid transparent; white-space: nowrap;
+    font-family: 'Roboto', sans-serif; letter-spacing: 0.2px;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  nav.tabs a.ext-tab:hover { color: var(--comapan-red); }
+  nav.tabs a.ext-tab::after { content: "↗"; font-size: 11px; opacity: 0.7; }
 
   main { max-width: 1280px; margin: 0 auto; padding: 0 56px; }
   .tab { display: none; padding: 48px 0; }
@@ -684,7 +703,7 @@ const REPORT_META = {"current": "diagnostico", "available": [{"id": "diagnostico
   <button data-tab="tiktok">TikTok</button>
   <button data-tab="linkedin">LinkedIn</button>
   <button data-tab="categorias">Categorías</button>
-  <button data-tab="conclusiones">Conclusiones</button>
+  <a href="/social-listening.html" class="ext-tab">Escucha social</a>
 </aside>
 
 <nav class="tabs">
@@ -694,7 +713,7 @@ const REPORT_META = {"current": "diagnostico", "available": [{"id": "diagnostico
   <button data-tab="tiktok">TikTok</button>
   <button data-tab="linkedin">LinkedIn</button>
   <button data-tab="categorias">Categorías</button>
-  <button data-tab="conclusiones">Conclusiones</button>
+  <a href="/social-listening.html" class="ext-tab">Escucha social</a>
 </nav>
 
 <main>
@@ -942,27 +961,6 @@ const REPORT_META = {"current": "diagnostico", "available": [{"id": "diagnostico
   <div class="chart-card" style="margin-top:24px"><h3>Categoría × Tipo de media — engagement promedio <i class="info-icon" data-tip="Heatmap del engagement promedio por categoría y tipo de media. Útil para decidir qué formato usar.">i</i></h3><div id="h-cat-type" style="overflow-x:auto"></div><div class="learn" id="l-cat-type"></div></div>
 
   <div class="chart-card" style="margin-top:24px"><h3>Gaps estratégicos <i class="info-icon" data-tip="Categorías que se publican poco (menos de 5% del mix) pero rinden mejor que el promedio global. Son las que conviene escalar.">i</i></h3><div id="tbl-cat-gaps"></div></div>
-</section>
-
-<!-- ============ CONCLUSIONES Y PLAN DE ACCION (hallazgos + recomendaciones unificados) ============ -->
-<section class="tab" id="tab-conclusiones">
-  <div class="section-head">
-    <div class="num">06 · Conclusiones y plan de acción</div>
-    <h2>Síntesis del período + palancas para los próximos 30 días</h2>
-    <div class="desc">Hallazgos clave que se desprenden del análisis y recomendaciones priorizadas por esfuerzo/impacto.</div>
-  </div>
-
-  <h3 style="margin-top:36px; font-size:18px; color:var(--ink);">Hallazgos clave</h3>
-  <div id="findings"></div>
-
-  <h3 style="margin-top:48px; font-size:18px; color:var(--ink);">Recomendaciones priorizadas</h3>
-  <div id="recos"></div>
-
-  <div class="section-head" style="margin-top:64px">
-    <div class="num">07 · La siguiente capa</div>
-    <h2>Hasta dónde puede llegar el análisis</h2>
-    <div class="desc">Este diagnóstico está construido con lo que las cuentas muestran al público. La siguiente capa — comportamiento real de la audiencia, alcance específico de cada pieza, conversión hacia la web — se abre cuando se conectan los accesos analíticos de las plataformas. Es la antesala natural para profundizar en los próximos meses.</div>
-  </div>
 </section>
 
 </main>
@@ -2051,10 +2049,6 @@ recos.forEach((r, i) => {
 
   var html = '<section class="llm-section" id="hallazgos-llm">';
   html += '<h2>Hallazgos automáticos del periodo</h2>';
-  var meta = llm._meta || {};
-  html += '<div class="llm-meta">Generado por '+esc(meta.model||"Claude")+' · '
-        + (meta.attempts||1) + ' intento'+((meta.attempts||1)>1?'s':'')+' · '
-        + esc((meta.generated_at||"").slice(0,10)) + '</div>';
 
   if (llm.resumen_ejecutivo) {
     html += '<div class="llm-resumen">' + esc(llm.resumen_ejecutivo) + '</div>';
