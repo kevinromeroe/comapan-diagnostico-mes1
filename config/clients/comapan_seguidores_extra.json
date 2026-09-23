@@ -1,0 +1,6 @@
+{
+  "descripcion": "Mediciones de seguidores recuperadas de copias públicas archivadas del perfil (archive.org), para meses sin corrida propia.",
+  "puntos": [
+    {"red": "tiktok", "fecha": "2026-02-11", "seguidores": 4821, "fuente": "https://web.archive.org/web/20260211220924/https://www.tiktok.com/@comapanco"}
+  ]
+}

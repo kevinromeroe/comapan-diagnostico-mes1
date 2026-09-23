@@ -795,6 +795,7 @@ const REPORT_META = {"current": "diagnostico", "available": [{"id": "diagnostico
   <div class="chart-card">
     <h3>Seguidores por red <i class="info-icon" data-tip="Seguidores de cada cuenta mes a mes. Cada red se muestra en su propia escala para que las variaciones sean comparables.">i</i></h3>
     <div class="evo-multiples" id="evo-multiples"></div>
+    <div class="evo-foot">Los meses sin punto no tienen registro público de seguidores.</div>
     <div class="learn" id="l-evo-followers"></div>
   </div>
   <div class="chart-card" style="margin-top:20px">
@@ -811,7 +812,7 @@ const REPORT_META = {"current": "diagnostico", "available": [{"id": "diagnostico
   </div>
   <script>
   (function () {
-    const EVO = {"months": ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep"], "partial": true, "cutoffDay": 16, "interactions": {"ig": [1449, 6515, 787, 2297, 919, 363, 812, 1087, 262], "fb": [1349, 273, 515, 1589, 186, 79, 105, 492, 88], "tt": [268, 1328, 274, 295, 184, 76, 194, 768, 68], "li": [52, 86, 43, 39, 25, 90, 9, 17, 14]}, "paidCount": 6, "pieces": {"ig": [21, 30, 23, 27, 24, 19, 16, 24, 11], "fb": [23, 21, 23, 23, 21, 12, 10, 20, 10], "tt": [7, 9, 7, 10, 5, 3, 7, 10, 1], "li": [5, 6, 5, 5, 3, 5, 1, 2, 1]}, "fMonths": ["May", "Jun", "Jul", "Ago", "Sep"], "followers": {"ig": [13422, 13404, 13434, 13478, 13505], "fb": [null, null, 119205, 119032, 118939], "tt": [null, null, 6032, 6294, 6307], "li": [5020, 5135, 5195, 5260, 5288]}};
+    const EVO = {"months": ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep"], "partial": true, "cutoffDay": 16, "interactions": {"ig": [1449, 6515, 787, 2297, 919, 363, 812, 1087, 262], "fb": [1349, 273, 515, 1589, 186, 79, 105, 492, 88], "tt": [268, 1328, 274, 295, 184, 76, 194, 768, 68], "li": [52, 86, 43, 39, 25, 90, 9, 17, 14]}, "paidCount": 6, "pieces": {"ig": [21, 30, 23, 27, 24, 19, 16, 24, 11], "fb": [23, 21, 23, 23, 21, 12, 10, 20, 10], "tt": [7, 9, 7, 10, 5, 3, 7, 10, 1], "li": [5, 6, 5, 5, 3, 5, 1, 2, 1]}, "fMonths": ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep"], "followers": {"ig": [null, null, null, null, 13422, 13404, 13434, 13478, 13505], "fb": [null, null, null, null, null, null, 119205, 119032, 118939], "tt": [null, 4821, null, null, null, null, 6032, 6294, 6307], "li": [null, null, null, null, 5020, 5135, 5195, 5260, 5288]}};
     const NETS = [
       { key: "ig", name: "Instagram", color: "#e1306c" },
       { key: "fb", name: "Facebook", color: "#1877f2" },
@@ -883,7 +884,7 @@ const REPORT_META = {"current": "diagnostico", "available": [{"id": "diagnostico
           type: "line",
           data: { labels: EVO.fMonths, datasets: [{
             data: s, borderColor: n.color, borderWidth: 2, tension: 0.25, spanGaps: false,
-            pointRadius: s.map((_, i) => i === i1 ? 4 : 2.5), pointBackgroundColor: n.color,
+            pointRadius: s.map((v, i) => v == null ? 0 : (i === i1 ? 4.5 : 3.5)), pointBackgroundColor: n.color,
             pointBorderColor: "#fff", pointBorderWidth: 1.5, pointHitRadius: 12,
           }] },
           options: {

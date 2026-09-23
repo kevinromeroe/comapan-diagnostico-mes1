@@ -32,6 +32,7 @@ CLIENT_ID = "comapan"
 YEAR_START = "2026-01"
 TARGETS = [ROOT / "diagnostico" / "index.html", ROOT / "index.html"]
 PAID_FILE = ROOT / "config" / "clients" / "comapan_piezas_pauta.json"
+EXTRA_FOLLOWERS_FILE = ROOT / "config" / "clients" / "comapan_seguidores_extra.json"
 START = "<!-- EVOL-MENSUAL:START -->"
 END = "<!-- EVOL-MENSUAL:END -->"
 # Punto de inserción la primera vez: cierre de la sección 04 del Resumen ejecutivo.
@@ -104,7 +105,13 @@ def build_data(sb: Supabase) -> dict:
         pid = a["period_id"]
         m = a["snapshot_at"][:7] if pid == "diagnostico" else pid
         foll[k][m] = v
-    f_months = sorted({m for d in foll.values() for m in d})
+    # Puntos recuperados de copias archivadas del perfil (solo si ese mes no tiene corrida propia).
+    for pt in json.loads(EXTRA_FOLLOWERS_FILE.read_text())["puntos"]:
+        k = PLATFORM_KEY.get(pt["red"])
+        if k:
+            foll[k].setdefault(pt["fecha"][:7], pt["seguidores"])
+    # Mismo eje que las otras gráficas; los meses sin registro quedan vacíos.
+    f_months = months
     followers = {n: [foll[n].get(m) for m in f_months] for n in NETS}
 
     return {
@@ -151,6 +158,7 @@ def render_block(data: dict) -> str:
   <div class="chart-card">
     <h3>Seguidores por red <i class="info-icon" data-tip="Seguidores de cada cuenta mes a mes. Cada red se muestra en su propia escala para que las variaciones sean comparables.">i</i></h3>
     <div class="evo-multiples" id="evo-multiples"></div>
+    <div class="evo-foot">Los meses sin punto no tienen registro público de seguidores.</div>
     <div class="learn" id="l-evo-followers"></div>
   </div>
   <div class="chart-card" style="margin-top:20px">
@@ -239,7 +247,7 @@ def render_block(data: dict) -> str:
           type: "line",
           data: {{ labels: EVO.fMonths, datasets: [{{
             data: s, borderColor: n.color, borderWidth: 2, tension: 0.25, spanGaps: false,
-            pointRadius: s.map((_, i) => i === i1 ? 4 : 2.5), pointBackgroundColor: n.color,
+            pointRadius: s.map((v, i) => v == null ? 0 : (i === i1 ? 4.5 : 3.5)), pointBackgroundColor: n.color,
             pointBorderColor: "#fff", pointBorderWidth: 1.5, pointHitRadius: 12,
           }}] }},
           options: {{
