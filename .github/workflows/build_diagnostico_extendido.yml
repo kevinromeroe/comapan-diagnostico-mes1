@@ -48,6 +48,11 @@ jobs:
       - name: Construir HTML estático con DATA embebida
         run: python scripts/build_diagnostico_extendido_html.py --period "${{ steps.p.outputs.period }}"
 
+      # Si falla, no bloquea la publicación de los reportes; queda marcado en rojo en Actions.
+      - name: Actualizar evolución mes a mes (página inicial)
+        continue-on-error: true
+        run: python scripts/build_evolucion_mensual.py
+
       - name: Commit & push (con retry si hay diff)
         run: |
           git config user.email "bot@datalitica.com.co"
