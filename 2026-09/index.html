@@ -723,7 +723,7 @@ const REPORT_META = {"current": "2026-09", "available": [{"id": "diagnostico", "
   <div class="resumen-corp" style="margin: 0 0 18px; padding: 22px 26px; background: #FBFAF7; border: 1px solid #E8E4DA; border-radius: 4px;">
     <div style="font-size: 10px; color: #8a8a8a; text-transform: uppercase; letter-spacing: 1.4px; font-weight: 600; margin-bottom: 10px;">Resumen ejecutivo</div>
     <div style="font-size: 14.5px; line-height: 1.65; color: #2a2a2a; font-family: 'Roboto', sans-serif;">
-      <p style="margin: 0; font-size: 15px; line-height: 1.7;"><strong>En Septiembre 2026, Comapan publicó 23 piezas en 4 redes (432 interacciones).</strong> TikTok es el motor de eficiencia —mejor engagement por post (68)—, Instagram aporta el mayor alcance (13,505 de audiencia). Prioridad: sostener cadencia en TikTok.</p>
+      <p style="margin: 0; font-size: 15px; line-height: 1.7;"><strong>En Septiembre 2026, Comapan publicó 23 piezas en 4 redes (432 interacciones).</strong> TikTok es el motor de eficiencia —mejor engagement por post (68)—, Facebook aporta el mayor alcance (118,939 de audiencia). Prioridad: sostener cadencia en TikTok.</p>
     </div>
   </div>
   <div class="hero">
@@ -1357,9 +1357,9 @@ DATA.consolidated.forEach(c => {
   const tr = document.createElement("tr");
   let audiencia;
   if (c.plataforma === "TikTok") {
-    audiencia = `<span style="color:var(--muted)" title="La API pública de TikTok no expone seguidores.">n/d</span>`;
+    audiencia = c.seguidores ? `${fmt(c.seguidores)} <span style="color:var(--muted);font-size:11px">seguidores</span>` : "—";
   } else if (c.plataforma === "Facebook") {
-    audiencia = `${fmt(parseInt(DATA.accounts.Facebook?.page_likes || 0))} <span style="color:var(--muted);font-size:11px">seguidores</span>`;
+    audiencia = `${fmt(parseInt(c.seguidores || DATA.accounts.Facebook?.page_likes || 0))} <span style="color:var(--muted);font-size:11px">seguidores</span>`;
   } else {
     audiencia = `${fmt(c.seguidores)} <span style="color:var(--muted);font-size:11px">seguidores</span>`;
   }
@@ -1911,7 +1911,7 @@ findings.push({
 if (ratioIgFb >= 1.5) {
   findings.push({
     title: `Instagram es donde está la audiencia que reacciona`,
-    body: `Aunque Facebook tiene una página enorme (${fmt(parseInt(DATA.accounts.Facebook?.page_likes||0))} likes), cada post en Instagram recibe <strong>${ratioIgFb}x más interacciones</strong> que uno en Facebook (${fmt(ig.engagement_promedio)} vs ${fmt(fb.engagement_promedio)}). La gente que consume Comapan en redes está en IG; FB se mantiene por inercia.`,
+    body: `Aunque Facebook tiene una página enorme (${fmt(parseInt(DATA.accounts.Facebook?.seguidores||DATA.accounts.Facebook?.page_likes||0))} seguidores), cada post en Instagram recibe <strong>${ratioIgFb}x más interacciones</strong> que uno en Facebook (${fmt(ig.engagement_promedio)} vs ${fmt(fb.engagement_promedio)}). La gente que consume Comapan en redes está en IG; FB se mantiene por inercia.`,
     impact: "alto"
   });
 }

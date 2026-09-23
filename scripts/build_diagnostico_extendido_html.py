@@ -648,8 +648,8 @@ def compute_deltas(data, sb, period):
     prev_audience = {}
     for a in prev_accounts_rows:
         plat = a["platform"]
-        # Facebook: comparar page_likes; el resto: followers
-        val = a.get("page_likes") if plat == "facebook" else a.get("followers")
+        # Todas las redes se comparan por seguidores (Facebook dejó de publicar "me gusta" de página)
+        val = a.get("followers")
         prev_audience[plat] = val
 
     # Per platform
@@ -674,8 +674,7 @@ def compute_deltas(data, sb, period):
         acc_cur = (data.get("accounts") or {}).get(cap) or {}
         cur_aud = None
         try:
-            key = "page_likes" if plat == "facebook" else "seguidores"
-            v = acc_cur.get(key)
+            v = acc_cur.get("seguidores")
             if v not in (None, ""):
                 cur_aud = int(v)
         except Exception:
@@ -1045,7 +1044,7 @@ def build_data_dict(sb: Supabase, period: str = "diagnostico") -> dict:
             snapshots.append({
                 "snapshot_date": acc.get("snapshot_fecha", ""),
                 "plataforma": cap,
-                "metrica": "followers" if cap != "Facebook" else "page_likes",
+                "metrica": "followers",
                 "valor": acc.get("seguidores") or acc.get("page_likes", ""),
                 "posts_acumulados": acc.get("posts_totales", ""),
                 "fuente": "apify",
@@ -1193,6 +1192,9 @@ def _build_one_period(sb, period: str) -> bool:
 
     # Renderizar HTML clonando el template fuente
     src = SOURCE_HTML.read_text()
+    # La sección de evolución mensual (build_evolucion_mensual.py) solo vive en la página inicial.
+    if period != "diagnostico":
+        src = re.sub(r"<!-- EVOL-MENSUAL:START -->.*?<!-- EVOL-MENSUAL:END -->\n?", "", src, flags=re.DOTALL)
     data_json = json.dumps(data, ensure_ascii=False, separators=(", ", ": "))
     src = re.sub(r"const DATA = \{.*?\};", lambda m: f"const DATA = {data_json};", src, count=1, flags=re.DOTALL)
     # REPORT_META dinamico segun periodos disponibles
@@ -1223,7 +1225,8 @@ def _build_one_period(sb, period: str) -> bool:
     top_vol = max(plats, key=lambda x: x["n"]) if total_posts > 0 else None
     top_eng = max(plats, key=lambda x: x["ep"]) if total_posts > 0 else None
     acc = data.get("accounts") or {}
-    fb_audi = int((acc.get("Facebook") or {}).get("page_likes") or 0)
+    fb_acc = acc.get("Facebook") or {}
+    fb_audi = int(fb_acc.get("seguidores") or fb_acc.get("page_likes") or 0)
     ig_audi = int((acc.get("Instagram") or {}).get("seguidores") or 0)
     top_audi_plat, top_audi_val = ("Facebook", fb_audi) if fb_audi > ig_audi else ("Instagram", ig_audi)
 

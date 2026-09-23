@@ -31,6 +31,7 @@ from pipeline.load.supabase_client import Supabase  # noqa: E402
 CLIENT_ID = "comapan"
 YEAR_START = "2026-01"
 TARGETS = [ROOT / "diagnostico" / "index.html", ROOT / "index.html"]
+PAID_FILE = ROOT / "config" / "clients" / "comapan_piezas_pauta.json"
 START = "<!-- EVOL-MENSUAL:START -->"
 END = "<!-- EVOL-MENSUAL:END -->"
 # Punto de inserción la primera vez: cierre de la sección 04 del Resumen ejecutivo.
@@ -68,7 +69,8 @@ def month_range(first: str, last: str) -> list[str]:
 
 def build_data(sb: Supabase) -> dict:
     accounts = fetch_all(sb, f"/accounts?client_id=eq.{CLIENT_ID}&select=period_id,platform,followers,snapshot_at")
-    posts = fetch_all(sb, f"/posts?client_id=eq.{CLIENT_ID}&select=platform,posted_at,engagement")
+    posts = fetch_all(sb, f"/posts?client_id=eq.{CLIENT_ID}&select=id,platform,posted_at,engagement")
+    paid_ids = {x["id"] for x in json.loads(PAID_FILE.read_text())["piezas"]}
 
     latest_snap = max(date.fromisoformat(a["snapshot_at"][:10]) for a in accounts if a.get("snapshot_at"))
     last_month = max(p["posted_at"][:7] for p in posts if p.get("posted_at"))
@@ -87,7 +89,9 @@ def build_data(sb: Supabase) -> dict:
             continue
         i = months.index(m)
         pieces[k][i] += 1
-        inter[k][i] += int(p.get("engagement") or 0)
+        # Las piezas con pauta cuentan como publicadas, pero no en interacciones orgánicas.
+        if p["id"] not in paid_ids:
+            inter[k][i] += int(p.get("engagement") or 0)
 
     # Seguidores: solo el campo followers. Se descartan cifras redondeadas a miles
     # (vienen de textos tipo "119K") porque no sirven para medir variaciones.
@@ -108,6 +112,7 @@ def build_data(sb: Supabase) -> dict:
         "partial": partial,
         "cutoffDay": latest_snap.day,
         "interactions": inter,
+        "paidCount": sum(1 for p in posts if p["id"] in paid_ids and (p.get("posted_at") or "")[:7] in months),
         "pieces": pieces,
         "fMonths": [MES[int(m[5:]) - 1] for m in f_months],
         "followers": followers,
@@ -118,8 +123,8 @@ def render_block(data: dict) -> str:
     first, last = data["months"][0], data["months"][-1]
     full = {"Ene": "enero", "Feb": "febrero", "Mar": "marzo", "Abr": "abril", "May": "mayo", "Jun": "junio",
             "Jul": "julio", "Ago": "agosto", "Sep": "septiembre", "Oct": "octubre", "Nov": "noviembre", "Dic": "diciembre"}
-    foot = (f'<div class="evo-foot">* {full[last].capitalize()} con datos hasta el {data["cutoffDay"]}.</div>'
-            if data["partial"] else "")
+    foot_txt = f'* {full[last].capitalize()} con datos hasta el {data["cutoffDay"]}.'
+    foot = f'<div class="evo-foot">{foot_txt}</div>' if data["partial"] else ""
     payload = json.dumps(data, ensure_ascii=False)
     return f"""{START}
   <div class="section-head">
@@ -149,9 +154,9 @@ def render_block(data: dict) -> str:
     <div class="learn" id="l-evo-followers"></div>
   </div>
   <div class="chart-card" style="margin-top:20px">
-    <h3>Interacciones al mes por red <i class="info-icon" data-tip="Interacciones = likes + comentarios + compartidos de las publicaciones hechas en cada mes.">i</i></h3>
+    <h3>Interacciones orgánicas al mes por red <i class="info-icon" data-tip="Interacciones = likes + comentarios + compartidos de las publicaciones hechas en cada mes. No incluye las piezas identificadas con pauta.">i</i></h3>
     <div class="chart-wrap" style="height:320px"><canvas id="c-evo-interactions"></canvas></div>
-    {foot}
+    <div class="evo-foot">No incluye {data["paidCount"]} piezas con pauta.{(" " + foot_txt) if data["partial"] else ""}</div>
     <div class="learn" id="l-evo-interactions"></div>
   </div>
   <div class="chart-card" style="margin-top:20px">

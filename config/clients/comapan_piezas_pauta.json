@@ -1,0 +1,12 @@
+{
+  "regla": "Pieza que concentra más de la mitad de las interacciones de su red en el mes (y más de 300), con señal fuerte o media de pauta. Se excluyen de las interacciones orgánicas; siguen contando como piezas publicadas.",
+  "confirmado_con_cliente": false,
+  "piezas": [
+    {"id": "7599076592505179413", "red": "tiktok", "fecha": "2026-01-24", "interacciones": 9748, "url": "https://www.tiktok.com/@comapanco/video/7599076592505179413"},
+    {"id": "894377829645146", "red": "facebook", "fecha": "2026-02-02", "interacciones": 3801, "url": "https://www.facebook.com/100072188111060/posts/894377829645146"},
+    {"id": "921969966885932", "red": "facebook", "fecha": "2026-03-09", "interacciones": 811, "url": "https://www.facebook.com/100072188111060/posts/921969966885932"},
+    {"id": "966979429051652", "red": "facebook", "fecha": "2026-05-05", "interacciones": 4246, "url": "https://www.facebook.com/100072188111060/posts/966979429051652"},
+    {"id": "3890654092486181343", "red": "instagram", "fecha": "2026-05-05", "interacciones": 5631, "url": "https://www.instagram.com/p/DX-YUiWjwHf/"},
+    {"id": "1049392297477031", "red": "facebook", "fecha": "2026-08-13", "interacciones": 830, "url": "https://www.facebook.com/100072188111060/posts/1049392297477031"}
+  ]
+}

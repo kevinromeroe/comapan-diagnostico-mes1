@@ -116,7 +116,7 @@ def assemble(
     snap_date = snapshot_dt.date().isoformat()
     for label, key in [
         ("Instagram", "followers"),
-        ("Facebook", "page_likes"),
+        ("Facebook", "followers"),
         ("LinkedIn", "followers"),
     ]:
         acc = accounts[label]
