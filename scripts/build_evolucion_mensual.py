@@ -35,8 +35,8 @@ PAID_FILE = ROOT / "config" / "clients" / "comapan_piezas_pauta.json"
 EXTRA_FOLLOWERS_FILE = ROOT / "config" / "clients" / "comapan_seguidores_extra.json"
 START = "<!-- EVOL-MENSUAL:START -->"
 END = "<!-- EVOL-MENSUAL:END -->"
-# Punto de inserción la primera vez: cierre de la sección 04 del Resumen ejecutivo.
-ANCHOR = '<div class="learn" id="l-posts-evolution"></div>\n  </div>\n'
+# Punto de inserción la primera vez: después de la tabla "Las cuatro cuentas" del Resumen ejecutivo.
+ANCHOR = '<tbody id="t-accounts"></tbody>\n    </table>\n  </div>\n'
 
 NETS = ["ig", "fb", "tt", "li"]
 PLATFORM_KEY = {"instagram": "ig", "facebook": "fb", "tiktok": "tt", "linkedin": "li"}
@@ -135,7 +135,7 @@ def render_block(data: dict) -> str:
     payload = json.dumps(data, ensure_ascii=False)
     return f"""{START}
   <div class="section-head">
-    <div class="num">05 · Evolución mes a mes</div>
+    <div class="num">04 · Evolución mes a mes</div>
     <h2>Cómo se han movido las cuentas de {full[first]} a {full[last]}.</h2>
     <div class="desc">Seguidores, interacciones y piezas publicadas por red, mes a mes.</div>
   </div>
