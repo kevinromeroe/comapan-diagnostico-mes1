@@ -754,6 +754,189 @@ const REPORT_META = {"current": "2026-07", "available": [{"id": "diagnostico", "
       <tbody id="t-accounts"></tbody>
     </table>
   </div>
+<!-- EVOL-MENSUAL:START -->
+  <div class="section-head">
+    <div class="num">04 · Evolución mes a mes</div>
+    <h2>Cómo se han movido las cuentas de enero a septiembre.</h2>
+    <div class="desc">Seguidores, interacciones y piezas publicadas por red, mes a mes.</div>
+  </div>
+  <style>
+    .evo-multiples { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+    .evo-mini { border: 1px solid var(--line); border-radius: 4px; padding: 14px 14px 10px; background: var(--bg); }
+    .evo-mini-top { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; color: var(--ink-soft); }
+    .evo-mini-top i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+    .evo-mini-val { font-family: 'Roboto Slab', serif; font-size: 26px; font-weight: 600; margin-top: 6px; font-variant-numeric: tabular-nums; color: var(--ink); }
+    .evo-mini-delta { font-size: 12px; font-weight: 500; font-variant-numeric: tabular-nums; }
+    .evo-mini-delta.up { color: #2f7d32; }
+    .evo-mini-delta.down { color: #c0392b; }
+    .evo-mini-delta span { color: var(--muted); font-weight: 400; }
+    .evo-mini-chart { position: relative; height: 90px; margin-top: 8px; }
+    .evo-foot { font-size: 12px; color: var(--muted); margin-top: 8px; }
+    @media (max-width: 1000px) { .evo-multiples { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 520px) { .evo-multiples { grid-template-columns: 1fr; } }
+    @media print { .evo-mini-chart { height: 80px; } }
+  </style>
+  <div class="chart-card">
+    <h3>Seguidores por red <i class="info-icon" data-tip="Seguidores de cada cuenta mes a mes. Cada red se muestra en su propia escala para que las variaciones sean comparables.">i</i></h3>
+    <div class="evo-multiples" id="evo-multiples"></div>
+    <div class="learn" id="l-evo-followers"></div>
+  </div>
+  <div class="chart-card" style="margin-top:20px">
+    <h3>Interacciones orgánicas al mes por red <i class="info-icon" data-tip="Interacciones = likes + comentarios + compartidos de las publicaciones hechas en cada mes. No incluye las piezas identificadas con pauta.">i</i></h3>
+    <div class="chart-wrap" style="height:320px"><canvas id="c-evo-interactions"></canvas></div>
+    <div class="evo-foot">No incluye 6 piezas con pauta. * Septiembre con datos hasta el 23.</div>
+    <div class="learn" id="l-evo-interactions"></div>
+  </div>
+  <div class="chart-card" style="margin-top:20px">
+    <h3>Piezas publicadas al mes por red <i class="info-icon" data-tip="Número de publicaciones (posts, reels y videos) hechas en cada red por mes.">i</i></h3>
+    <div class="chart-wrap" style="height:320px"><canvas id="c-evo-pieces"></canvas></div>
+    <div class="evo-foot">* Septiembre con datos hasta el 23.</div>
+    <div class="learn" id="l-evo-pieces"></div>
+  </div>
+  <script>
+  (function () {
+    const EVO = {"months": ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep"], "partial": true, "cutoffDay": 23, "interactions": {"ig": [1449, 6515, 787, 2297, 919, 363, 812, 1087, 410], "fb": [1349, 273, 515, 1589, 186, 79, 105, 492, 154], "tt": [268, 1328, 274, 295, 184, 76, 194, 768, 88], "li": [52, 86, 43, 39, 25, 90, 9, 17, 14]}, "paidCount": 6, "pieces": {"ig": [21, 30, 23, 27, 24, 19, 16, 24, 17], "fb": [23, 21, 23, 23, 21, 12, 10, 20, 16], "tt": [7, 9, 7, 10, 5, 3, 7, 10, 2], "li": [5, 6, 5, 5, 3, 5, 1, 2, 1]}, "fMonths": ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep"], "followers": {"ig": [null, null, null, null, 13422, 13404, 13434, 13478, 13512], "fb": [null, null, null, null, null, null, 119205, 119032, 118886], "tt": [null, 4821, null, null, null, null, 6032, 6294, 6316], "li": [null, null, null, null, 5020, 5135, 5195, 5260, 5302]}};
+    const NETS = [
+      { key: "ig", name: "Instagram", color: "#e1306c" },
+      { key: "fb", name: "Facebook", color: "#1877f2" },
+      { key: "tt", name: "TikTok", color: "#000000" },
+      { key: "li", name: "LinkedIn", color: "#0a66c2" },
+    ];
+    const FULL = {"Ene": "enero", "Feb": "febrero", "Mar": "marzo", "Abr": "abril", "May": "mayo", "Jun": "junio", "Jul": "julio", "Ago": "agosto", "Sep": "septiembre", "Oct": "octubre", "Nov": "noviembre", "Dic": "diciembre"};
+    const f = n => n == null ? "—" : Number(n).toLocaleString("es-CO");
+    const signed = n => (n > 0 ? "+" : n < 0 ? "−" : "") + Math.abs(n).toLocaleString("es-CO");
+    const pct = x => (x > 0 ? "+" : x < 0 ? "−" : "") + Math.abs(x).toLocaleString("es-CO", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + "%";
+    const dec = x => x.toLocaleString("es-CO", { maximumFractionDigits: 1 });
+    const avg = a => a.length ? a.reduce((s, v) => s + v, 0) / a.length : 0;
+    const setLearn = (id, html) => { const el = document.getElementById(id); if (el) el.innerHTML = "<p>" + html + "</p>"; };
+    const rgba = (hex, a) => { const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})`; };
+
+    const lastIdx = EVO.months.length - 1;
+    const complete = EVO.partial ? lastIdx : lastIdx + 1;
+    const labels = EVO.months.map((m, i) => (EVO.partial && i === lastIdx) ? m + "*" : m);
+    const totals = src => EVO.months.map((_, i) => NETS.reduce((s, n) => s + src[n.key][i], 0));
+
+    function stacked(id, src, unit) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      new Chart(el, {
+        type: "bar",
+        data: { labels, datasets: NETS.map(n => ({
+          label: n.name, data: src[n.key],
+          backgroundColor: labels.map((_, i) => (EVO.partial && i === lastIdx) ? rgba(n.color, 0.35) : n.color),
+          borderColor: "#ffffff", borderWidth: 1, maxBarThickness: 44,
+        })) },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          interaction: { mode: "index", intersect: false },
+          scales: {
+            x: { stacked: true, grid: { display: false } },
+            y: { stacked: true, beginAtZero: true, grid: { color: "#F0EDE4" }, ticks: { callback: v => Number(v).toLocaleString("es-CO"), maxTicksLimit: 6 } },
+          },
+          plugins: {
+            legend: { position: "top", align: "start", labels: { boxWidth: 10, boxHeight: 10, usePointStyle: false } },
+            tooltip: { callbacks: {
+              label: c => ` ${c.dataset.label}: ${f(c.raw)}`,
+              footer: items => `Total: ${f(items.reduce((s, it) => s + it.raw, 0))} ${unit}`,
+            } },
+          },
+        },
+      });
+    }
+
+    function followers() {
+      const box = document.getElementById("evo-multiples");
+      if (!box) return;
+      const stats = [];
+      NETS.forEach(n => {
+        const s = EVO.followers[n.key];
+        const i0 = s.findIndex(v => v != null);
+        let i1 = s.length - 1; while (i1 >= 0 && s[i1] == null) i1--;
+        if (i0 < 0 || i1 <= i0) return;
+        const d = s[i1] - s[i0], p = d / s[i0] * 100, since = FULL[EVO.fMonths[i0]];
+        stats.push({ n, d, p, since });
+        const card = document.createElement("div");
+        card.className = "evo-mini";
+        card.innerHTML = `
+          <div class="evo-mini-top"><i style="background:${n.color}"></i>${n.name}</div>
+          <div class="evo-mini-val">${f(s[i1])}</div>
+          <div class="evo-mini-delta ${d >= 0 ? "up" : "down"}">${d >= 0 ? "▲" : "▼"} ${signed(d)} (${pct(p)}) <span>desde ${since}</span></div>
+          <div class="evo-mini-chart"><canvas aria-label="Seguidores de ${n.name} por mes"></canvas></div>`;
+        box.appendChild(card);
+        new Chart(card.querySelector("canvas"), {
+          type: "line",
+          // Cada tarjeta arranca en su primer mes medido; la línea une solo mediciones reales.
+          data: { labels: EVO.fMonths.slice(i0, i1 + 1), datasets: [{
+            data: s.slice(i0, i1 + 1), borderColor: n.color, borderWidth: 2, tension: 0.25, spanGaps: true,
+            pointRadius: s.slice(i0, i1 + 1).map((v, i) => v == null ? 0 : (i === i1 - i0 ? 4.5 : 3.5)), pointBackgroundColor: n.color,
+            pointBorderColor: "#fff", pointBorderWidth: 1.5, pointHitRadius: 12,
+          }] },
+          options: {
+            responsive: true, maintainAspectRatio: false, animation: false,
+            interaction: { mode: "index", intersect: false },
+            plugins: { legend: { display: false }, tooltip: { displayColors: false, callbacks: { label: c => `${f(c.raw)} seguidores` } } },
+            scales: { x: { grid: { display: false }, border: { display: false }, ticks: { font: { size: 10 } } }, y: { display: false, grace: "15%" } },
+          },
+        });
+      });
+      if (!stats.length) return;
+      const best = [...stats].sort((a, b) => b.p - a.p)[0];
+      let t = `<strong>${best.n.name}</strong> es la red que más crece: ${signed(best.d)} seguidores (${pct(best.p)}) desde ${best.since}.`;
+      const others = stats.filter(s => s !== best && s.d > 0).map(s => `${s.n.name} (${signed(s.d)} desde ${s.since})`);
+      if (others.length) t += ` También suman ${others.join(" y ")}.`;
+      stats.filter(s => s.d < 0).forEach(s => { t += ` ${s.n.name} baja levemente: ${signed(s.d)} seguidores (${pct(s.p)}) desde ${s.since}.`; });
+      setLearn("l-evo-followers", t);
+    }
+
+    function learnInteractions() {
+      const tot = totals(EVO.interactions).slice(0, complete);
+      if (!tot.length) return;
+      const peak = tot.indexOf(Math.max(...tot));
+      const lead = NETS.map(n => ({ n, v: EVO.interactions[n.key][peak] })).sort((a, b) => b.v - a.v)[0];
+      let t = `El mes con más interacciones fue <strong>${FULL[EVO.months[peak]]}</strong> (${f(tot[peak])})`;
+      t += lead.v / tot[peak] >= 0.6 ? `, impulsado por ${lead.n.name} (${Math.round(lead.v / tot[peak] * 100)}% del mes).` : ".";
+      if (complete >= 3) {
+        const k = complete - 3, last3 = tot.slice(k);
+        const bi = k + last3.indexOf(Math.max(...last3));
+        t += ` En los últimos tres meses completos, <strong>${FULL[EVO.months[bi]]}</strong> lidera con ${f(tot[bi])}`;
+        t += bi !== k && tot[k] > 0 ? `, ${dec(tot[bi] / tot[k])} veces ${FULL[EVO.months[k]]}.` : ".";
+      }
+      setLearn("l-evo-interactions", t);
+    }
+
+    function learnPieces() {
+      const tot = totals(EVO.pieces).slice(0, complete);
+      if (!tot.length) return;
+      const peak = tot.indexOf(Math.max(...tot));
+      let t = `El mes con más piezas publicadas fue <strong>${FULL[EVO.months[peak]]}</strong> (${f(tot[peak])}).`;
+      if (complete >= 3) {
+        const k = complete - 3;
+        t += ` En los últimos tres meses completos el ritmo pasó de ${f(tot[k])} piezas en ${FULL[EVO.months[k]]} a ${f(tot[complete - 1])} en ${FULL[EVO.months[complete - 1]]}.`;
+        if (k >= 2) {
+          const drops = NETS.map(n => {
+            const before = avg(EVO.pieces[n.key].slice(0, k)), after = avg(EVO.pieces[n.key].slice(k, complete));
+            return { n, before, after, rel: before ? (after - before) / before : 0 };
+          }).filter(x => x.before >= 2 && x.rel <= -0.3).sort((a, b) => a.rel - b.rel);
+          if (drops.length) {
+            const x = drops[0];
+            t += ` ${x.n.name} es la red que más baja su frecuencia (${dec(x.before)} → ${dec(x.after)} piezas al mes).`;
+          }
+        }
+      }
+      setLearn("l-evo-pieces", t);
+    }
+
+    function run() {
+      followers();
+      stacked("c-evo-interactions", EVO.interactions, "interacciones");
+      stacked("c-evo-pieces", EVO.pieces, "piezas");
+      learnInteractions();
+      learnPieces();
+    }
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run); else run();
+  })();
+  </script>
+<!-- EVOL-MENSUAL:END -->
 
 </section>
 

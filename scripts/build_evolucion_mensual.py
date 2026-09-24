@@ -30,7 +30,9 @@ from pipeline.load.supabase_client import Supabase  # noqa: E402
 
 CLIENT_ID = "comapan"
 YEAR_START = "2026-01"
-TARGETS = [ROOT / "diagnostico" / "index.html", ROOT / "index.html"]
+# La sección se muestra en la página inicial y en todos los reportes mensuales.
+TARGETS = [ROOT / "diagnostico" / "index.html", ROOT / "index.html",
+           *sorted(ROOT.glob("20[0-9][0-9]-[01][0-9]/index.html"))]
 PAID_FILE = ROOT / "config" / "clients" / "comapan_piezas_pauta.json"
 EXTRA_FOLLOWERS_FILE = ROOT / "config" / "clients" / "comapan_seguidores_extra.json"
 START = "<!-- EVOL-MENSUAL:START -->"
@@ -158,7 +160,6 @@ def render_block(data: dict) -> str:
   <div class="chart-card">
     <h3>Seguidores por red <i class="info-icon" data-tip="Seguidores de cada cuenta mes a mes. Cada red se muestra en su propia escala para que las variaciones sean comparables.">i</i></h3>
     <div class="evo-multiples" id="evo-multiples"></div>
-    <div class="evo-foot">Los meses sin punto no tienen registro público de seguidores.</div>
     <div class="learn" id="l-evo-followers"></div>
   </div>
   <div class="chart-card" style="margin-top:20px">
@@ -245,9 +246,10 @@ def render_block(data: dict) -> str:
         box.appendChild(card);
         new Chart(card.querySelector("canvas"), {{
           type: "line",
-          data: {{ labels: EVO.fMonths, datasets: [{{
-            data: s, borderColor: n.color, borderWidth: 2, tension: 0.25, spanGaps: false,
-            pointRadius: s.map((v, i) => v == null ? 0 : (i === i1 ? 4.5 : 3.5)), pointBackgroundColor: n.color,
+          // Cada tarjeta arranca en su primer mes medido; la línea une solo mediciones reales.
+          data: {{ labels: EVO.fMonths.slice(i0, i1 + 1), datasets: [{{
+            data: s.slice(i0, i1 + 1), borderColor: n.color, borderWidth: 2, tension: 0.25, spanGaps: true,
+            pointRadius: s.slice(i0, i1 + 1).map((v, i) => v == null ? 0 : (i === i1 - i0 ? 4.5 : 3.5)), pointBackgroundColor: n.color,
             pointBorderColor: "#fff", pointBorderWidth: 1.5, pointHitRadius: 12,
           }}] }},
           options: {{

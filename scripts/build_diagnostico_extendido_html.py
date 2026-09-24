@@ -1192,9 +1192,6 @@ def _build_one_period(sb, period: str) -> bool:
 
     # Renderizar HTML clonando el template fuente
     src = SOURCE_HTML.read_text()
-    # La sección de evolución mensual (build_evolucion_mensual.py) solo vive en la página inicial.
-    if period != "diagnostico":
-        src = re.sub(r"<!-- EVOL-MENSUAL:START -->.*?<!-- EVOL-MENSUAL:END -->\n?", "", src, flags=re.DOTALL)
     data_json = json.dumps(data, ensure_ascii=False, separators=(", ", ": "))
     src = re.sub(r"const DATA = \{.*?\};", lambda m: f"const DATA = {data_json};", src, count=1, flags=re.DOTALL)
     # REPORT_META dinamico segun periodos disponibles
