@@ -1,0 +1,2196 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Comapan · Dashboard de Redes Sociales</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
+<meta name="theme-color" content="#DB0632">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@300;400;500;600;700;800&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --comapan-red: #DB0632;
+    --comapan-red-soft: #F8E0E5;
+    --comapan-yellow: #F5DA6C;
+    --comapan-orange: #FFBC7D;
+    --comapan-green: #5BAC47;
+    --comapan-turquoise: #19AAB2;
+    --ink: #1a1a1a;
+    --ink-soft: #4a4a4a;
+    --muted: #8a8a8a;
+    --line: #ececec;
+    --bg: #ffffff;
+    --bg-soft: #F2E8D5;
+    --bg-soft-2: #FBF4E4;
+    --ig: #e1306c; --fb: #1877f2; --tt: #000000; --li: #0a66c2;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; max-width: 100vw; overflow-x: clip; }
+  body {
+    font-family: 'Roboto', -apple-system, sans-serif;
+    background: var(--bg); color: var(--ink);
+    line-height: 1.55; font-size: 15px; -webkit-font-smoothing: antialiased;
+  }
+  /* Chart.js: wrap con width controlado evita que el canvas desborde el contenedor */
+  .chart-wrap, .chart-card { min-width: 0; max-width: 100%; }
+
+  /* Info icon con tooltip — explicación de métricas */
+  .info-icon {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 16px; height: 16px; border-radius: 50%; background: var(--line);
+    color: var(--ink-soft); font-size: 10px; font-weight: 700; font-style: normal;
+    cursor: help; margin-left: 6px;
+    user-select: none; vertical-align: middle; font-family: -apple-system, sans-serif;
+    transition: background 0.15s, color 0.15s;
+  }
+  .info-icon:hover, .info-icon.active { background: var(--comapan-red); color: white; }
+
+  /* Tooltip global con position: fixed — escapa cualquier overflow:hidden */
+  .global-tooltip {
+    position: fixed; background: var(--ink); color: white;
+    padding: 10px 14px; border-radius: 6px;
+    font-size: 12px; font-weight: 400; line-height: 1.5;
+    max-width: 280px; text-align: left;
+    text-transform: none; letter-spacing: normal;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.22);
+    opacity: 0; pointer-events: none; transition: opacity 0.15s;
+    z-index: 1000; top: 0; left: 0;
+  }
+  .global-tooltip.visible { opacity: 1; }
+  .global-tooltip::after {
+    content: ""; position: absolute;
+    left: var(--arrow-x, 50%); transform: translateX(-50%);
+    border: 6px solid transparent;
+  }
+  .global-tooltip:not(.below)::after {
+    top: 100%; border-top-color: var(--ink);
+  }
+  .global-tooltip.below::after {
+    bottom: 100%; border-bottom-color: var(--ink);
+  }
+  @media (max-width: 720px) {
+    .global-tooltip { max-width: 70vw; font-size: 12px; }
+  }
+
+  /* Hamburger + drawer (ocultos en desktop) */
+  .menu-toggle {
+    display: none; background: transparent; border: 0; cursor: pointer;
+    width: 40px; height: 40px; padding: 8px; flex-direction: column; gap: 5px;
+    justify-content: center; align-items: center;
+  }
+  .menu-toggle span {
+    display: block; width: 22px; height: 2px; background: var(--ink);
+    border-radius: 1px; transition: transform 0.2s, opacity 0.2s;
+  }
+  .menu-toggle.active span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+  .menu-toggle.active span:nth-child(2) { opacity: 0; }
+  .menu-toggle.active span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+  .menu-backdrop {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+    z-index: 99; opacity: 0; transition: opacity 0.25s;
+  }
+  .menu-backdrop.open { display: block; opacity: 1; }
+
+  .menu-drawer {
+    display: none; position: fixed; top: 0; right: 0; height: 100vh; width: 300px;
+    max-width: 88vw; background: var(--bg); z-index: 100;
+    transform: translateX(100%); transition: transform 0.28s cubic-bezier(.2,.8,.2,1);
+    box-shadow: -4px 0 24px rgba(0,0,0,0.12); flex-direction: column;
+    padding: 0; overflow-y: auto;
+  }
+  .menu-drawer.open { transform: translateX(0); }
+  .menu-drawer-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 24px; border-bottom: 1px solid var(--line);
+    font-family: 'Roboto Slab', serif; font-weight: 700; font-size: 15px;
+    text-transform: uppercase; letter-spacing: 1.2px; color: var(--comapan-red);
+  }
+  .menu-close {
+    background: transparent; border: 0; font-size: 28px; line-height: 1;
+    cursor: pointer; color: var(--ink-soft); padding: 0 8px;
+  }
+  .menu-drawer button[data-tab] {
+    background: transparent; border: 0; text-align: left; padding: 16px 24px;
+    font-size: 15px; color: var(--ink); cursor: pointer; font-family: inherit;
+    border-bottom: 1px solid var(--line); display: block; width: 100%;
+  }
+  .menu-drawer button[data-tab]:hover { background: var(--bg-soft-2); color: var(--comapan-red); }
+  .menu-drawer button[data-tab].active {
+    color: var(--comapan-red); font-weight: 700;
+    border-left: 3px solid var(--comapan-red); padding-left: 21px;
+  }
+  .menu-drawer a.ext-tab {
+    background: transparent; border: 0; text-align: left; padding: 16px 24px;
+    font-size: 15px; color: var(--ink); cursor: pointer; font-family: inherit;
+    border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 8px;
+    width: 100%; text-decoration: none;
+  }
+  .menu-drawer a.ext-tab:hover { background: var(--bg-soft-2); color: var(--comapan-red); }
+  .menu-drawer a.ext-tab::after {
+    content: "↗"; margin-left: auto; font-size: 12px; color: var(--muted); font-weight: 400;
+  }
+  h1, h2, h3, h4, .display { font-family: 'Roboto Slab', serif; font-weight: 700; }
+
+  /* Top bar */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 56px; border-bottom: 1px solid var(--line); background: var(--bg);
+    position: sticky; top: 0; z-index: 50; gap: 32px;
+  }
+  .topbar .brand { display: flex; align-items: center; gap: 24px; flex: 1; }
+  .agency-box { background: #1a1a1a; padding: 6px 12px; border-radius: 6px; display: flex; align-items: center; }
+  .agency-box img { height: 28px; display: block; }
+  .topbar .title-block { display: flex; flex-direction: column; gap: 2px; }
+  .topbar .title-block .eyebrow {
+    font-size: 10px; color: var(--comapan-red); text-transform: uppercase;
+    letter-spacing: 1.6px; font-weight: 700;
+  }
+  .topbar .title-block .title {
+    font-family: 'Roboto Slab', serif; font-size: 22px; font-weight: 700;
+    line-height: 1.1; color: var(--ink);
+  }
+  .topbar .title-block .title em { color: var(--comapan-red); font-style: normal; }
+  .topbar .divider { width: 1px; height: 36px; background: var(--line); }
+  .topbar .logo-comapan { height: 44px; opacity: 1; }
+  .topbar .meta { text-align: right; font-size: 12px; color: var(--muted); white-space: nowrap; }
+  .period-selector {
+    display: inline-block; margin-left: 14px; padding: 6px 28px 6px 12px;
+    border: 1px solid var(--line); border-radius: 6px; background: white;
+    font-family: inherit; font-size: 12px; font-weight: 500; color: var(--ink);
+    cursor: pointer; outline: none; transition: border-color 0.15s, box-shadow 0.15s;
+    appearance: none; -webkit-appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3e%3cpath fill='%231a1a1a' d='M0 0l5 6 5-6z'/%3e%3c/svg%3e");
+    background-repeat: no-repeat; background-position: right 10px center;
+  }
+  .period-selector:hover { border-color: var(--comapan-red); }
+  .period-selector:focus { border-color: var(--comapan-red); box-shadow: 0 0 0 3px rgba(219,6,50,0.12); }
+  .period-selector:empty { display: none; }
+  .pdf-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    margin-left: 8px; padding: 6px 12px;
+    border: 1px solid var(--line); border-radius: 6px; background: white;
+    font-family: inherit; font-size: 12px; font-weight: 500; color: var(--ink);
+    cursor: pointer; outline: none;
+    transition: border-color 0.15s, color 0.15s, box-shadow 0.15s;
+  }
+  .pdf-btn:hover { border-color: var(--comapan-red); color: var(--comapan-red); }
+  .pdf-btn:focus { border-color: var(--comapan-red); box-shadow: 0 0 0 3px rgba(219,6,50,0.12); }
+  .pdf-btn svg { display: inline-block; }
+
+  /* ============================================================
+     IMPRESIÓN A PDF
+     Optimizado para que "Imprimir → Guardar como PDF" produzca
+     un documento limpio con todas las secciones desplegadas.
+     ============================================================ */
+  @media print {
+    @page { size: A4 landscape; margin: 1cm; }
+    html, body { background: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body { font-size: 11px; }
+    /* Ocultar todo lo navegacional */
+    .menu-toggle, .menu-drawer, .menu-backdrop,
+    .period-selector, .pdf-btn,
+    nav.tabs, .info-icon, .global-tooltip { display: none !important; }
+    /* Mostrar TODAS las pestañas como secciones continuas */
+    section.tab { display: block !important; page-break-before: always; padding-top: 12px; }
+    section.tab:first-of-type { page-break-before: avoid; }
+    section.tab.active { display: block !important; }
+    /* Topbar compacto */
+    .topbar { padding: 8px 0 14px !important; border-bottom: 2px solid var(--comapan-red) !important; }
+    .topbar .meta { font-size: 10px !important; }
+    /* Charts: forzar tamaños razonables, evitar cortes feos */
+    .chart-wrap { page-break-inside: avoid; max-height: 240px; }
+    .chart-card { page-break-inside: avoid; }
+    .kpi, .ranking, .net-card, .finding, .reco-card { page-break-inside: avoid; }
+    /* FIX-PDF-PRINT-2026: evitar desbordes en A4 landscape */
+    canvas { max-width: 100% !important; }
+    .chart-wrap { height: 210px !important; max-height: 210px !important; }
+    .chart-grid.cols-2 { grid-template-columns: 1fr 1fr !important; }
+    table { font-size: 9.5px !important; }
+    table th, table td { padding: 6px 8px !important; }
+    .post-thumb, .post-thumb-placeholder { width: 64px !important; height: 64px !important; }
+    .hm-cell { font-size: 7px !important; min-height: 16px !important; }
+    /* Tooltips no van al PDF */
+    [data-tip]::after, [data-tip]::before { display: none !important; }
+    /* Footer impreso con metadata */
+    main::after {
+      content: "Datalítica Colombia S.A.S. · Generado para Catorce Días — Comapan · Documento confidencial";
+      display: block; margin-top: 20px; padding-top: 12px;
+      border-top: 1px solid var(--line);
+      font-size: 9px; color: var(--muted); text-align: center;
+    }
+  }
+  .topbar .meta strong { color: var(--comapan-red); display: block; font-size: 13px;
+    font-family: 'Roboto Slab', serif; font-weight: 700; letter-spacing: 0.3px; }
+
+  /* Nav */
+  nav.tabs {
+    display: flex; gap: 0; padding: 0 56px; border-bottom: 1px solid var(--line);
+    background: var(--bg); overflow-x: auto; position: sticky; top: 88px; z-index: 49;
+  }
+  nav.tabs button {
+    background: transparent; border: 0; color: var(--muted); cursor: pointer;
+    padding: 14px 22px; font-size: 13px; font-weight: 500;
+    border-bottom: 3px solid transparent; white-space: nowrap;
+    font-family: 'Roboto', sans-serif; letter-spacing: 0.2px;
+  }
+  nav.tabs button.active { color: var(--comapan-red); border-bottom-color: var(--comapan-red); font-weight: 700; }
+  nav.tabs button:hover { color: var(--ink); }
+  nav.tabs a.ext-tab {
+    background: transparent; color: var(--muted); text-decoration: none;
+    padding: 14px 22px; font-size: 13px; font-weight: 500;
+    border-bottom: 3px solid transparent; white-space: nowrap;
+    font-family: 'Roboto', sans-serif; letter-spacing: 0.2px;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  nav.tabs a.ext-tab:hover { color: var(--comapan-red); }
+  nav.tabs a.ext-tab::after { content: "↗"; font-size: 11px; opacity: 0.7; }
+
+  main { max-width: 1280px; margin: 0 auto; padding: 0 56px; }
+  .tab { display: none; padding: 48px 0; }
+  .tab.active { display: block; }
+
+  /* HERO */
+  .hero { padding: 80px 0 64px; border-bottom: 1px solid var(--line); }
+  .hero .eyebrow { font-size: 12px; color: var(--comapan-red); font-weight: 700;
+    text-transform: uppercase; letter-spacing: 2px; margin-bottom: 16px; }
+  .hero h1 { font-size: 56px; line-height: 1.05; margin: 0 0 24px; max-width: 900px; letter-spacing: -1px; }
+  .hero h1 em { color: var(--comapan-red); font-style: normal; }
+  .hero .lead { font-size: 19px; color: var(--ink-soft); max-width: 720px; margin: 0 0 48px; line-height: 1.5; }
+
+  /* KPI grid */
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0;
+    border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+  .kpi { padding: 28px 24px; border-right: 1px solid var(--line); position: relative; }
+  .kpi:last-child { border-right: 0; }
+  .kpi .label { font-size: 11px; color: var(--muted); text-transform: uppercase;
+    letter-spacing: 1px; font-weight: 600; margin-bottom: 12px; }
+  .kpi .value { font-family: 'Roboto Slab', serif; font-size: 38px; font-weight: 800;
+    color: var(--ink); line-height: 1; }
+  .kpi .sub { font-size: 12px; color: var(--muted); margin-top: 8px; }
+  .kpi.accent { background: var(--comapan-red); color: white; }
+  .kpi.accent .label, .kpi.accent .sub { color: rgba(255,255,255,0.7); }
+  .kpi.accent .value { color: white; }
+
+  /* Sections */
+  .section-head { margin: 64px 0 32px; }
+  .section-head .num { font-family: 'Roboto Slab', serif; font-weight: 300;
+    font-size: 14px; color: var(--comapan-red); letter-spacing: 2px;
+    text-transform: uppercase; margin-bottom: 8px; }
+  .section-head h2 { font-size: 36px; margin: 0 0 12px; letter-spacing: -0.5px; }
+  .section-head .desc { color: var(--ink-soft); font-size: 16px; max-width: 720px; }
+
+  .verdict { background: var(--bg-soft); border-left: 4px solid var(--comapan-red);
+    padding: 24px 28px; margin: 32px 0; border-radius: 0 4px 4px 0; }
+  .verdict .label { font-size: 11px; color: var(--comapan-red); font-weight: 700;
+    text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px; }
+  .verdict p { margin: 0; font-size: 17px; line-height: 1.6; color: var(--ink); }
+
+  /* Network ranking cards */
+  .ranking { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin: 24px 0; }
+  .net-card { padding: 24px; border: 1px solid var(--line); border-radius: 6px;
+    background: var(--bg); position: relative; transition: transform 0.15s; }
+  .net-card:hover { transform: translateY(-2px); border-color: var(--comapan-red); }
+  .net-card .rank { position: absolute; top: 16px; right: 20px; font-family: 'Roboto Slab', serif;
+    font-size: 36px; font-weight: 800; color: var(--line); line-height: 1; }
+  .net-card .net-name { font-weight: 700; font-size: 16px; margin-bottom: 12px; }
+  .net-card .net-name .dot { display: inline-block; width: 8px; height: 8px;
+    border-radius: 50%; margin-right: 8px; vertical-align: middle; }
+  .net-card .stat { font-family: 'Roboto Slab', serif; font-size: 28px;
+    font-weight: 700; line-height: 1; margin: 8px 0; }
+  .net-card .stat-label { font-size: 11px; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.5px; }
+  .net-card .row { display: flex; justify-content: space-between; padding: 8px 0;
+    border-top: 1px solid var(--line); font-size: 13px; }
+  .net-card .row .k { color: var(--muted); }
+  .net-card .row .v { font-weight: 600; }
+
+  /* Charts */
+  .chart-grid { display: grid; gap: 20px; }
+  .chart-grid.cols-2 { grid-template-columns: 1fr 1fr; }
+  .chart-card { padding: 24px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); }
+  .chart-card h3 { margin: 0 0 16px; font-size: 13px; color: var(--ink-soft);
+    text-transform: uppercase; letter-spacing: 1px; font-family: 'Roboto', sans-serif; font-weight: 600; }
+  .chart-wrap { position: relative; height: 280px; }
+  .learn { margin-top: 16px; padding: 14px 18px; background: var(--bg-soft-2);
+    border-left: 3px solid var(--comapan-red); border-radius: 0 4px 4px 0; }
+  .learn p { margin: 0; font-size: 13px; line-height: 1.55; color: var(--ink); }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table th { text-align: left; padding: 12px 14px; font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted);
+    font-weight: 600; border-bottom: 2px solid var(--line); }
+  table td { padding: 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table tr:hover td { background: var(--bg-soft); }
+  table a { color: var(--comapan-red); text-decoration: none; font-weight: 500; }
+  table a:hover { text-decoration: underline; }
+  .pill { display: inline-block; padding: 3px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 600; background: var(--line); color: var(--ink-soft); }
+  .post-thumb { width: 120px; height: 120px; object-fit: cover; border-radius: 8px;
+    background: var(--bg-soft); display: block; flex-shrink: 0; }
+  .post-thumb-placeholder { width: 120px; height: 120px; border-radius: 8px;
+    background: linear-gradient(135deg, #FBF4E4 0%, #F2E8D5 100%); display: flex; align-items: center; justify-content: center;
+    color: var(--comapan-red); font-size: 32px; flex-shrink: 0; border: 1px solid #E8E4DA; }
+  td .thumb-cell { display: flex; align-items: center; }
+
+  .platform-header { display: flex; align-items: center; gap: 16px; margin-bottom: 8px; }
+  .platform-dot { width: 12px; height: 12px; border-radius: 50%; }
+  .platform-header .meta { color: var(--muted); font-size: 14px; }
+
+  
+  /* Heatmap dia x hora */
+  .hm-grid { display: grid; grid-template-columns: 40px repeat(24, 1fr); gap: 1px; background: #e8e4da; padding: 1px; border-radius: 4px; font-family: 'Roboto', sans-serif; }
+  .hm-cell { background: #fff; padding: 4px 0; text-align: center; font-size: 9px; min-height: 22px; display: flex; align-items: center; justify-content: center; color: #2a2a2a; }
+  .hm-corner { background: transparent; }
+  .hm-h { color: #8a8a8a; font-weight: 600; font-size: 8px; }
+  .hm-d { color: #4a4a4a; font-weight: 700; font-size: 10px; background: #fbfaf7; }
+  .hm-v { font-size: 8px; font-weight: 600; }
+
+  /* Findings */
+  .finding { display: flex; gap: 24px; padding: 28px 0; border-bottom: 1px solid var(--line); }
+  .finding:last-child { border-bottom: 0; }
+  .finding .num { font-family: 'Roboto Slab', serif; font-size: 48px; font-weight: 300;
+    color: var(--comapan-red); line-height: 1; min-width: 60px; }
+  .finding .body h4 { margin: 0 0 8px; font-size: 18px; font-family: 'Roboto Slab', serif; }
+  .finding .body p { margin: 0; color: var(--ink-soft); font-size: 15px; }
+  .finding .impact { display: inline-block; padding: 3px 10px; border-radius: 4px;
+    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; margin-top: 8px; }
+  .impact.alto { background: var(--comapan-red); color: white; }
+  .impact.medio { background: var(--comapan-yellow); color: var(--ink); }
+  .impact.bajo { background: var(--line); color: var(--ink-soft); }
+
+  /* Recommendations */
+  .reco { display: grid; grid-template-columns: 60px 1fr; gap: 24px; padding: 24px;
+    background: var(--bg-soft); border-radius: 6px; margin: 16px 0;
+    border-left: 4px solid var(--comapan-red); }
+  .reco .num { font-family: 'Roboto Slab', serif; font-size: 36px; font-weight: 700;
+    color: var(--comapan-red); }
+  .reco h4 { margin: 0 0 8px; font-size: 18px; }
+  .reco p { margin: 0; color: var(--ink-soft); }
+  .reco .tags { margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .reco .tag { padding: 4px 10px; background: white; border: 1px solid var(--line);
+    border-radius: 20px; font-size: 11px; color: var(--ink-soft); }
+
+  /* Hashtags */
+  .hashtags { display: flex; flex-wrap: wrap; gap: 8px; }
+  .hashtags .ht { padding: 6px 14px; background: var(--bg-soft); border: 1px solid var(--line);
+    border-radius: 20px; font-size: 13px; }
+  .hashtags .ht strong { color: var(--comapan-red); margin-left: 6px; }
+
+  /* Notice / warn */
+  .notice { padding: 14px 20px; background: #FFF8E5; border: 1px solid var(--comapan-yellow);
+    border-radius: 4px; font-size: 13px; color: #6e5a1a; margin: 16px 0; }
+
+  /* Footer */
+  footer { margin-top: 80px; padding: 40px 56px; border-top: 1px solid var(--line);
+    background: var(--bg-soft); }
+  footer .footer-grid { max-width: 1280px; margin: 0 auto;
+    display: flex; justify-content: space-between; align-items: flex-start; gap: 32px; flex-wrap: wrap; }
+  footer .powered { font-size: 12px; color: var(--ink-soft); line-height: 1.6; }
+  footer .powered strong { color: var(--ink); font-weight: 700; }
+  footer details.legal-details { margin-top: 4px; font-size: 11px; color: var(--muted); }
+  footer details.legal-details summary {
+    cursor: pointer; display: inline-block; padding: 2px 0;
+    color: var(--ink-soft); font-size: 11px; user-select: none;
+    list-style: none; transition: color 0.15s;
+  }
+  footer details.legal-details summary::-webkit-details-marker { display: none; }
+  footer details.legal-details summary::before {
+    content: "▸"; display: inline-block; margin-right: 6px;
+    transition: transform 0.2s; color: var(--muted);
+  }
+  footer details.legal-details[open] summary::before { transform: rotate(90deg); }
+  footer details.legal-details summary:hover { color: var(--comapan-red); }
+  footer .legal-content {
+    margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line);
+    line-height: 1.6; max-width: 720px;
+  }
+  footer .legal-content p { margin: 0 0 8px; }
+  footer .legal-content a { color: var(--comapan-red); text-decoration: none; }
+  footer .legal-content a:hover { text-decoration: underline; }
+  footer .logos { display: flex; align-items: center; gap: 20px; }
+  footer .logos .agency-box { padding: 5px 10px; }
+  footer .logos .agency-box img { height: 20px; }
+  footer .logos img.logo-comapan-foot { height: 24px; opacity: 0.85; }
+
+  @media (max-width: 1000px) {
+    .kpi-grid, .ranking, .chart-grid.cols-2 { grid-template-columns: 1fr 1fr; }
+    .hero h1 { font-size: 38px; }
+    main, .topbar, nav.tabs, footer { padding-left: 24px; padding-right: 24px; }
+  }
+  @media (max-width: 720px) {
+    /* Hamburger + drawer activos en mobile */
+    .menu-toggle { display: flex; position: absolute; top: 14px; right: 16px; }
+    .menu-drawer { display: flex; }
+    nav.tabs { display: none; }
+
+    /* Topbar — stack vertical en mobile, dejando espacio para el hamburger */
+    .topbar { flex-direction: column; align-items: flex-start; gap: 12px;
+      padding: 14px 56px 14px 16px; position: relative; }
+    .topbar .brand { gap: 12px; flex-wrap: wrap; }
+    .topbar .title-block .title { font-size: 18px; }
+    .topbar .title-block .eyebrow { font-size: 9px; letter-spacing: 1.2px; }
+    .topbar .divider { display: none; }
+    .topbar .logo-comapan { height: 22px; }
+    .agency-box { padding: 5px 10px; }
+    .agency-box img { height: 22px; }
+    .topbar .meta { text-align: left; font-size: 11px; }
+    .topbar .meta strong { font-size: 12px; }
+
+    /* Nav tabs */
+    nav.tabs { padding: 0 16px; top: auto; position: relative; }
+    nav.tabs button { padding: 12px 14px; font-size: 12px; }
+
+    main { padding: 0 16px; }
+    .tab { padding: 24px 0; }
+
+    /* Hero */
+    .hero { padding: 40px 0 32px; }
+    .hero .eyebrow { font-size: 10px; letter-spacing: 1.5px; }
+    .hero h1 { font-size: 26px; line-height: 1.15; letter-spacing: -0.5px; }
+    .hero .lead { font-size: 15px; margin-bottom: 28px; }
+
+    /* Section heads */
+    .section-head { margin: 36px 0 20px; }
+    .section-head h2 { font-size: 22px; }
+    .section-head .desc { font-size: 14px; }
+    .section-head .num { font-size: 11px; }
+
+    /* KPI grid — 1 col en mobile */
+    .kpi-grid { grid-template-columns: 1fr; }
+    .kpi { padding: 18px 20px; border-right: 0; border-bottom: 1px solid var(--line); }
+    .kpi:last-child { border-bottom: 0; }
+    .kpi .value { font-size: 30px; }
+
+    /* Ranking cards y comparativos — 1 col */
+    .ranking, .chart-grid.cols-2 { grid-template-columns: 1fr; gap: 12px; }
+    .net-card .stat { font-size: 24px; }
+    .net-card .rank { font-size: 28px; top: 12px; right: 14px; }
+
+    /* Cards y charts */
+    .chart-card { padding: 16px; min-width: 0; }
+    .chart-card h3 { font-size: 12px; }
+    .chart-wrap { height: 240px !important; min-width: 0; max-width: 100%; overflow: hidden; }
+
+    /* Verdict */
+    .verdict { padding: 18px 20px; }
+    .verdict p { font-size: 15px; }
+
+    /* Tablas Top 5 — scroll horizontal con touch */
+    .tab table { display: block; overflow-x: auto; white-space: nowrap;
+      -webkit-overflow-scrolling: touch; }
+    .tab table thead, .tab table tbody { display: table; min-width: 640px; width: 100%; }
+    .tab table th, .tab table td { padding: 10px 8px; font-size: 12px; }
+    .post-thumb, .post-thumb-placeholder { width: 90px; height: 90px; }
+
+    /* Findings */
+    .finding { padding: 20px 0; gap: 14px; }
+    .finding .num { font-size: 32px; min-width: 36px; }
+    .finding .body h4 { font-size: 16px; }
+    .finding .body p { font-size: 14px; }
+
+    /* Recos */
+    .reco { grid-template-columns: 40px 1fr; gap: 14px; padding: 18px; }
+    .reco .num { font-size: 26px; }
+    .reco h4 { font-size: 16px; }
+
+    /* Footer */
+    footer { padding: 24px 16px; }
+    footer .footer-grid { flex-direction: column; align-items: flex-start; gap: 16px; }
+    footer .legal { font-size: 10px; }
+
+    /* Hashtags */
+    .hashtags .ht { font-size: 12px; padding: 4px 10px; }
+
+    /* Platform header en cada tab */
+    .platform-header { flex-wrap: wrap; gap: 8px; }
+    .platform-header h2 { font-size: 22px; }
+  }
+/* ============================================================
+     IMPRESIÓN A PDF — v2 ORDENADO (cuadrícula estándar, sin cortes)
+     Este bloque va DESPUÉS del <style> existente y sobrescribe lo anterior.
+     ============================================================ */
+  @media print {
+    @page { size: A4 landscape; margin: 0.8cm; }
+    html, body { background: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    body { font-size: 10.5px !important; }
+
+    /* Ocultar lo navegacional */
+    .menu-toggle, .menu-drawer, .menu-backdrop, .period-selector, .pdf-btn,
+    nav.tabs, .info-icon, .global-tooltip { display: none !important; }
+
+    /* Cada red arranca en página nueva (la primera no) */
+    section.tab { display: block !important; page-break-before: always; break-before: page; padding-top: 4px !important; }
+    section.tab:first-of-type { page-break-before: avoid; break-before: avoid; }
+
+    /* HERO compacto: que título + subtítulo + KPIs quepan JUNTOS en la misma página */
+    .hero { margin: 4px 0 8px !important; }
+    .hero h1 { font-size: 20px !important; line-height: 1.12 !important; margin: 4px 0 6px !important; }
+    .hero .lead { font-size: 11px !important; margin: 0 0 8px !important; }
+    .eyebrow { margin: 2px 0 !important; }
+
+    /* Encabezados NUNCA huérfanos: se quedan pegados a su contenido */
+    .section-head { margin: 8px 0 6px !important; break-after: avoid !important; page-break-after: avoid !important; }
+    .section-head h2 { font-size: 15px !important; margin: 2px 0 !important; }
+    .section-head .desc { font-size: 10px !important; margin-top: 2px !important; }
+    h1, h2, h3 { break-after: avoid !important; page-break-after: avoid !important; }
+
+    /* Unidades que NUNCA se parten entre páginas */
+    .kpi-grid, .ranking, .chart-card, table, .net-card, .finding, .reco-card {
+      break-inside: avoid !important; page-break-inside: avoid !important;
+    }
+
+    /* KPIs y ranking compactos */
+    .kpi-grid { gap: 8px !important; margin: 6px 0 !important; }
+    .ranking { gap: 8px !important; margin: 6px 0 !important; }
+
+    /* GRÁFICOS: altura fija que sí cabe + cuadrícula estándar 2 por fila */
+    .chart-grid { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 10px !important; }
+    .chart-card { margin: 0 0 8px !important; padding: 10px !important; }
+    .chart-wrap { height: 170px !important; max-height: 170px !important; }
+    canvas { max-width: 100% !important; max-height: 170px !important; }
+
+    /* Tablas legibles y compactas */
+    table { font-size: 9px !important; }
+    table th, table td { padding: 4px 6px !important; }
+    .post-thumb, .post-thumb-placeholder { width: 56px !important; height: 56px !important; }
+    .hm-cell { font-size: 7px !important; min-height: 15px !important; }
+
+    /* Topbar compacto + pie de página */
+    .topbar { padding: 6px 0 10px !important; border-bottom: 2px solid var(--comapan-red) !important; }
+    [data-tip]::after, [data-tip]::before { display: none !important; }
+    main::after {
+      content: "Datalítica Colombia S.A.S. · Generado para Catorce Días — Comapan · Documento confidencial";
+      display: block; margin-top: 14px; padding-top: 10px;
+      border-top: 1px solid var(--line);
+      font-size: 9px; color: var(--muted); text-align: center;
+    }
+  }
+/* ============================================================
+     IMPRESIÓN A PDF — v3 (ordenado, sin huérfanos, encabezados por red)
+     Va DESPUÉS del <style> existente. Se PEGA, no se borra nada.
+     ============================================================ */
+  @media print {
+    @page { size: A4 landscape; margin: 0.8cm; }
+    html, body { background:#fff !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    body { font-size: 10.5px !important; }
+
+    .menu-toggle, .menu-drawer, .menu-backdrop, .period-selector, .pdf-btn,
+    nav.tabs, .info-icon, .global-tooltip { display:none !important; }
+
+    /* Cada red arranca en página nueva */
+    section.tab { display:block !important; page-break-before: always; break-before: page; padding-top: 2px !important; }
+    section.tab:first-of-type { page-break-before: avoid; break-before: avoid; }
+
+    /* --- Quitar el hueco gigante entre Resumen ejecutivo y Panorama --- */
+    .resumen-corp { margin: 0 0 8px !important; padding: 14px 18px !important; }
+    .hero { margin: 2px 0 8px !important; }
+    .hero h1 { font-size: 20px !important; line-height: 1.12 !important; margin: 4px 0 6px !important; }
+    .hero .lead { font-size: 11px !important; margin: 0 0 6px !important; }
+    .eyebrow { margin: 2px 0 !important; }
+    .kpi-grid { margin: 8px 0 !important; gap: 8px !important; }
+
+    /* --- Cada sección clave (02 Ranking, 03 Vista comparada, 04 Evolución) --- */
+    /* arranca en página nueva: el título NUNCA queda huérfano y el contenido va completo */
+    .section-head { page-break-before: always; break-before: page; break-after: avoid; page-break-after: avoid; margin: 0 0 8px !important; }
+    .section-head h2 { font-size: 15px !important; margin: 2px 0 !important; }
+    .section-head .desc { font-size: 10px !important; margin-top: 2px !important; }
+    h1, h2, h3 { break-after: avoid !important; page-break-after: avoid !important; }
+
+    /* --- Encabezado grande y diferenciado por red social --- */
+    .platform-header {
+      display:flex !important; align-items:center !important; gap:10px !important;
+      background:#F4F5F7 !important; border:1px solid #E3E3E6 !important; border-left:6px solid #999 !important;
+      padding:10px 14px !important; margin:0 0 10px !important; border-radius:4px !important;
+      break-after: avoid !important; page-break-after: avoid !important;
+    }
+    .platform-header h2 { font-size:20px !important; margin:0 !important; }
+    .platform-header .meta { font-size:11px !important; color:#6a6a6a !important; }
+    #tab-instagram .platform-header { border-left-color:#E1306C !important; }
+    #tab-facebook  .platform-header { border-left-color:#1877F2 !important; }
+    #tab-tiktok    .platform-header { border-left-color:#111111 !important; }
+    #tab-linkedin  .platform-header { border-left-color:#0A66C2 !important; }
+    .platform-header + .kpi-grid { margin-top: 10px !important; }
+
+    /* Unidades que NUNCA se parten entre páginas */
+    .kpi-grid, .ranking, .chart-card, table, .net-card, .finding, .reco-card {
+      break-inside: avoid !important; page-break-inside: avoid !important;
+    }
+    .ranking { gap: 8px !important; margin: 6px 0 !important; }
+
+    /* Gráficos: cuadrícula 2 por fila + altura fija que sí cabe */
+    .chart-grid { display:grid !important; grid-template-columns: 1fr 1fr !important; gap: 10px !important; margin-top: 12px !important; }
+    .chart-card { margin: 0 0 8px !important; padding: 10px !important; }
+    .chart-wrap { height: 165px !important; max-height: 165px !important; }
+    canvas { max-width: 100% !important; max-height: 165px !important; }
+
+    /* Tablas legibles y compactas */
+    table { font-size: 9px !important; }
+    table th, table td { padding: 4px 6px !important; }
+    .post-thumb, .post-thumb-placeholder { width: 54px !important; height: 54px !important; }
+    .hm-cell { font-size: 7px !important; min-height: 15px !important; }
+
+    .topbar { padding: 6px 0 10px !important; border-bottom: 2px solid var(--comapan-red) !important; }
+    [data-tip]::after, [data-tip]::before { display:none !important; }
+    main::after {
+      content: "Datalítica Colombia S.A.S. · Generado para Catorce Días — Comapan · Documento confidencial";
+      display:block; margin-top:14px; padding-top:10px; border-top:1px solid var(--line);
+      font-size:9px; color:var(--muted); text-align:center;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <img class="logo-comapan" src="/assets/logo-comapan.svg" alt="Comapan" onerror="this.src='/assets/logo-comapan.png'">
+    <div class="divider"></div>
+    <div class="title-block">
+      <span class="eyebrow">Inteligencia de redes</span>
+      <span class="title">Dashboard de Redes Sociales · <em>Comapan</em></span>
+    </div>
+    <div class="divider"></div>
+    <div class="agency-box"><img src="/assets/logo-14dias.svg" alt="Catorce Días"></div>
+  </div>
+  <div class="meta">
+    <strong>Lectura ejecutiva</strong>
+    <span id="meta-window"></span>
+    <select id="period-selector" class="period-selector" aria-label="Seleccionar periodo de reporte"
+            onchange="if(this.value)window.location.href=this.value"></select>
+    <button class="pdf-btn" type="button" onclick="window.open('reporte.pdf','_blank','noopener')" aria-label="Descargar el PDF del período">
+      <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
+        <path fill="currentColor" d="M5 1h6l4 4v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zm6 1.5V5h2.5L11 2.5zM6 10h4v1H6v-1zm0-2h4v1H6V8z"/>
+      </svg>
+      <span>PDF</span>
+    </button>
+  </div>
+  <button class="menu-toggle" id="menu-toggle" aria-label="Abrir menú">
+    <span></span><span></span><span></span>
+  </button>
+</div>
+<script>
+const REPORT_META = {"current": "2026-10", "available": [{"id": "diagnostico", "label": "Diagnóstico (Ene-May 2026)", "url": "/diagnostico/"}, {"id": "2026-06", "label": "Junio 2026", "url": "/2026-06/"}, {"id": "2026-07", "label": "Julio 2026", "url": "/2026-07/"}, {"id": "2026-08", "label": "Agosto 2026", "url": "/2026-08/"}, {"id": "2026-09", "label": "Septiembre 2026", "url": "/2026-09/"}, {"id": "2026-10", "label": "Octubre 2026", "url": "/2026-10/"}]};
+(function(){
+  if (typeof REPORT_META === "undefined") return;
+  var sel = document.getElementById("period-selector");
+  if (!sel) return;
+  (REPORT_META.available || []).forEach(function(p){
+    var opt = document.createElement("option");
+    opt.value = p.url;
+    opt.textContent = p.label;
+    if (p.id === REPORT_META.current) opt.selected = true;
+    sel.appendChild(opt);
+  });
+})();
+</script>
+
+<div class="menu-backdrop" id="menu-backdrop"></div>
+<aside class="menu-drawer" id="menu-drawer" aria-label="Menú de secciones">
+  <div class="menu-drawer-head">
+    <span>Secciones</span>
+    <button class="menu-close" id="menu-close" aria-label="Cerrar menú">×</button>
+  </div>
+  <button data-tab="resumen">Resumen ejecutivo</button>
+  <button data-tab="instagram">Instagram</button>
+  <button data-tab="facebook">Facebook</button>
+  <button data-tab="tiktok">TikTok</button>
+  <button data-tab="linkedin">LinkedIn</button>
+  <button data-tab="categorias">Categorías</button>
+  <a href="/social-listening.html" class="ext-tab">Escucha social</a>
+</aside>
+
+<nav class="tabs">
+  <button class="active" data-tab="resumen">Resumen ejecutivo</button>
+  <button data-tab="instagram">Instagram</button>
+  <button data-tab="facebook">Facebook</button>
+  <button data-tab="tiktok">TikTok</button>
+  <button data-tab="linkedin">LinkedIn</button>
+  <button data-tab="categorias">Categorías</button>
+  <a href="/social-listening.html" class="ext-tab">Escucha social</a>
+</nav>
+
+<main>
+
+<!-- ============ RESUMEN EJECUTIVO ============ -->
+<section class="tab active" id="tab-resumen">
+  <div class="resumen-corp" style="margin: 0 0 18px; padding: 22px 26px; background: #FBFAF7; border: 1px solid #E8E4DA; border-radius: 4px;">
+    <div style="font-size: 10px; color: #8a8a8a; text-transform: uppercase; letter-spacing: 1.4px; font-weight: 600; margin-bottom: 10px;">Resumen ejecutivo</div>
+    <div style="font-size: 14.5px; line-height: 1.65; color: #2a2a2a; font-family: 'Roboto', sans-serif;">
+      <p style="margin: 0; font-size: 15px; line-height: 1.7;"><strong>En Octubre 2026, Comapan publicó 7 piezas en 4 redes (478 interacciones).</strong> Instagram es el motor de eficiencia —mejor engagement por post (108)—, Facebook aporta el mayor alcance (118,750 de audiencia), y Facebook queda subutilizado (1 post). Prioridad: sostener cadencia en Instagram.</p>
+    </div>
+  </div>
+  <div class="hero">
+    <div class="eyebrow">Panorama general · Octubre 2026</div>
+    <h1>Cómo se comporta <em>Comapan</em> en redes hoy.</h1>
+    <p class="lead">Una lectura descriptiva de la actividad y desempeño de las cuentas oficiales en Instagram, Facebook, TikTok y LinkedIn — basada únicamente en datos públicos.</p>
+
+    <div class="kpi-grid" id="kpi-hero"></div>
+  </div>
+
+  <div class="section-head">
+    <div class="num">02 · Ranking</div>
+    <h2>Cómo rinde cada red, ordenada por desempeño.</h2>
+    <div class="desc">Las redes están ordenadas por engagement total. La cifra grande corresponde al engagement por publicación promedio — el indicador más importante para entender eficiencia.</div>
+  </div>
+  <div class="ranking" id="ranking-cards"></div>
+
+  <div class="section-head">
+    <div class="num">03 · Vista comparada</div>
+    <h2>Las cuatro cuentas en una sola tabla</h2>
+  </div>
+  <div class="chart-card" style="padding:0">
+    <table>
+      <thead><tr>
+        <th>Red</th><th>Cuenta</th><th>Audiencia</th><th>Posts (periodo)</th>
+        <th>Engagement total</th><th>Eng./post</th><th>Top post</th>
+      </tr></thead>
+      <tbody id="t-accounts"></tbody>
+    </table>
+  </div>
+
+<!-- EVOL-MENSUAL:START -->
+  <div class="section-head">
+    <div class="num">04 · Evolución mes a mes</div>
+    <h2>Cómo se han movido las cuentas de enero a octubre.</h2>
+    <div class="desc">Seguidores, interacciones y piezas publicadas por red, mes a mes.</div>
+  </div>
+  <style>
+    .evo-multiples { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+    .evo-mini { border: 1px solid var(--line); border-radius: 4px; padding: 14px 14px 10px; background: var(--bg); }
+    .evo-mini-top { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; color: var(--ink-soft); }
+    .evo-mini-top i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+    .evo-mini-val { font-family: 'Roboto Slab', serif; font-size: 26px; font-weight: 600; margin-top: 6px; font-variant-numeric: tabular-nums; color: var(--ink); }
+    .evo-mini-delta { font-size: 12px; font-weight: 500; font-variant-numeric: tabular-nums; }
+    .evo-mini-delta.up { color: #2f7d32; }
+    .evo-mini-delta.down { color: #c0392b; }
+    .evo-mini-delta span { color: var(--muted); font-weight: 400; }
+    .evo-mini-chart { position: relative; height: 90px; margin-top: 8px; }
+    .evo-foot { font-size: 12px; color: var(--muted); margin-top: 8px; }
+    @media (max-width: 1000px) { .evo-multiples { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 520px) { .evo-multiples { grid-template-columns: 1fr; } }
+    @media print { .evo-mini-chart { height: 80px; } }
+  </style>
+  <div class="chart-card">
+    <h3>Seguidores por red <i class="info-icon" data-tip="Seguidores de cada cuenta mes a mes. Cada red se muestra en su propia escala para que las variaciones sean comparables.">i</i></h3>
+    <div class="evo-multiples" id="evo-multiples"></div>
+    <div class="learn" id="l-evo-followers"></div>
+  </div>
+  <div class="chart-card" style="margin-top:20px">
+    <h3>Interacciones orgánicas al mes por red <i class="info-icon" data-tip="Interacciones = likes + comentarios + compartidos de las publicaciones hechas en cada mes. No incluye las piezas identificadas con pauta.">i</i></h3>
+    <div class="chart-wrap" style="height:320px"><canvas id="c-evo-interactions"></canvas></div>
+    <div class="evo-foot">No incluye 6 piezas con pauta. * Octubre con datos hasta el 14.</div>
+    <div class="learn" id="l-evo-interactions"></div>
+  </div>
+  <div class="chart-card" style="margin-top:20px">
+    <h3>Piezas publicadas al mes por red <i class="info-icon" data-tip="Número de publicaciones (posts, reels y videos) hechas en cada red por mes.">i</i></h3>
+    <div class="chart-wrap" style="height:320px"><canvas id="c-evo-pieces"></canvas></div>
+    <div class="evo-foot">* Octubre con datos hasta el 14.</div>
+    <div class="learn" id="l-evo-pieces"></div>
+  </div>
+  <script>
+  (function () {
+    const EVO = {"months": ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct"], "partial": true, "cutoffDay": 14, "interactions": {"ig": [1449, 6515, 787, 2297, 919, 363, 812, 1087, 2733, 431], "fb": [1349, 273, 515, 1589, 186, 79, 105, 492, 187, 20], "tt": [268, 1328, 274, 295, 184, 76, 194, 768, 90, 16], "li": [52, 86, 43, 39, 25, 90, 9, 17, 14, 11]}, "paidCount": 6, "pieces": {"ig": [21, 30, 23, 27, 24, 19, 16, 24, 23, 4], "fb": [23, 21, 23, 23, 21, 12, 10, 20, 21, 1], "tt": [7, 9, 7, 10, 5, 3, 7, 10, 2, 1], "li": [5, 6, 5, 5, 3, 5, 1, 2, 1, 1]}, "fMonths": ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct"], "followers": {"ig": [null, null, null, null, 13422, 13404, 13434, 13478, 13523, 13540], "fb": [null, null, null, null, null, null, 119205, 119032, 118831, 118750], "tt": [null, 4821, null, null, null, null, 6032, 6294, 6321, 6321], "li": [null, null, null, null, 5020, 5135, 5195, 5260, 5322, 5346]}};
+    const NETS = [
+      { key: "ig", name: "Instagram", color: "#e1306c" },
+      { key: "fb", name: "Facebook", color: "#1877f2" },
+      { key: "tt", name: "TikTok", color: "#000000" },
+      { key: "li", name: "LinkedIn", color: "#0a66c2" },
+    ];
+    const FULL = {"Ene": "enero", "Feb": "febrero", "Mar": "marzo", "Abr": "abril", "May": "mayo", "Jun": "junio", "Jul": "julio", "Ago": "agosto", "Sep": "septiembre", "Oct": "octubre", "Nov": "noviembre", "Dic": "diciembre"};
+    const f = n => n == null ? "—" : Number(n).toLocaleString("es-CO");
+    const signed = n => (n > 0 ? "+" : n < 0 ? "−" : "") + Math.abs(n).toLocaleString("es-CO");
+    const pct = x => (x > 0 ? "+" : x < 0 ? "−" : "") + Math.abs(x).toLocaleString("es-CO", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + "%";
+    const dec = x => x.toLocaleString("es-CO", { maximumFractionDigits: 1 });
+    const avg = a => a.length ? a.reduce((s, v) => s + v, 0) / a.length : 0;
+    const setLearn = (id, html) => { const el = document.getElementById(id); if (el) el.innerHTML = "<p>" + html + "</p>"; };
+    const rgba = (hex, a) => { const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})`; };
+
+    const lastIdx = EVO.months.length - 1;
+    const complete = EVO.partial ? lastIdx : lastIdx + 1;
+    const labels = EVO.months.map((m, i) => (EVO.partial && i === lastIdx) ? m + "*" : m);
+    const totals = src => EVO.months.map((_, i) => NETS.reduce((s, n) => s + src[n.key][i], 0));
+
+    function stacked(id, src, unit) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      new Chart(el, {
+        type: "bar",
+        data: { labels, datasets: NETS.map(n => ({
+          label: n.name, data: src[n.key],
+          backgroundColor: labels.map((_, i) => (EVO.partial && i === lastIdx) ? rgba(n.color, 0.35) : n.color),
+          borderColor: "#ffffff", borderWidth: 1, maxBarThickness: 44,
+        })) },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          interaction: { mode: "index", intersect: false },
+          scales: {
+            x: { stacked: true, grid: { display: false } },
+            y: { stacked: true, beginAtZero: true, grid: { color: "#F0EDE4" }, ticks: { callback: v => Number(v).toLocaleString("es-CO"), maxTicksLimit: 6 } },
+          },
+          plugins: {
+            legend: { position: "top", align: "start", labels: { boxWidth: 10, boxHeight: 10, usePointStyle: false } },
+            tooltip: { callbacks: {
+              label: c => ` ${c.dataset.label}: ${f(c.raw)}`,
+              footer: items => `Total: ${f(items.reduce((s, it) => s + it.raw, 0))} ${unit}`,
+            } },
+          },
+        },
+      });
+    }
+
+    function followers() {
+      const box = document.getElementById("evo-multiples");
+      if (!box) return;
+      const stats = [];
+      NETS.forEach(n => {
+        const s = EVO.followers[n.key];
+        const i0 = s.findIndex(v => v != null);
+        let i1 = s.length - 1; while (i1 >= 0 && s[i1] == null) i1--;
+        if (i0 < 0 || i1 <= i0) return;
+        const d = s[i1] - s[i0], p = d / s[i0] * 100, since = FULL[EVO.fMonths[i0]];
+        stats.push({ n, d, p, since });
+        const card = document.createElement("div");
+        card.className = "evo-mini";
+        card.innerHTML = `
+          <div class="evo-mini-top"><i style="background:${n.color}"></i>${n.name}</div>
+          <div class="evo-mini-val">${f(s[i1])}</div>
+          <div class="evo-mini-delta ${d >= 0 ? "up" : "down"}">${d >= 0 ? "▲" : "▼"} ${signed(d)} (${pct(p)}) <span>desde ${since}</span></div>
+          <div class="evo-mini-chart"><canvas aria-label="Seguidores de ${n.name} por mes"></canvas></div>`;
+        box.appendChild(card);
+        new Chart(card.querySelector("canvas"), {
+          type: "line",
+          // Cada tarjeta arranca en su primer mes medido; la línea une solo mediciones reales.
+          data: { labels: EVO.fMonths.slice(i0, i1 + 1), datasets: [{
+            data: s.slice(i0, i1 + 1), borderColor: n.color, borderWidth: 2, tension: 0.25, spanGaps: true,
+            pointRadius: s.slice(i0, i1 + 1).map((v, i) => v == null ? 0 : (i === i1 - i0 ? 4.5 : 3.5)), pointBackgroundColor: n.color,
+            pointBorderColor: "#fff", pointBorderWidth: 1.5, pointHitRadius: 12,
+          }] },
+          options: {
+            responsive: true, maintainAspectRatio: false, animation: false,
+            interaction: { mode: "index", intersect: false },
+            plugins: { legend: { display: false }, tooltip: { displayColors: false, callbacks: { label: c => `${f(c.raw)} seguidores` } } },
+            scales: { x: { grid: { display: false }, border: { display: false }, ticks: { font: { size: 10 } } }, y: { display: false, grace: "15%" } },
+          },
+        });
+      });
+      if (!stats.length) return;
+      const best = [...stats].sort((a, b) => b.p - a.p)[0];
+      let t = `<strong>${best.n.name}</strong> es la red que más crece: ${signed(best.d)} seguidores (${pct(best.p)}) desde ${best.since}.`;
+      const others = stats.filter(s => s !== best && s.d > 0).map(s => `${s.n.name} (${signed(s.d)} desde ${s.since})`);
+      if (others.length) t += ` También suman ${others.join(" y ")}.`;
+      stats.filter(s => s.d < 0).forEach(s => { t += ` ${s.n.name} baja levemente: ${signed(s.d)} seguidores (${pct(s.p)}) desde ${s.since}.`; });
+      setLearn("l-evo-followers", t);
+    }
+
+    function learnInteractions() {
+      const tot = totals(EVO.interactions).slice(0, complete);
+      if (!tot.length) return;
+      const peak = tot.indexOf(Math.max(...tot));
+      const lead = NETS.map(n => ({ n, v: EVO.interactions[n.key][peak] })).sort((a, b) => b.v - a.v)[0];
+      let t = `El mes con más interacciones fue <strong>${FULL[EVO.months[peak]]}</strong> (${f(tot[peak])})`;
+      t += lead.v / tot[peak] >= 0.6 ? `, impulsado por ${lead.n.name} (${Math.round(lead.v / tot[peak] * 100)}% del mes).` : ".";
+      if (complete >= 3) {
+        const k = complete - 3, last3 = tot.slice(k);
+        const bi = k + last3.indexOf(Math.max(...last3));
+        t += ` En los últimos tres meses completos, <strong>${FULL[EVO.months[bi]]}</strong> lidera con ${f(tot[bi])}`;
+        t += bi !== k && tot[k] > 0 ? `, ${dec(tot[bi] / tot[k])} veces ${FULL[EVO.months[k]]}.` : ".";
+      }
+      setLearn("l-evo-interactions", t);
+    }
+
+    function learnPieces() {
+      const tot = totals(EVO.pieces).slice(0, complete);
+      if (!tot.length) return;
+      const peak = tot.indexOf(Math.max(...tot));
+      let t = `El mes con más piezas publicadas fue <strong>${FULL[EVO.months[peak]]}</strong> (${f(tot[peak])}).`;
+      if (complete >= 3) {
+        const k = complete - 3;
+        t += ` En los últimos tres meses completos el ritmo pasó de ${f(tot[k])} piezas en ${FULL[EVO.months[k]]} a ${f(tot[complete - 1])} en ${FULL[EVO.months[complete - 1]]}.`;
+        if (k >= 2) {
+          const drops = NETS.map(n => {
+            const before = avg(EVO.pieces[n.key].slice(0, k)), after = avg(EVO.pieces[n.key].slice(k, complete));
+            return { n, before, after, rel: before ? (after - before) / before : 0 };
+          }).filter(x => x.before >= 2 && x.rel <= -0.3).sort((a, b) => a.rel - b.rel);
+          if (drops.length) {
+            const x = drops[0];
+            t += ` ${x.n.name} es la red que más baja su frecuencia (${dec(x.before)} → ${dec(x.after)} piezas al mes).`;
+          }
+        }
+      }
+      setLearn("l-evo-pieces", t);
+    }
+
+    function run() {
+      followers();
+      stacked("c-evo-interactions", EVO.interactions, "interacciones");
+      stacked("c-evo-pieces", EVO.pieces, "piezas");
+      learnInteractions();
+      learnPieces();
+    }
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run); else run();
+  })();
+  </script>
+<!-- EVOL-MENSUAL:END -->
+</section>
+
+
+
+<!-- ============ INSTAGRAM ============ -->
+<section class="tab" id="tab-instagram">
+  <div class="platform-header">
+    <span class="platform-dot" style="background:var(--ig)"></span>
+    <h2 style="margin:0">Instagram</h2>
+    <span class="meta">@<span id="ig-user">comapan_co</span></span>
+  </div>
+  <div class="kpi-grid" id="kpi-ig" style="margin-top:24px"></div>
+  <div style="margin-top:20px; padding:12px 16px; background:#FBFAF7; border:1px solid #E8E4DA; border-radius:4px; font-size:11.5px; color:#6a6a6a; line-height:1.55;">
+    <strong style="color:#4a4a4a;">Sobre estos gráficos</strong> · Las distribuciones, ranking semanal, día y hora se calculan únicamente sobre las <strong>publicaciones típicas</strong> (excluyen los posts atípicos con engagement &gt; 5× la mediana del período) para que ningún hit aislado distorsione las tendencias. Las publicaciones atípicas se muestran aparte en la sección "Análisis por publicación", y las KPIs del encabezado también se calculan solo sobre las publicaciones típicas (excluyen la pauta).
+  </div>
+  <div class="chart-grid cols-2" style="margin-top:32px">
+    <div class="chart-card"><h3>Volumen semanal de publicación <i class="info-icon" data-tip="Cantidad de publicaciones por semana. Mide el ritmo del calendario editorial — picos altos indican semanas activas, valles indican gaps de contenido.">i</i></h3><div class="chart-wrap"><canvas id="c-ig-week"></canvas></div><div class="learn" id="l-ig-week"></div></div>
+    <div class="chart-card"><h3>Engagement promedio por tipo de contenido <i class="info-icon" data-tip="Promedio de likes + comentarios que recibe cada formato (foto, carrusel, reel). Se calcula sumando el engagement de los posts del tipo y dividiendo entre cuántos hubo. Identifica el formato que más conecta.">i</i></h3><div class="chart-wrap"><canvas id="c-ig-type"></canvas></div><div class="learn" id="l-ig-type"></div></div>
+    <div class="chart-card"><h3>Mejor día de la semana <i class="info-icon" data-tip="Engagement promedio de los posts publicados ese día específico de la semana, comparado contra los demás días. Revela el día con mejor desempeño para esta cuenta.">i</i></h3><div class="chart-wrap"><canvas id="c-ig-dow"></canvas></div><div class="learn" id="l-ig-dow"></div></div>
+    <div class="chart-card"><h3>Distribución por hora del día <i class="info-icon" data-tip="Cantidad de publicaciones que se hicieron en cada franja horaria. Muestra los hábitos de publicación del equipo, no necesariamente cuándo la audiencia está más activa.">i</i></h3><div class="chart-wrap"><canvas id="c-ig-hour"></canvas></div><div class="learn" id="l-ig-hour"></div></div>
+    <div class="chart-card"><h3>Heatmap día × hora — engagement promedio <i class="info-icon" data-tip="Cada celda es el engagement promedio de los posts publicados ese día de la semana a esa hora del día. Cuanto mas roja, mejor performance. Util para encontrar ventanas optimas de publicacion.">i</i></h3><div id="h-ig-heatmap" style="overflow-x: auto"></div></div>
+    <div class="chart-card"><h3>Mix de contenido <i class="info-icon" data-tip="Distribucion de los posts del periodo por categoria de contenido (etiquetado automatico por IA basado en el caption).">i</i></h3><div class="chart-wrap"><canvas id="c-ig-tagmix"></canvas></div><div class="learn" id="l-ig-tagmix"></div></div>
+    <div class="chart-card"><h3>Engagement por categoría <i class="info-icon" data-tip="Engagement promedio por post segun la categoria. Indica que tipo de contenido conecta mas con la audiencia.">i</i></h3><div class="chart-wrap"><canvas id="c-ig-tageng"></canvas></div><div class="learn" id="l-ig-tageng"></div></div>
+  </div>
+  <h2 style="margin-top:48px">Análisis por publicación</h2>
+  <div style="margin: 14px 0 0; padding: 10px 14px; background: #FBFAF7; border: 1px solid #E8E4DA; border-radius: 4px; font-size: 11.5px; color: #6a6a6a; line-height: 1.5;">
+    <strong style="color: #4a4a4a;">Cómo se separan las publicaciones</strong> · Un post se considera <strong>atípico</strong> cuando su engagement supera 5× la mediana del período (regla aplicada por red). Los atípicos se muestran aparte para no distorsionar el análisis del Top "normal". En redes con menos de 6 publicaciones en el período, solo se muestra el Top consolidado (sin sección de peores separada) para evitar redundancias.
+  </div>
+
+  <h3 id="h-ig-atipicos-title" style="margin-top:28px; font-size: 16px; color: var(--ink); display: none;">🌟 Publicaciones atípicas</h3>
+  <div class="chart-card" id="card-ig-atipicos" style="padding:0; display: none;">
+    <table id="t-ig-atipicos"><thead><tr><th></th><th>Fecha</th><th>Tipo</th><th>Caption</th><th>Categoría</th><th>Likes</th><th>Coments</th><th>Engagement</th><th></th></tr></thead><tbody></tbody></table>
+  </div>
+
+  <h3 style="margin-top:28px; font-size: 16px; color: var(--ink);">📈 Top 5 publicaciones (sin atípicos)</h3>
+  <div class="chart-card" style="padding:0">
+    <table id="t-ig-top"><thead><tr><th></th><th>Fecha</th><th>Tipo</th><th>Caption</th><th>Categoría</th><th>Likes</th><th>Coments</th><th>Engagement</th><th></th></tr></thead><tbody></tbody></table>
+    <div class="learn" id="l-ig-top" style="margin: 0; border-radius: 0 0 6px 6px"></div>
+  </div>
+
+  <h3 style="margin-top:28px; font-size: 16px; color: var(--ink);">📉 5 publicaciones de menor engagement</h3>
+  <div class="chart-card" style="padding:0">
+    <table id="t-ig-worst"><thead><tr><th></th><th>Fecha</th><th>Tipo</th><th>Caption</th><th>Categoría</th><th>Likes</th><th>Coments</th><th>Engagement</th><th></th></tr></thead><tbody></tbody></table>
+  </div>
+  <h2 style="margin-top:48px">Hashtags más usados</h2>
+  <div class="hashtags" id="ig-hashtags"></div>
+</section>
+
+<!-- ============ FACEBOOK ============ -->
+<section class="tab" id="tab-facebook">
+  <div class="platform-header">
+    <span class="platform-dot" style="background:var(--fb)"></span>
+    <h2 style="margin:0">Facebook</h2>
+    <span class="meta">ComapanCo</span>
+  </div>
+  <div class="kpi-grid" id="kpi-fb" style="margin-top:24px"></div>
+  <div style="margin-top:20px; padding:12px 16px; background:#FBFAF7; border:1px solid #E8E4DA; border-radius:4px; font-size:11.5px; color:#6a6a6a; line-height:1.55;">
+    <strong style="color:#4a4a4a;">Sobre estos gráficos</strong> · Las distribuciones, ranking semanal, día y hora se calculan únicamente sobre las <strong>publicaciones típicas</strong> (excluyen los posts atípicos con engagement &gt; 5× la mediana del período) para que ningún hit aislado distorsione las tendencias. Las publicaciones atípicas se muestran aparte en la sección "Análisis por publicación", y las KPIs del encabezado también se calculan solo sobre las publicaciones típicas (excluyen la pauta).
+  </div>
+  <div class="chart-grid cols-2" style="margin-top:32px">
+    <div class="chart-card"><h3>Engagement promedio por tipo <i class="info-icon" data-tip="Promedio de likes + comentarios + shares por formato (foto, carrusel, video). Identifica el tipo de pieza más eficiente.">i</i></h3><div class="chart-wrap"><canvas id="c-fb-type"></canvas></div><div class="learn" id="l-fb-type"></div></div>
+    <div class="chart-card"><h3>Volumen semanal (posts datados) <i class="info-icon" data-tip="Cantidad de posts por semana. Solo cuenta los posts que tienen fecha disponible (videos y reels). Las fotos individuales y álbumes en Facebook no exponen su fecha públicamente.">i</i></h3><div class="chart-wrap"><canvas id="c-fb-week"></canvas></div><div class="learn" id="l-fb-week"></div></div>
+    <div class="chart-card"><h3>Mejor día de la semana <i class="info-icon" data-tip="Engagement promedio agrupado por día de la semana. Indica qué día rinde más para esta cuenta.">i</i></h3><div class="chart-wrap"><canvas id="c-fb-dow"></canvas></div><div class="learn" id="l-fb-dow"></div></div>
+    <div class="chart-card"><h3>Distribución por hora del día <i class="info-icon" data-tip="Cantidad de publicaciones en cada franja horaria. Refleja el horario habitual del equipo de contenido.">i</i></h3><div class="chart-wrap"><canvas id="c-fb-hour"></canvas></div><div class="learn" id="l-fb-hour"></div></div>
+    <div class="chart-card"><h3>Heatmap día × hora — engagement promedio <i class="info-icon" data-tip="Cada celda es el engagement promedio de los posts publicados ese día de la semana a esa hora del día. Cuanto mas roja, mejor performance. Util para encontrar ventanas optimas de publicacion.">i</i></h3><div id="h-fb-heatmap" style="overflow-x: auto"></div></div>
+    <div class="chart-card"><h3>Mix de contenido <i class="info-icon" data-tip="Distribucion de los posts del periodo por categoria de contenido (etiquetado automatico por IA basado en el caption).">i</i></h3><div class="chart-wrap"><canvas id="c-fb-tagmix"></canvas></div><div class="learn" id="l-fb-tagmix"></div></div>
+    <div class="chart-card"><h3>Engagement por categoría <i class="info-icon" data-tip="Engagement promedio por post segun la categoria. Indica que tipo de contenido conecta mas con la audiencia.">i</i></h3><div class="chart-wrap"><canvas id="c-fb-tageng"></canvas></div><div class="learn" id="l-fb-tageng"></div></div>
+  </div>
+  <h2 style="margin-top:48px">Análisis por publicación</h2>
+  <div style="margin: 14px 0 0; padding: 10px 14px; background: #FBFAF7; border: 1px solid #E8E4DA; border-radius: 4px; font-size: 11.5px; color: #6a6a6a; line-height: 1.5;">
+    <strong style="color: #4a4a4a;">Cómo se separan las publicaciones</strong> · Un post se considera <strong>atípico</strong> cuando su engagement supera 5× la mediana del período (regla aplicada por red). Los atípicos se muestran aparte para no distorsionar el análisis del Top "normal". En redes con menos de 6 publicaciones en el período, solo se muestra el Top consolidado (sin sección de peores separada) para evitar redundancias.
+  </div>
+
+  <h3 id="h-fb-atipicos-title" style="margin-top:28px; font-size: 16px; color: var(--ink); display: none;">🌟 Publicaciones atípicas</h3>
+  <div class="chart-card" id="card-fb-atipicos" style="padding:0; display: none;">
+    <table id="t-fb-atipicos"><thead><tr><th></th><th>Fecha</th><th>Tipo</th><th>Caption</th><th>Categoría</th><th>Likes</th><th>Shares</th><th>Engagement</th><th></th></tr></thead><tbody></tbody></table>
+  </div>
+
+  <h3 style="margin-top:28px; font-size: 16px; color: var(--ink);">📈 Top 5 publicaciones (sin atípicos)</h3>
+  <div class="chart-card" style="padding:0">
+    <table id="t-fb-top"><thead><tr><th></th><th>Fecha</th><th>Tipo</th><th>Caption</th><th>Categoría</th><th>Likes</th><th>Shares</th><th>Engagement</th><th></th></tr></thead><tbody></tbody></table>
+    <div class="learn" id="l-fb-top" style="margin: 0; border-radius: 0 0 6px 6px"></div>
+  </div>
+
+  <h3 style="margin-top:28px; font-size: 16px; color: var(--ink);">📉 5 publicaciones de menor engagement</h3>
+  <div class="chart-card" style="padding:0">
+    <table id="t-fb-worst"><thead><tr><th></th><th>Fecha</th><th>Tipo</th><th>Caption</th><th>Categoría</th><th>Likes</th><th>Shares</th><th>Engagement</th><th></th></tr></thead><tbody></tbody></table>
+  </div>
+</section>
+
+<!-- ============ TIKTOK ============ -->
+<section class="tab" id="tab-tiktok">
+  <div class="platform-header">
+    <span class="platform-dot" style="background:var(--tt)"></span>
+    <h2 style="margin:0">TikTok</h2>
+    <span class="meta">@comapanco</span>
+  </div>
+  <div class="kpi-grid" id="kpi-tt" style="margin-top:24px"></div>
+  <div style="margin-top:20px; padding:12px 16px; background:#FBFAF7; border:1px solid #E8E4DA; border-radius:4px; font-size:11.5px; color:#6a6a6a; line-height:1.55;">
+    <strong style="color:#4a4a4a;">Sobre estos gráficos</strong> · Las distribuciones, ranking semanal, día y hora se calculan únicamente sobre las <strong>publicaciones típicas</strong> (excluyen los posts atípicos con engagement &gt; 5× la mediana del período) para que ningún hit aislado distorsione las tendencias. Las publicaciones atípicas se muestran aparte en la sección "Análisis por publicación", y las KPIs del encabezado también se calculan solo sobre las publicaciones típicas (excluyen la pauta).
+  </div>
+  <div class="chart-grid cols-2" style="margin-top:32px">
+    <div class="chart-card"><h3>Volumen semanal <i class="info-icon" data-tip="Cantidad de videos publicados por semana en TikTok.">i</i></h3><div class="chart-wrap"><canvas id="c-tt-week"></canvas></div><div class="learn" id="l-tt-week"></div></div>
+    <div class="chart-card"><h3>Mejor día de la semana <i class="info-icon" data-tip="Engagement promedio (likes + comentarios + shares) por día. En TikTok usa la suma de todas las interacciones del video.">i</i></h3><div class="chart-wrap"><canvas id="c-tt-dow"></canvas></div><div class="learn" id="l-tt-dow"></div></div>
+    <div class="chart-card"><h3>Distribución por hora del día <i class="info-icon" data-tip="Barras: volumen de videos por hora. Linea: engagement promedio por hora. Util para ver si publicamos cuando la audiencia esta activa.">i</i></h3><div class="chart-wrap"><canvas id="c-tt-hour"></canvas></div><div class="learn" id="l-tt-hour"></div></div>
+    <div class="chart-card"><h3>Heatmap día × hora — engagement promedio <i class="info-icon" data-tip="Engagement promedio por dia de la semana y hora del dia. Cuanto mas roja la celda, mejor performance en esa ventana.">i</i></h3><div id="h-tt-heatmap" style="overflow-x: auto"></div></div>
+    <div class="chart-card"><h3>Mix de contenido <i class="info-icon" data-tip="Distribucion de los posts del periodo por categoria de contenido (etiquetado automatico por IA basado en el caption).">i</i></h3><div class="chart-wrap"><canvas id="c-tt-tagmix"></canvas></div><div class="learn" id="l-tt-tagmix"></div></div>
+    <div class="chart-card"><h3>Engagement por categoría <i class="info-icon" data-tip="Engagement promedio por post segun la categoria. Indica que tipo de contenido conecta mas con la audiencia.">i</i></h3><div class="chart-wrap"><canvas id="c-tt-tageng"></canvas></div><div class="learn" id="l-tt-tageng"></div></div>
+  </div>
+  <h2 style="margin-top:48px">Análisis por video</h2>
+  <div style="margin: 14px 0 0; padding: 10px 14px; background: #FBFAF7; border: 1px solid #E8E4DA; border-radius: 4px; font-size: 11.5px; color: #6a6a6a; line-height: 1.5;">
+    <strong style="color: #4a4a4a;">Cómo se separan las publicaciones</strong> · Un post se considera <strong>atípico</strong> cuando su engagement supera 5× la mediana del período (regla aplicada por red). Los atípicos se muestran aparte para no distorsionar el análisis del Top "normal". En redes con menos de 6 publicaciones en el período, solo se muestra el Top consolidado (sin sección de peores separada) para evitar redundancias.
+  </div>
+
+  <h3 id="h-tt-atipicos-title" style="margin-top:28px; font-size: 16px; color: var(--ink); display: none;">🌟 Videos atípicos</h3>
+  <div class="chart-card" id="card-tt-atipicos" style="padding:0; display: none;">
+    <table id="t-tt-atipicos"><thead><tr><th></th><th>Fecha</th><th>Caption</th><th>Categoría</th><th>Likes</th><th>Coments</th><th>Engagement</th><th></th></tr></thead><tbody></tbody></table>
+  </div>
+
+  <h3 style="margin-top:28px; font-size: 16px; color: var(--ink);">📈 Top 5 videos (sin atípicos)</h3>
+  <div class="chart-card" style="padding:0">
+    <table id="t-tt-top"><thead><tr><th></th><th>Fecha</th><th>Caption</th><th>Categoría</th><th>Likes</th><th>Coments</th><th>Engagement</th><th></th></tr></thead><tbody></tbody></table>
+    <div class="learn" id="l-tt-top" style="margin: 0; border-radius: 0 0 6px 6px"></div>
+  </div>
+
+  <h3 style="margin-top:28px; font-size: 16px; color: var(--ink);">📉 5 videos de menor engagement</h3>
+  <div class="chart-card" style="padding:0">
+    <table id="t-tt-worst"><thead><tr><th></th><th>Fecha</th><th>Caption</th><th>Categoría</th><th>Likes</th><th>Coments</th><th>Engagement</th><th></th></tr></thead><tbody></tbody></table>
+  </div>
+</section>
+
+<!-- ============ LINKEDIN ============ -->
+<section class="tab" id="tab-linkedin">
+  <div class="platform-header">
+    <span class="platform-dot" style="background:var(--li)"></span>
+    <h2 style="margin:0">LinkedIn</h2>
+    <span class="meta">Comapan S.A.</span>
+  </div>
+  <div class="kpi-grid" id="kpi-li" style="margin-top:24px"></div>
+  <div style="margin-top:20px; padding:12px 16px; background:#FBFAF7; border:1px solid #E8E4DA; border-radius:4px; font-size:11.5px; color:#6a6a6a; line-height:1.55;">
+    <strong style="color:#4a4a4a;">Sobre estos gráficos</strong> · Las distribuciones, ranking semanal, día y hora se calculan únicamente sobre las <strong>publicaciones típicas</strong> (excluyen los posts atípicos con engagement &gt; 5× la mediana del período) para que ningún hit aislado distorsione las tendencias. Las publicaciones atípicas se muestran aparte en la sección "Análisis por publicación", y las KPIs del encabezado también se calculan solo sobre las publicaciones típicas (excluyen la pauta).
+  </div>
+  <div class="chart-grid cols-2" style="margin-top:32px">
+    <div class="chart-card"><h3>Volumen semanal <i class="info-icon" data-tip="Cantidad de publicaciones por semana en LinkedIn.">i</i></h3><div class="chart-wrap"><canvas id="c-li-week"></canvas></div><div class="learn" id="l-li-week"></div></div>
+    <div class="chart-card"><h3>Mejor día de la semana <i class="info-icon" data-tip="Engagement promedio (likes + comentarios + shares) por día de la semana en LinkedIn.">i</i></h3><div class="chart-wrap"><canvas id="c-li-dow"></canvas></div><div class="learn" id="l-li-dow"></div></div>
+    <div class="chart-card"><h3>Distribución por hora del día <i class="info-icon" data-tip="Barras: volumen de posts por hora. Linea: engagement promedio por hora. Util para ver si publicamos cuando la audiencia esta activa.">i</i></h3><div class="chart-wrap"><canvas id="c-li-hour"></canvas></div><div class="learn" id="l-li-hour"></div></div>
+    <div class="chart-card"><h3>Heatmap día × hora — engagement promedio <i class="info-icon" data-tip="Engagement promedio por dia de la semana y hora del dia. Cuanto mas roja la celda, mejor performance en esa ventana.">i</i></h3><div id="h-li-heatmap" style="overflow-x: auto"></div></div>
+    <div class="chart-card"><h3>Mix de contenido <i class="info-icon" data-tip="Distribucion de los posts del periodo por categoria de contenido (etiquetado automatico por IA basado en el caption).">i</i></h3><div class="chart-wrap"><canvas id="c-li-tagmix"></canvas></div><div class="learn" id="l-li-tagmix"></div></div>
+    <div class="chart-card"><h3>Engagement por categoría <i class="info-icon" data-tip="Engagement promedio por post segun la categoria. Indica que tipo de contenido conecta mas con la audiencia.">i</i></h3><div class="chart-wrap"><canvas id="c-li-tageng"></canvas></div><div class="learn" id="l-li-tageng"></div></div>
+  </div>
+  <h2 style="margin-top:48px">Análisis por publicación</h2>
+  <div style="margin: 14px 0 0; padding: 10px 14px; background: #FBFAF7; border: 1px solid #E8E4DA; border-radius: 4px; font-size: 11.5px; color: #6a6a6a; line-height: 1.5;">
+    <strong style="color: #4a4a4a;">Cómo se separan las publicaciones</strong> · Un post se considera <strong>atípico</strong> cuando su engagement supera 5× la mediana del período (regla aplicada por red). Los atípicos se muestran aparte para no distorsionar el análisis del Top "normal". En redes con menos de 6 publicaciones en el período, solo se muestra el Top consolidado (sin sección de peores separada) para evitar redundancias.
+  </div>
+
+  <h3 id="h-li-atipicos-title" style="margin-top:28px; font-size: 16px; color: var(--ink); display: none;">🌟 Publicaciones atípicas</h3>
+  <div class="chart-card" id="card-li-atipicos" style="padding:0; display: none;">
+    <table id="t-li-atipicos"><thead><tr><th></th><th>Fecha</th><th>Caption</th><th>Categoría</th><th>Likes</th><th>Coments</th><th>Engagement</th><th></th></tr></thead><tbody></tbody></table>
+  </div>
+
+  <h3 style="margin-top:28px; font-size: 16px; color: var(--ink);">📈 Top 5 publicaciones (sin atípicos)</h3>
+  <div class="chart-card" style="padding:0">
+    <table id="t-li-top"><thead><tr><th></th><th>Fecha</th><th>Caption</th><th>Categoría</th><th>Likes</th><th>Coments</th><th>Engagement</th><th></th></tr></thead><tbody></tbody></table>
+    <div class="learn" id="l-li-top" style="margin: 0; border-radius: 0 0 6px 6px"></div>
+  </div>
+
+  <h3 style="margin-top:28px; font-size: 16px; color: var(--ink);">📉 5 publicaciones de menor engagement</h3>
+  <div class="chart-card" style="padding:0">
+    <table id="t-li-worst"><thead><tr><th></th><th>Fecha</th><th>Caption</th><th>Categoría</th><th>Likes</th><th>Coments</th><th>Engagement</th><th></th></tr></thead><tbody></tbody></table>
+  </div>
+</section>
+
+<!-- ============ HALLAZGOS ============ -->
+<!-- ============ ANALISIS POR CATEGORIAS ============ -->
+<section class="tab" id="tab-categorias">
+  <div class="section-head">
+    <div class="num">05 · Análisis por categorías</div>
+    <h2>Qué tipo de contenido funciona — y dónde</h2>
+    <div class="desc">Análisis de las 12 categorías editoriales cruzando red, tipo de media y desempeño. Pista accionable para el equipo creativo.</div>
+  </div>
+
+  <div class="chart-grid cols-2" style="margin-top:24px">
+    <div class="chart-card"><h3>Mix de contenido global <i class="info-icon" data-tip="Distribución porcentual de las 12 categorías sobre los posts típicos del período.">i</i></h3><div class="chart-wrap" style="height:340px"><canvas id="c-cat-mix"></canvas></div><div class="learn" id="l-cat-mix"></div></div>
+    <div class="chart-card"><h3>Performance por categoría <i class="info-icon" data-tip="Engagement promedio, mediana y percentil 75 por categoría. Mediana muy distinta del promedio indica alta variabilidad.">i</i></h3><div class="chart-wrap" style="height:340px"><canvas id="c-cat-perf"></canvas></div><div class="learn" id="l-cat-perf"></div></div>
+  </div>
+
+  <div class="chart-card" style="margin-top:24px"><h3>Categoría × Red — engagement promedio <i class="info-icon" data-tip="Heatmap del engagement promedio por categoría y red. Cuanto más rojo, mejor performance.">i</i></h3><div id="h-cat-plat" style="overflow-x:auto"></div><div class="learn" id="l-cat-plat"></div></div>
+
+  <div class="chart-card" style="margin-top:24px"><h3>Categoría × Tipo de media — engagement promedio <i class="info-icon" data-tip="Heatmap del engagement promedio por categoría y tipo de media. Útil para decidir qué formato usar.">i</i></h3><div id="h-cat-type" style="overflow-x:auto"></div><div class="learn" id="l-cat-type"></div></div>
+
+  <div class="chart-card" style="margin-top:24px"><h3>Gaps estratégicos <i class="info-icon" data-tip="Categorías que se publican poco (menos de 5% del mix) pero rinden mejor que el promedio global. Son las que conviene escalar.">i</i></h3><div id="tbl-cat-gaps"></div></div>
+</section>
+
+</main>
+
+<footer>
+  <div class="footer-grid">
+    <div style="flex:1; min-width:280px">
+      <div class="powered">
+        © 2026 <strong>Datalítica Colombia S.A.S.</strong> · Entregable confidencial para <strong>Catorce Días</strong> (D14S) · Datos de fuentes públicas
+      </div>
+      <details class="legal-details">
+        <summary>Aviso legal y tratamiento de datos</summary>
+        <div class="legal-content">
+          <p>Reporte confidencial — acceso o distribución no autorizada prohibida. Tratamiento de datos conforme a la <strong>Ley 1581/2012</strong> (Colombia) y la <strong>LFPDPPP</strong> (México).</p>
+          <p>Consultas: <a href="mailto:informacion@catorcedias.com">informacion@catorcedias.com</a> · Política: <a href="https://catorcedias.com/politica-privacidad/" target="_blank" rel="noopener">catorcedias.com/politica-privacidad</a>.</p>
+        </div>
+      </details>
+    </div>
+    <div class="logos">
+      <div class="agency-box"><img src="/assets/logo-14dias.svg" alt="Catorce Días"></div>
+      <img class="logo-comapan-foot" src="/assets/logo-comapan.svg" alt="Comapan" onerror="this.src='/assets/logo-comapan.png'">
+    </div>
+  </div>
+</footer>
+
+<script>
+const DATA = {"generated_at": "14/10/2026", "ventana": {"desde": "2026-10-01", "hasta": "2026-10-31"}, "accounts": {"Facebook": {"bio": "Comapan está entre las marcas más recordadas y queridas, en Colombia\nSíguenos en IG: @comapan_co", "business_account": "", "categoria": "Page, Specialty Grocery Store", "direccion": "Carrera 42B No. 14 -18, Bogotá, Colombia, 111611", "nombre": "Comapan | Bogotá", "page_likes": "", "plataforma": "Facebook", "posts_totales": "", "rating": "88% recommend (89 reviews)", "seguidores": "118750", "siguiendo": "12", "snapshot_fecha": "2026-10-14", "telefono": "+57 322 8085210", "url_externa": "http://www.comapan.com.co/", "username": "ComapanCo", "verified": "", "views_totales_90d": "", "website": "http://www.comapan.com.co/"}, "Instagram": {"bio": "Comapan #ElPanDelSánduche \n75 años compartiendo el sabor de una sonrisa😀\nCOMPRA ONLINE 👇🏽", "business_account": "True", "categoria": "Food & Drink", "direccion": "", "nombre": "El pan del sánduche", "page_likes": "", "plataforma": "Instagram", "posts_totales": "2334", "rating": "", "seguidores": "13540", "siguiendo": "273", "snapshot_fecha": "2026-10-14", "telefono": "", "url_externa": "https://linktr.ee/Comapan", "username": "comapan_co", "verified": "False", "views_totales_90d": "", "website": ""}, "LinkedIn": {"bio": "", "business_account": "", "categoria": "", "direccion": "", "nombre": "Comapan S.A.", "page_likes": "", "plataforma": "LinkedIn", "posts_totales": "", "rating": "", "seguidores": "5346", "siguiendo": "", "snapshot_fecha": "2026-10-14", "telefono": "", "url_externa": "", "username": "comapan-s-a-", "verified": "", "views_totales_90d": "", "website": ""}, "TikTok": {"bio": "El sabor de la una sonrisa se transmite", "business_account": "False", "categoria": "", "direccion": "", "nombre": "Comapan 🍞", "page_likes": "", "plataforma": "TikTok", "posts_totales": "430", "rating": "", "seguidores": "6321", "siguiendo": "93", "snapshot_fecha": "2026-10-14", "telefono": "", "url_externa": "", "username": "comapanco", "verified": "False", "views_totales_90d": "2139308", "website": ""}}, "consolidated": [{"plataforma": "Instagram", "username": "comapan_co", "seguidores": "13540", "posts del periodo": "4", "engagement total": "431", "engagement_promedio_post": "107.8", "top_post_url": "https://www.instagram.com/p/DeCnUDUxSa4/", "top_post_engagement": "301", "snapshot_fecha": "2026-10-14"}, {"plataforma": "Facebook", "username": "ComapanCo", "seguidores": "118750", "posts del periodo": "1", "engagement total": "20", "engagement_promedio_post": "20.0", "top_post_url": "https://www.facebook.com/100072188111060/posts/1091174129965514", "top_post_engagement": "20", "snapshot_fecha": "2026-10-14"}, {"plataforma": "TikTok", "username": "comapanco", "seguidores": "6321", "posts del periodo": "1", "engagement total": "16", "engagement_promedio_post": "16.0", "top_post_url": "https://www.tiktok.com/@comapanco/video/7694075674172083462", "top_post_engagement": "16", "snapshot_fecha": "2026-10-14"}, {"plataforma": "LinkedIn", "username": "comapan-s-a-", "seguidores": "5346", "posts del periodo": "1", "engagement total": "11", "engagement_promedio_post": "11.0", "top_post_url": "https://www.linkedin.com/posts/comapan-s-a-_comapan-daedadelasonrisa-compartiendoelsabordeunasonrisa-activity-7511909281663741952-yFNx", "top_post_engagement": "11", "snapshot_fecha": "2026-10-14"}], "instagram": {"n_posts": 4, "engagement_total": 431, "engagement_promedio": 107.8, "engagement_mediana": 76, "by_type": {"labels": ["Video", "Sidecar"], "counts": [3, 1], "engagement": [355, 76], "engagement_promedio": [118.3, 76.0]}, "by_day": {"labels": ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"], "counts": [0, 0, 1, 1, 1, 1, 0], "engagement_promedio": [0, 0, 24.0, 76.0, 30.0, 301.0, 0]}, "by_hour": {"labels": ["12", "15", "18"], "counts": [1, 1, 2], "engagement_promedio": [301.0, 30.0, 50.0], "_timezone": "America/Bogota"}, "by_week": {"labels": ["2026-S40", "2026-S41"], "counts": [3, 1], "engagement": [407, 24]}, "captions_avg_len": 285.5, "top_hashtags": [["Comapan", 3], ["DíaDeLaSonrisa", 1], ["CompartiendoElSaborDeUnaSonrisa", 1], ["SomosComapan", 1], ["DíaDelCafé", 1], ["CafeConPan", 1], ["Cafecito", 1], ["MomentoComapan", 1], ["MiFrutaguesaFavorita", 1], ["COMAPAN", 1]], "top5": [{"url": "https://www.instagram.com/p/DeCnUDUxSa4/", "tipo": "Video", "fecha": "2026-10-03", "likes": 259, "caption": "Un plan con amigas, comida rica y muchas ganas de compartir🥰🍔\n\nPorque cuando nos reunimos, cualquier comida se convierte en un momento especial. Esta vez disfrutamos y nos pusimos creativas con los productos de @comapan_co ❤️\n\nY comprobamos que hay sabores que simplemente saben mejor cuando se comparten✨\n\n#Comapan #compartir #Arauca #planconamigas", "media_url": "/assets/thumbs/instagram-6817eab9bdda.jpg", "engagement": 301, "comentarios": 42, "tags": ["promocional"], "tag_primary": "promocional"}, {"url": "https://www.instagram.com/p/Dd-EXFxjtJZ/", "tipo": "Sidecar", "fecha": "2026-10-01", "likes": 72, "caption": "Hay días de frío, de sueño y de afán… pero siempre hay ganas de un café con pan. ☕️🍞\n\nFeliz Día del Café. 🤎\nQue nunca falte ese cafecito que acompaña cualquier momento del día.\n\n#DíaDelCafé #Comapan #CafeConPan #Cafecito #MomentoComapan", "media_url": "/assets/thumbs/instagram-8c6e1343f58f.jpg", "engagement": 76, "comentarios": 4, "tags": ["promocional"], "tag_primary": "promocional"}, {"url": "https://www.instagram.com/p/DeAS3skP_fH/", "tipo": "Video", "fecha": "2026-10-02", "likes": 30, "caption": "Hay momentos que saben mejor cuando se comparten. ❤️\n\nHoy celebramos el Día Mundial de la Sonrisa agradeciendo a quienes hacen parte de Comapan y llenan nuestros días de alegría y buenos momentos.\n\nPorque juntos seguimos compartiendo el sabor de una sonrisa. 😃 ✨\n\n#Comapan #DíaDeLaSonrisa #CompartiendoElSaborDeUnaSonrisa #SomosComapan", "media_url": "https://instagram.ftpa1-1.fna.fbcdn.net/v/t51.71878-15/833388917_1639860531484875_1805262749121557811_n.jpg?stp=dst-jpg_e15_tt6&_nc_cat=103&_nc_map=urlgen_bucketless&ig_cache_key=Mzk5OTI3OTQ2MTM2NjIzMzAzMQ%3D%3D.3-ccb7-5&ccb=7-5&_nc_sid=58cdad&efg=eyJ2ZW5jb2RlX3RhZyI6IkNMSVBTLnhwaWRzLjY0MC5zZHIudmlkZW9fZGVmYXVsdF9jb3Zlcl9mcmFtZS5DMyJ9&_nc_ohc=8mr9-BEYpmsQ7kNvwGIl-pO&_nc_oc=AdrbeKbcJEd1bWy3VPZ-TksIC1gZaeBBNVjMNjVHw9s9yvWygdbHXgqZY3uBZnuu2dQpBzapM6rKZfnuPmDafXCV&_nc_ad=z-m&_nc_cid=0&_nc_zt=23&_nc_ht=instagram.ftpa1-1.fna&_nc_gid=LOLZpOgoq1uKE3miJ_h_7w&_nc_ss=7a22e&oh=00_AQMn__sKsmaieE5djwtJmLEyvY-RraezYDTCXnkS30xlsA&oe=6AD53E83", "engagement": 30, "comentarios": 0, "tags": ["estacional"], "tag_primary": "estacional"}, {"url": "https://www.instagram.com/p/DeNkYnjuRa_/", "tipo": "Video", "fecha": "2026-10-07", "likes": 20, "caption": "Quitándole la cáscara a mi fruta favorita… 🍔👀 Aunque, seamos sinceros: sabe mucho mejor con salsas Comapan. 🤤\n\n¿Qué salsa combina mejor con su “Fruta favorita”?\n\n#MiFrutaguesaFavorita #COMAPAN #ModoAntojo #Pan #hamburguesa", "media_url": "/assets/thumbs/instagram-4f3c161e0253.jpg", "engagement": 24, "comentarios": 4, "tags": ["producto"], "tag_primary": "producto"}], "atipicos": [], "worst5": [], "outlier_threshold": 380, "outlier_rule": "engagement > 5x mediana del periodo", "by_day_hour": {"labels_dow": ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"], "labels_hour": ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23"], "matrix": [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 24.0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 76.0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 30.0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 301.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]], "counts": [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]}, "tag_summary": {"promocional": 4, "estacional": 2, "producto": 2}, "tag_engagement": {"promocional": 188.5, "estacional": 30.0, "producto": 24.0}}, "facebook": {"n_posts": 1, "engagement_total": 20, "engagement_promedio": 20.0, "engagement_mediana": 20, "by_type": {"labels": ["Text"], "counts": [1], "engagement": [20], "engagement_promedio": [20.0]}, "by_day": {"labels": ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"], "counts": [0, 0, 0, 1, 0, 0, 0], "engagement_promedio": [0, 0, 0, 20.0, 0, 0, 0]}, "by_hour": {"labels": ["18"], "counts": [1], "engagement_promedio": [20.0], "_timezone": "America/Bogota"}, "by_week": {"labels": ["2026-S40"], "counts": [1], "engagement": [20]}, "captions_avg_len": 249.0, "top_hashtags": [["DíaDelCafé", 1], ["Comapan", 1], ["CafeConPan", 1], ["Cafecito", 1], ["MomentoComapan", 1], ["Antojo", 1], ["Pan", 1]], "top5": [{"url": "https://www.facebook.com/100072188111060/posts/1091174129965514", "tipo": "Text", "fecha": "2026-10-01", "likes": 20, "caption": "Hay días de frío, de sueño y de afán… pero siempre hay ganas de un café con pan. ☕️🍞\n\nFeliz Día del Café. 🤎\nQue nunca falte ese cafecito que acompaña cualquier momento del día.\n\n#DíaDelCafé #Comapan #CafeConPan #Cafecito #MomentoComapan #Antojo #Pan", "media_url": "", "engagement": 20, "comentarios": 0, "tags": ["promocional"], "tag_primary": "promocional"}], "atipicos": [], "worst5": [], "outlier_threshold": 100, "outlier_rule": "engagement > 5x mediana del periodo", "by_day_hour": {"labels_dow": ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"], "labels_hour": ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23"], "matrix": [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 20.0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]], "counts": [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]}, "tag_summary": {"promocional": 2}, "tag_engagement": {"promocional": 20.0}}, "tiktok": {"n_posts": 1, "engagement_total": 16, "engagement_promedio": 16.0, "engagement_mediana": 16, "by_type": {"labels": ["Video"], "counts": [1], "engagement": [16], "engagement_promedio": [16.0]}, "by_day": {"labels": ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"], "counts": [0, 0, 1, 0, 0, 0, 0], "engagement_promedio": [0, 0, 16.0, 0, 0, 0, 0]}, "by_hour": {"labels": ["18"], "counts": [1], "engagement_promedio": [16.0], "_timezone": "America/Bogota"}, "by_week": {"labels": ["2026-S41"], "counts": [1], "engagement": [16]}, "captions_avg_len": 210.0, "top_hashtags": [["mifrutaguesafavorita", 1], ["comapan", 1], ["modoantojo", 1]], "top5": [{"url": "https://www.tiktok.com/@comapanco/video/7694075674172083462", "tipo": "Video", "fecha": "2026-10-07", "likes": 15, "caption": "Quitándole la cáscara a mi fruta favorita… 🍔👀 Aunque, seamos sinceros: sabe mucho mejor con salsas Comapan. 🤤\n\n¿Qué salsa combina mejor con su “Fruta favorita”?\n\n#M#MiFrutaguesaFavoritaC#COMAPANM#ModoAntojoPan ", "media_url": "/assets/thumbs/tiktok-5c97a4cd73dd.jpg", "engagement": 16, "comentarios": 1, "tags": ["producto"], "tag_primary": "producto"}], "atipicos": [], "worst5": [], "outlier_threshold": 80, "outlier_rule": "engagement > 5x mediana del periodo", "by_day_hour": {"labels_dow": ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"], "labels_hour": ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23"], "matrix": [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16.0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]], "counts": [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]}, "tag_summary": {"producto": 2}, "tag_engagement": {"producto": 16.0}}, "linkedin": {"n_posts": 1, "engagement_total": 11, "engagement_promedio": 11.0, "engagement_mediana": 11, "by_type": {"labels": ["Video"], "counts": [1], "engagement": [11], "engagement_promedio": [11.0]}, "by_day": {"labels": ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"], "counts": [0, 0, 0, 0, 1, 0, 0], "engagement_promedio": [0, 0, 0, 0, 11.0, 0, 0]}, "by_hour": {"labels": ["17"], "counts": [1], "engagement_promedio": [11.0], "_timezone": "America/Bogota"}, "by_week": {"labels": ["2026-S40"], "counts": [1], "engagement": [11]}, "captions_avg_len": 564.0, "top_hashtags": [["Comapan", 1], ["DíaDeLaSonrisa", 1], ["CompartiendoElSaborDeUnaSonrisa", 1], ["OrgulloComapan", 1]], "top5": [{"url": "https://www.linkedin.com/posts/comapan-s-a-_comapan-daedadelasonrisa-compartiendoelsabordeunasonrisa-activity-7511909281663741952-yFNx", "tipo": "Video", "fecha": "2026-10-02", "likes": 10, "caption": "Hoy celebramos el Día Mundial de la Sonrisa, una fecha que nos recuerda el valor de compartir, conectar y disfrutar juntos esos pequeños momentos que hacen la diferencia. 😃\n\nEn Comapan creemos que detrás de cada logro hay personas que, con su compromiso y dedicación, hacen posible que sigamos construyendo grandes historias. Gracias a nuestros colaboradores por ponerle una sonrisa a cada día y hacer parte de esta familia.\n\nPorque juntos seguimos compartiendo el sabor de una sonrisa. ❤️\n\n#Comapan #DíaDeLaSonrisa #CompartiendoElSaborDeUnaSonrisa #OrgulloComapan", "media_url": "/assets/thumbs/linkedin-7e169b04f506.jpg", "engagement": 11, "comentarios": 0, "tags": ["estacional"], "tag_primary": "estacional"}], "atipicos": [], "worst5": [], "outlier_threshold": 55, "outlier_rule": "engagement > 5x mediana del periodo", "by_day_hour": {"labels_dow": ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"], "labels_hour": ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23"], "matrix": [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11.0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]], "counts": [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]}, "tag_summary": {"estacional": 2}, "tag_engagement": {"estacional": 11.0}}, "fb_undated": 0, "fb_total": 1, "snapshots_history": [{"snapshot_date": "2026-10-14", "plataforma": "Facebook", "metrica": "followers", "valor": "118750", "posts_acumulados": "", "fuente": "apify"}, {"snapshot_date": "2026-10-14", "plataforma": "Instagram", "metrica": "followers", "valor": "13540", "posts_acumulados": "2334", "fuente": "apify"}, {"snapshot_date": "2026-10-14", "plataforma": "LinkedIn", "metrica": "followers", "valor": "5346", "posts_acumulados": "", "fuente": "apify"}, {"snapshot_date": "2026-10-14", "plataforma": "TikTok", "metrica": "followers", "valor": "6321", "posts_acumulados": "430", "fuente": "apify"}], "periodo_label": "Octubre 2026", "periodo_id": "2026-10", "category_analysis": {"total_posts": 7, "global_mean": 68.3, "mix_global": [{"category": "promocional", "count": 3, "pct": 42.9}, {"category": "estacional", "count": 2, "pct": 28.6}, {"category": "producto", "count": 2, "pct": 28.6}], "performance": [{"category": "promocional", "n": 3, "mean": 132.3, "median": 76, "p75": 301}, {"category": "estacional", "n": 2, "mean": 20.5, "median": 20.5, "p75": 30}, {"category": "producto", "n": 2, "mean": 20.0, "median": 20.0, "p75": 24}], "by_platform": {"categories": ["promocional", "estacional", "producto"], "platforms": ["instagram", "facebook", "tiktok", "linkedin"], "matrix": [[188.5, 20.0, 0, 0], [30.0, 0, 0, 11.0], [24.0, 0, 16.0, 0]]}, "by_type": {"categories": ["promocional", "estacional", "producto"], "types": ["Sidecar", "Text", "Video"], "matrix": [[76.0, 20.0, 301.0], [0, 0, 20.5], [0, 0, 20.0]]}, "gaps": []}, "deltas": {"global": {"total_posts_pct": -85.1, "total_engagement_pct": -84.2, "engagement_por_post_pct": 6.2}, "instagram": {"n_posts_pct": -82.6, "engagement_total_pct": -84.2, "engagement_promedio_pct": -9.3, "engagement_mediana_pct": 280.0, "audience_pct": 0.1, "n_posts_abs": -19, "engagement_total_abs": -2302, "engagement_promedio_abs": -11.0}, "facebook": {"n_posts_pct": -95.2, "engagement_total_pct": -89.3, "engagement_promedio_pct": 124.7, "engagement_mediana_pct": 122.2, "audience_pct": -0.1, "n_posts_abs": -20, "engagement_total_abs": -167, "engagement_promedio_abs": 11.1}, "tiktok": {"n_posts_pct": -50.0, "engagement_total_pct": -82.2, "engagement_promedio_pct": -64.4, "engagement_mediana_pct": -78.1, "audience_pct": 0.0, "n_posts_abs": -1, "engagement_total_abs": -74, "engagement_promedio_abs": -29.0}, "linkedin": {"n_posts_pct": 0.0, "engagement_total_pct": -21.4, "engagement_promedio_pct": -21.4, "engagement_mediana_pct": -21.4, "audience_pct": 0.5, "n_posts_abs": 0, "engagement_total_abs": -3, "engagement_promedio_abs": -3.0}}, "_prev_period_label": "2026-09", "hallazgos_llm": null};
+
+// ── Config ──
+Chart.defaults.color = "#4a4a4a";
+Chart.defaults.borderColor = "#ececec";
+Chart.defaults.font.family = "Roboto, -apple-system, sans-serif";
+Chart.defaults.font.size = 12;
+
+const COLORS = {
+  red: "#DB0632", redSoft: "#F8E0E5", yellow: "#F5DA6C", orange: "#FFBC7D",
+  green: "#5BAC47", turquoise: "#19AAB2",
+  ig: "#e1306c", fb: "#1877f2", tt: "#000000", li: "#0a66c2"
+};
+
+const fmt = n => {
+  if (n === null || n === undefined || n === "") return "—";
+  const num = Number(n);
+  if (isNaN(num)) return n;
+  return new Intl.NumberFormat("es-CO").format(num);
+};
+
+// Delta MoM badge: verde ↑ / rojo ↓ / gris = si es despreciable
+function deltaBadge(pct) {
+  if (pct === null || pct === undefined) return "";
+  const p = parseFloat(pct);
+  if (isNaN(p)) return "";
+  const arrow = p > 0.5 ? "▲" : (p < -0.5 ? "▼" : "▬");
+  const color = p > 0.5 ? "#3d8f3d" : (p < -0.5 ? "#c33" : "#8a8a8a");
+  const bg = p > 0.5 ? "#e8f2e2" : (p < -0.5 ? "#fbe6e6" : "#f0f0f0");
+  const sign = p > 0 ? "+" : "";
+  return `<span style="display:inline-block; margin-left:6px; padding:2px 7px; border-radius:10px; font-size:10px; font-weight:700; background:${bg}; color:${color}; letter-spacing:0.2px;" title="vs mes anterior">${arrow} ${sign}${p.toFixed(1)}%</span>`;
+}
+
+// Cambio ABSOLUTO vs mes anterior (para el ranking): muestra "+47" en vez de "%"
+function deltaBadgeAbs(v) {
+  if (v === null || v === undefined) return "";
+  const p = parseFloat(v);
+  if (isNaN(p) || p === 0) return "";
+  const arrow = p > 0 ? "▲" : "▼";
+  const color = p > 0 ? "#3d8f3d" : "#c33";
+  const bg = p > 0 ? "#e8f2e2" : "#fbe6e6";
+  const sign = p > 0 ? "+" : "";
+  const num = Number.isInteger(p) ? Math.abs(p).toLocaleString("es-CO") : Math.abs(p).toFixed(1);
+  return `<span style="display:inline-block; margin-left:6px; padding:2px 7px; border-radius:10px; font-size:10px; font-weight:700; background:${bg}; color:${color}; letter-spacing:0.2px;" title="vs mes anterior">${arrow} ${sign}${num}</span>`;
+}
+
+const kpi = (label, value, sub, accent, tip, deltaPct) => {
+  const tipHtml = tip ? ` <i class="info-icon" data-tip="${tip.replace(/"/g, '&quot;')}">i</i>` : "";
+  const badgeHtml = (typeof deltaPct === "number") ? deltaBadge(deltaPct) : "";
+  return `<div class="kpi ${accent ? 'accent' : ''}"><div class="label">${label}${tipHtml}</div><div class="value">${value}${badgeHtml}</div>${sub ? `<div class="sub">${sub}</div>` : ""}</div>`;
+};
+
+// Header window
+function toMonthYear(iso) {
+  if (!iso) return "";
+  const [y, m] = iso.split("-");
+  const months = ["", "Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+  return `${months[parseInt(m, 10)]} ${y}`;
+}
+document.getElementById("meta-window").textContent =
+  DATA.ventana.desde && DATA.ventana.hasta
+    ? `${toMonthYear(DATA.ventana.desde)} → ${toMonthYear(DATA.ventana.hasta)}`
+    : "Ene a May 2026";
+// Fecha de generación oculta en el footer por decisión editorial
+
+// Tabs (desktop) + Drawer (mobile) sincronizados
+function activateTab(tabId) {
+  document.querySelectorAll("nav.tabs button, .menu-drawer button[data-tab]").forEach(x => x.classList.remove("active"));
+  document.querySelectorAll(".tab").forEach(x => x.classList.remove("active"));
+  document.querySelectorAll(`[data-tab="${tabId}"]`).forEach(x => x.classList.add("active"));
+  const target = document.getElementById("tab-" + tabId);
+  if (target) target.classList.add("active");
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+document.querySelectorAll("nav.tabs button").forEach(b => {
+  b.addEventListener("click", () => activateTab(b.dataset.tab));
+});
+
+// Drawer (mobile menu)
+const drawer = document.getElementById("menu-drawer");
+const backdrop = document.getElementById("menu-backdrop");
+const toggle = document.getElementById("menu-toggle");
+const closeBtn = document.getElementById("menu-close");
+function openDrawer() {
+  drawer.classList.add("open");
+  backdrop.classList.add("open");
+  toggle.classList.add("active");
+  document.body.style.overflow = "hidden";
+}
+function closeDrawer() {
+  drawer.classList.remove("open");
+  backdrop.classList.remove("open");
+  toggle.classList.remove("active");
+  document.body.style.overflow = "";
+}
+toggle.addEventListener("click", () => {
+  drawer.classList.contains("open") ? closeDrawer() : openDrawer();
+});
+backdrop.addEventListener("click", closeDrawer);
+closeBtn.addEventListener("click", closeDrawer);
+document.querySelectorAll(".menu-drawer button[data-tab]").forEach(b => {
+  b.addEventListener("click", () => {
+    activateTab(b.dataset.tab);
+    closeDrawer();
+  });
+});
+// Marcar la tab activa inicial también en el drawer
+document.querySelector(`.menu-drawer button[data-tab="resumen"]`)?.classList.add("active");
+
+// ── Tooltips globales (position: fixed, escapan overflow:hidden) ──
+const tooltipEl = document.createElement("div");
+tooltipEl.className = "global-tooltip";
+document.body.appendChild(tooltipEl);
+
+let activeIcon = null;
+const PADDING = 8;
+
+function positionTooltip(icon) {
+  const tip = icon.dataset.tip;
+  if (!tip) return;
+  tooltipEl.textContent = tip;
+  tooltipEl.classList.add("visible");
+
+  // Medir después de poner contenido
+  const iconRect = icon.getBoundingClientRect();
+  const tipRect = tooltipEl.getBoundingClientRect();
+  const vw = window.innerWidth, vh = window.innerHeight;
+
+  // Posición horizontal centrada en el icono, ajustada al viewport
+  let left = iconRect.left + iconRect.width / 2 - tipRect.width / 2;
+  left = Math.max(PADDING, Math.min(left, vw - tipRect.width - PADDING));
+
+  // Vertical: arriba del icono por defecto, abajo si no cabe
+  let top = iconRect.top - tipRect.height - 12;
+  let below = false;
+  if (top < PADDING) {
+    top = iconRect.bottom + 12;
+    below = true;
+  }
+  tooltipEl.classList.toggle("below", below);
+
+  // Posición de la flecha (centrada en el icono respecto al tooltip)
+  const arrowX = iconRect.left + iconRect.width / 2 - left;
+  tooltipEl.style.setProperty("--arrow-x", `${Math.max(12, Math.min(arrowX, tipRect.width - 12))}px`);
+
+  tooltipEl.style.left = `${left}px`;
+  tooltipEl.style.top = `${top}px`;
+}
+
+function hideTooltip() {
+  tooltipEl.classList.remove("visible");
+  if (activeIcon) {
+    activeIcon.classList.remove("active");
+    activeIcon = null;
+  }
+}
+
+// Hover (desktop)
+document.addEventListener("mouseover", e => {
+  const icon = e.target.closest(".info-icon");
+  if (icon && !activeIcon) {
+    icon.classList.add("active");
+    positionTooltip(icon);
+  }
+});
+document.addEventListener("mouseout", e => {
+  const icon = e.target.closest(".info-icon");
+  if (icon && !activeIcon) {
+    icon.classList.remove("active");
+    tooltipEl.classList.remove("visible");
+  }
+});
+
+// Tap (mobile) — toggle persistente, click fuera lo cierra
+document.addEventListener("click", e => {
+  const icon = e.target.closest(".info-icon");
+  if (icon) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (activeIcon === icon) {
+      hideTooltip();
+    } else {
+      if (activeIcon) activeIcon.classList.remove("active");
+      activeIcon = icon;
+      icon.classList.add("active");
+      positionTooltip(icon);
+    }
+  } else {
+    hideTooltip();
+  }
+});
+
+// Reposicionar al hacer scroll o resize si hay tooltip activo
+window.addEventListener("scroll", () => { if (activeIcon) positionTooltip(activeIcon); }, { passive: true });
+window.addEventListener("resize", () => { if (activeIcon) positionTooltip(activeIcon); });
+
+// ── LEARN helper ──
+function learn(id, text) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.innerHTML = `<p>${text}</p>`;
+}
+
+// ── Definiciones de métricas (glosario) ──
+const DEFINITIONS = {
+  engagement: "Engagement = la suma de likes + comentarios + shares de las publicaciones. Es la actividad pública que la marca generó en sus redes.",
+  engagement_post: "Engagement por post = engagement total dividido entre la cantidad de publicaciones. Indica qué tan eficiente fue cada pieza en promedio.",
+  engagement_week: "Engagement semanal = la misma suma de likes + comentarios + shares, pero agrupada semana a semana. Permite ver si la cuenta gana o pierde tracción.",
+  cadencia: "Cadencia = posts publicados por semana en promedio durante Ene-May 2026.",
+  volumen: "Volumen semanal = cantidad de publicaciones por semana en esta red. Refleja el ritmo editorial.",
+  formato: "Engagement promedio por tipo de contenido = el promedio de likes + comentarios que recibe cada formato (foto, carrusel, reel). Permite identificar qué tipo de pieza conecta más.",
+  mejor_dia: "Mejor día de la semana = el promedio de interacciones de los posts publicados ese día específico de la semana, comparado contra los otros días.",
+  distribucion_hora: "Distribución por hora del día = la cantidad de publicaciones que se hicieron en cada franja horaria. Muestra los hábitos de publicación del equipo.",
+  audiencia: "Audiencia digital = cantidad de seguidores (Instagram, LinkedIn) o de seguidores (Facebook). En TikTok se muestran las views totales del periodo porque la API pública no entrega seguidores.",
+  followers: "Seguidores = personas que siguen la cuenta y reciben sus publicaciones en su feed.",
+  views_tiktok: "Views = reproducciones acumuladas de los videos publicados en Ene-May 2026.",
+  "posts del periodo": "Posts (periodo) = número de publicaciones realizadas en Ene-May 2026.",
+  top: "Top 5 = las 5 publicaciones que más interacciones recibieron en el periodo.",
+  hashtags: "Hashtags = las etiquetas (#palabra) que aparecen con mayor frecuencia en los captions del periodo. Solo se cuentan las que la marca usa, no las que aparecen en comentarios.",
+};
+function info(key) {
+  const d = DEFINITIONS[key];
+  if (!d) return "";
+  return ` <i class="info-icon" data-tip="${d.replace(/"/g, '&quot;')}">i</i>`;
+}
+function maxIdx(arr) { return arr.indexOf(Math.max(...arr)); }
+function minIdx(arr) { return arr.indexOf(Math.min(...arr.filter(x => x > 0))); }
+function maxIdx(arr) { return arr.indexOf(Math.max(...arr)); }
+function minIdx(arr) { return arr.indexOf(Math.min(...arr.filter(x => x > 0))); }
+
+// Traducción de nombres técnicos de formato → lenguaje publicitario
+const TYPE_LABEL = {
+  "Image": "Foto",
+  "Sidecar": "Carrusel",
+  "Video": "Reel",
+  "Photo": "Foto",
+  "Album": "Carrusel",
+  "Text": "Solo texto",
+  "post": "Publicación",
+};
+function prettyType(t) { return TYPE_LABEL[t] || t; }
+function prettyTypes(arr) { return arr.map(prettyType); }
+
+// ── HERO KPIs ──
+const totalPosts = DATA.instagram.n_posts + DATA.facebook.n_posts + DATA.tiktok.n_posts + DATA.linkedin.n_posts;
+const totalEng = DATA.instagram.engagement_total + DATA.facebook.engagement_total + DATA.tiktok.engagement_total + DATA.linkedin.engagement_total;
+
+// KPIs Hero — solo métricas globales sumables/promediables
+// (eliminado: tiktokViews — métrica no confiable)
+const postsPorSemana = (totalPosts / 13).toFixed(1);
+
+document.getElementById("kpi-hero").innerHTML =
+  kpi("Publicaciones totales", fmt(totalPosts), "en 4 redes", true,
+    "Suma de todas las publicaciones (posts, reels, videos) en las 4 redes en el periodo.",
+    DATA.deltas && DATA.deltas.global ? DATA.deltas.global.total_posts_pct : undefined) +
+  kpi("Engagement total", fmt(totalEng), "likes + coments + shares", false,
+    "Engagement = la suma de likes + comentarios + shares públicos de todas las publicaciones del periodo en las 4 redes.",
+    DATA.deltas && DATA.deltas.global ? DATA.deltas.global.total_engagement_pct : undefined) +
+  kpi("Engagement por post", fmt(Math.round(totalEng / totalPosts)), "promedio global", false,
+    "Engagement total dividido entre el número de publicaciones.",
+    DATA.deltas && DATA.deltas.global ? DATA.deltas.global.engagement_por_post_pct : undefined) +
+  kpi("Cadencia", `${postsPorSemana}`, "posts por semana en promedio", false,
+    "Posts por semana en promedio durante el periodo.");
+
+// ── VEREDICTO ──
+const ig = DATA.instagram, fb = DATA.facebook, tt = DATA.tiktok, li = DATA.linkedin;
+const ratioIgFb = (ig.engagement_promedio / Math.max(fb.engagement_promedio, 1)).toFixed(1);
+
+
+// ── RANKING CARDS ──
+const ordered = [
+  { name: "Instagram", color: COLORS.ig, key: "instagram", acc: DATA.accounts.Instagram },
+  { name: "Facebook", color: COLORS.fb, key: "facebook", acc: DATA.accounts.Facebook },
+  { name: "TikTok", color: COLORS.tt, key: "tiktok", acc: DATA.accounts.TikTok },
+  { name: "LinkedIn", color: COLORS.li, key: "linkedin", acc: DATA.accounts.LinkedIn }
+].sort((a,b) => DATA[b.key].engagement_total - DATA[a.key].engagement_total);
+
+const ranking = document.getElementById("ranking-cards");
+ordered.forEach((n, i) => {
+  const d = DATA[n.key];
+  const dl = (DATA.deltas && DATA.deltas[n.key]) || {};
+  // TikTok usa "Views" como métrica de alcance; el resto usa "Seguidores"
+  const alcanceLabel = n.key === "tiktok" ? "Posts publicados" : "Seguidores";
+  const alcanceValue = n.key === "tiktok"
+    ? fmt(d.n_posts)
+    : fmt(n.acc?.seguidores);
+  ranking.innerHTML += `
+    <div class="net-card">
+      <div class="rank">#${i+1}</div>
+      <div class="net-name"><span class="dot" style="background:${n.color}"></span>${n.name}</div>
+      <div class="stat-label">Engagement por post</div>
+      <div class="stat">${fmt(d.engagement_promedio)}${deltaBadgeAbs(dl.engagement_promedio_abs)}</div>
+      <div class="row"><span class="k">${alcanceLabel}</span><span class="v">${alcanceValue}</span></div>
+      <div class="row"><span class="k">Posts (periodo)</span><span class="v">${fmt(d.n_posts)}${deltaBadgeAbs(dl.n_posts_abs)}</span></div>
+      <div class="row"><span class="k">Engagement total</span><span class="v">${fmt(d.engagement_total)}${deltaBadgeAbs(dl.engagement_total_abs)}</span></div>
+    </div>`;
+});
+
+// Tabla de cuentas — la columna "Audiencia" muestra seguidores para IG/FB/LI y views totales para TikTok
+const tbody = document.getElementById("t-accounts");
+DATA.consolidated.forEach(c => {
+  const tr = document.createElement("tr");
+  let audiencia;
+  if (c.plataforma === "TikTok") {
+    audiencia = c.seguidores ? `${fmt(c.seguidores)} <span style="color:var(--muted);font-size:11px">seguidores</span>` : "—";
+  } else if (c.plataforma === "Facebook") {
+    audiencia = `${fmt(parseInt(c.seguidores || DATA.accounts.Facebook?.page_likes || 0))} <span style="color:var(--muted);font-size:11px">seguidores</span>`;
+  } else {
+    audiencia = `${fmt(c.seguidores)} <span style="color:var(--muted);font-size:11px">seguidores</span>`;
+  }
+  const _purl = {Instagram:u=>`https://instagram.com/${u}`,Facebook:u=>`https://facebook.com/${u}`,TikTok:u=>`https://tiktok.com/@${u}`,LinkedIn:u=>`https://linkedin.com/company/${u}`}[c.plataforma];
+  const _platCell = (c.username && _purl) ? `<a href="${_purl(c.username)}" target="_blank"><strong>${c.plataforma}</strong></a>` : `<strong>${c.plataforma}</strong>`;
+  tr.innerHTML = `<td>${_platCell}</td><td>${c.username || "—"}</td><td>${audiencia}</td><td>${c["posts del periodo"]}</td><td>${fmt(c["engagement total"])}</td><td>${fmt(c.engagement_promedio_post)}</td><td><a href="${c.top_post_url}" target="_blank">ver →</a></td>`;
+  tbody.appendChild(tr);
+});
+
+// ── PER PLATFORM ──
+function buildPlatform(prefix, key, color) {
+  const data = DATA[key];
+  const acc = DATA.accounts[ {ig:"Instagram",fb:"Facebook",tt:"TikTok",li:"LinkedIn"}[prefix] ] || {};
+  if (prefix === "ig") document.getElementById("ig-user").textContent = acc.username || "comapan_co";
+
+  // KPI principal varía por plataforma:
+  // - IG/FB/LI: Seguidores
+  // - TikTok: Views totales (el actor no entrega followers)
+  const audiencePct = (DATA.deltas && DATA.deltas[key]) ? DATA.deltas[key].audience_pct : undefined;
+  const kpiPrincipal = prefix === "tt"
+    ? kpi("Posts publicados", fmt(data.n_posts), "en el periodo", false,
+        "Número de videos publicados por @comapanco en el periodo analizado. TikTok no expone seguidores en su API pública.",
+        (DATA.deltas && DATA.deltas[key]) ? DATA.deltas[key].n_posts_pct : undefined)
+    : prefix === "fb"
+    ? kpi("Seguidores", fmt(acc.page_likes), "audiencia FB", false,
+        "Personas que dieron 'me gusta' a la página de Facebook. Históricamente equivale al concepto de seguidores.",
+        audiencePct)
+    : kpi("Seguidores", fmt(acc.seguidores), "", false,
+        "Personas que siguen la cuenta y reciben sus publicaciones en su feed.",
+        audiencePct);
+  const dPlat = (DATA.deltas && DATA.deltas[key]) || {};
+  document.getElementById("kpi-" + prefix).innerHTML =
+    kpiPrincipal +
+    kpi("Posts (periodo)", fmt(data.n_posts), "", false,
+      "Cantidad de publicaciones realizadas en el periodo en esta red.",
+      dPlat.n_posts_pct) +
+    kpi("Engagement total", fmt(data.engagement_total), "", false,
+      "Suma de likes + comentarios + shares de todos los posts del periodo en esta red.",
+      dPlat.engagement_total_pct) +
+    kpi("Eng. por post", fmt(data.engagement_promedio), `mediana: ${fmt(data.engagement_mediana)}`, false,
+      "Engagement total dividido entre la cantidad de posts.",
+      dPlat.engagement_promedio_pct);
+
+  // weekly
+  if (data.by_week.labels.length) {
+    new Chart(document.getElementById(`c-${prefix}-week`), {
+      type: "line",
+      data: { labels: data.by_week.labels,
+        datasets: [{ label: "Posts", data: data.by_week.counts,
+          borderColor: color, backgroundColor: color + "22", tension: 0.35, fill: true,
+          pointRadius: 3, pointBackgroundColor: color, pointBorderWidth: 0, borderWidth: 2 }] },
+      options: { plugins: { legend: { display: false } }, maintainAspectRatio: false,
+        scales: { y: { beginAtZero: true, grid: { color: "#f0f0f0" } }, x: { grid: { display: false } } } }
+    });
+    const wkCounts = data.by_week.counts;
+    const wkAvg = (wkCounts.reduce((a,b)=>a+b,0) / wkCounts.length).toFixed(1);
+    const wkMax = Math.max(...wkCounts), wkMin = Math.min(...wkCounts);
+    const wkMaxLabel = data.by_week.labels[wkCounts.indexOf(wkMax)];
+    const trend = wkCounts.length >= 4
+      ? (wkCounts.slice(-3).reduce((a,b)=>a+b,0) > wkCounts.slice(0,3).reduce((a,b)=>a+b,0) ? "creciente" : "decreciente")
+      : "estable";
+    learn(`l-${prefix}-week`,
+      `Cadencia promedio de <strong>${wkAvg} posts/semana</strong> con un pico de ${wkMax} en ${wkMaxLabel} y mínimo de ${wkMin}. Tendencia ${trend} en las últimas semanas.`);
+  }
+
+  // type
+  const cType = document.getElementById(`c-${prefix}-type`);
+  if (cType) {
+    new Chart(cType, {
+      type: "bar",
+      data: { labels: prettyTypes(data.by_type.labels),
+        datasets: [{ data: data.by_type.engagement_promedio, backgroundColor: color, borderRadius: 4 }] },
+      options: { plugins: { legend: { display: false } }, indexAxis: 'y', maintainAspectRatio: false,
+        scales: { x: { beginAtZero: true, grid: { color: "#f0f0f0" } }, y: { grid: { display: false } } } }
+    });
+    const typeAvg = data.by_type.engagement_promedio;
+    const tMaxIdx = maxIdx(typeAvg), tMinIdx = minIdx(typeAvg);
+    const ratio = typeAvg[tMinIdx] > 0
+      ? (typeAvg[tMaxIdx] / typeAvg[tMinIdx]).toFixed(1)
+      : "—";
+    const bestType = prettyType(data.by_type.labels[tMaxIdx]);
+    const worstType = prettyType(data.by_type.labels[tMinIdx]);
+    learn(`l-${prefix}-type`,
+      `Cada <strong>${bestType.toLowerCase()}</strong> consigue en promedio <strong>${fmt(typeAvg[tMaxIdx])} interacciones</strong>${ratio !== "—" && parseFloat(ratio) >= 1.3 ? `, casi <strong>${ratio} veces más</strong> que un ${worstType.toLowerCase()}` : ""}. Es la pieza que más mueve la cuenta y debería pesar más en el calendario.`);
+  }
+
+  // dow
+  const cDow = document.getElementById(`c-${prefix}-dow`);
+  if (cDow && data.by_day.labels.length) {
+    new Chart(cDow, {
+      type: "bar",
+      data: { labels: data.by_day.labels,
+        datasets: [{ data: data.by_day.engagement_promedio, backgroundColor: color, borderRadius: 4 }] },
+      options: { plugins: { legend: { display: false } }, maintainAspectRatio: false,
+        scales: { y: { beginAtZero: true, grid: { color: "#f0f0f0" } }, x: { grid: { display: false } } } }
+    });
+    const dowAvg = data.by_day.engagement_promedio;
+    const dMax = maxIdx(dowAvg), dMin = minIdx(dowAvg);
+    learn(`l-${prefix}-dow`,
+      `Los <strong>${data.by_day.labels[dMax]}</strong> son el mejor día (${fmt(dowAvg[dMax])} eng. promedio), mientras que los ${data.by_day.labels[dMin]} caen a ${fmt(dowAvg[dMin])}. Reorganizar el calendario hacia ${data.by_day.labels[dMax]} es una palanca de bajo costo.`);
+  }
+
+  // hour (combo: barras de volumen + linea de engagement promedio)
+  const cHour = document.getElementById(`c-${prefix}-hour`);
+  if (cHour && data.by_hour.labels.length) {
+    const engPromHour = data.by_hour.engagement_promedio || data.by_hour.labels.map(() => 0);
+    new Chart(cHour, {
+      type: "bar",
+      data: {
+        labels: data.by_hour.labels,
+        datasets: [
+          { type: "bar", label: "Publicaciones", data: data.by_hour.counts,
+            backgroundColor: color + "aa", borderRadius: 2, yAxisID: "y" },
+          { type: "line", label: "Engagement promedio", data: engPromHour,
+            borderColor: "#1a1a1a", backgroundColor: "transparent", borderWidth: 2,
+            tension: 0.3, pointRadius: 3, pointBackgroundColor: "#1a1a1a", yAxisID: "y1" }
+        ]
+      },
+      options: {
+        plugins: { legend: { display: true, position: "bottom", labels: { font: { size: 10 } } } },
+        maintainAspectRatio: false,
+        scales: {
+          y:  { beginAtZero: true, position: "left",
+                title: { display: true, text: "Posts", font: { size: 10 } },
+                grid: { color: "#f0f0f0" } },
+          y1: { beginAtZero: true, position: "right",
+                title: { display: true, text: "Eng. promedio", font: { size: 10 } },
+                grid: { drawOnChartArea: false } },
+          x:  { grid: { display: false } }
+        }
+      }
+    });
+    const hourCounts = data.by_hour.counts;
+    const hMax = maxIdx(hourCounts);
+    const peakHour = data.by_hour.labels[hMax];
+    const peakRange = `${peakHour}:00 - ${(parseInt(peakHour)+1)%24}:00`;
+    // mejor hora por engagement
+    let bestEngHour = peakHour, bestEng = 0;
+    (engPromHour || []).forEach((v, i) => { if (v > bestEng) { bestEng = v; bestEngHour = data.by_hour.labels[i]; } });
+    const bestRange = `${bestEngHour}:00 - ${(parseInt(bestEngHour)+1)%24}:00`;
+    learn(`l-${prefix}-hour`,
+      `Mayor concentracion de publicaciones a las <strong>${peakRange}</strong> (${hourCounts[hMax]} posts), pero el mejor engagement promedio se da en <strong>${bestRange}</strong> (${fmt(Math.round(bestEng))} interacciones por post). Considerar mover la franja editorial hacia esa ventana.`);
+  }
+
+  // heatmap dia × hora — engagement promedio
+  const heatHost = document.getElementById(`h-${prefix}-heatmap`);
+  if (heatHost && data.by_day_hour && data.by_day_hour.matrix) {
+    const m = data.by_day_hour.matrix;
+    let maxV = 0;
+    m.forEach(row => row.forEach(v => { if (v > maxV) maxV = v; }));
+    const dows = data.by_day_hour.labels_dow;
+    let html = '<div class="hm-grid">';
+    // header: hours
+    html += '<div class="hm-cell hm-corner"></div>';
+    for (let h = 0; h < 24; h++) html += `<div class="hm-cell hm-h">${h}</div>`;
+    // rows
+    for (let d = 0; d < 7; d++) {
+      html += `<div class="hm-cell hm-d">${dows[d]}</div>`;
+      for (let h = 0; h < 24; h++) {
+        const v = m[d][h];
+        const intensity = maxV > 0 ? Math.min(1, v / maxV) : 0;
+        const alpha = intensity > 0 ? (0.15 + intensity * 0.85) : 0;
+        const title = v > 0 ? `${dows[d]} ${h}:00 → ${v} eng. prom.` : `${dows[d]} ${h}:00 → sin posts`;
+        html += `<div class="hm-cell hm-v" style="background:rgba(219,6,50,${alpha})" title="${title}">${v > 0 ? Math.round(v) : ''}</div>`;
+      }
+    }
+    html += '</div>';
+    heatHost.innerHTML = html;
+    // hallazgo automatico debajo del heatmap
+    const learnHost = document.createElement("div");
+    learnHost.className = "learn";
+    let bestD = 0, bestH = 0, bestV = 0;
+    let worstHigh = null; // alta cadencia pero bajo engagement
+    const ch = data.by_day_hour.counts;
+    for (let d = 0; d < 7; d++) {
+      for (let h = 0; h < 24; h++) {
+        if (m[d][h] > bestV) { bestV = m[d][h]; bestD = d; bestH = h; }
+        // alta cadencia (>=3 posts) y engagement bajo (<promedio global)
+        const globalAvg = data.engagement_promedio || 0;
+        if (ch[d][h] >= 3 && m[d][h] < globalAvg * 0.5 && globalAvg > 0) {
+          if (!worstHigh || ch[d][h] > worstHigh.count) {
+            worstHigh = { d, h, v: m[d][h], count: ch[d][h] };
+          }
+        }
+      }
+    }
+    const dows2 = data.by_day_hour.labels_dow;
+    let learnTxt = bestV > 0
+      ? `Mejor ventana del periodo: <strong>${dows2[bestD]} ${bestH}:00</strong> con ${fmt(Math.round(bestV))} interacciones promedio por post.`
+      : "Aun no hay variacion suficiente para identificar una ventana ganadora.";
+    if (worstHigh) {
+      learnTxt += ` <strong>${dows2[worstHigh.d]} ${worstHigh.h}:00</strong> esta sub-aprovechado: se publican ${worstHigh.count} posts pero solo promedian ${fmt(Math.round(worstHigh.v))}. Considerar reubicar esa franja.`;
+    }
+    learnHost.innerHTML = learnTxt;
+    heatHost.parentElement.appendChild(learnHost);
+  }
+
+  // Learn del top 5: concentración + patrón dominante + gap
+  if (data.top5.length) {
+    const topEng = data.top5.reduce((a, b) => a + b.engagement, 0);
+    const concentration = data.engagement_total > 0
+      ? Math.round(topEng / data.engagement_total * 100)
+      : 0;
+    // Formato dominante (solo si hay tipos con prettyType útil — TikTok no aplica)
+    const types = data.top5.map(t => prettyType(t.tipo));
+    const tCounts = {};
+    types.forEach(t => tCounts[t] = (tCounts[t] || 0) + 1);
+    const dominantArr = Object.entries(tCounts).sort((a, b) => b[1] - a[1])[0];
+    const hasFormatVariation = Object.keys(tCounts).length > 1;
+    // Gap entre #1 y #5
+    const top1 = data.top5[0]?.engagement || 0;
+    const last = data.top5[data.top5.length - 1]?.engagement || 0;
+    const gap = last > 0 ? (top1 / last).toFixed(1) : null;
+
+    const parts = [];
+    if (concentration > 0) {
+      const otrasN = data.n_posts - data.top5.length;
+      const restante = 100 - concentration;
+      parts.push(`Estas <strong>${data.top5.length} publicaciones</strong> acumularon el <strong>${concentration}%</strong> de los likes y comentarios de Ene-May 2026 — las otras <strong>${otrasN} publicaciones</strong> se repartieron solo el <strong>${restante}%</strong> restante`);
+    }
+    if (hasFormatVariation && dominantArr && dominantArr[1] >= 3) {
+      parts.push(`<strong>${dominantArr[1]} de las ${data.top5.length}</strong> son <strong>${dominantArr[0].toLowerCase()}s</strong>: ese formato es el que más conecta con la audiencia`);
+    }
+    if (gap && parseFloat(gap) >= 1.5) {
+      const gapNum = parseFloat(gap);
+      const gapText = gapNum >= 5
+        ? `casi <strong>${Math.round(gapNum)} veces</strong>`
+        : `<strong>${gap} veces</strong>`;
+      parts.push(`el post más fuerte tuvo ${gapText} más interacciones que el quinto — vale la pena revisar qué tuvo de especial para repetirlo`);
+    }
+    learn(`l-${prefix}-top`, parts.join(". ") + ".");
+  }
+
+  // helper para renderizar tabla de posts (atipicos, top5 o peores)
+  const platformIcon = { ig: "📷", fb: "📷", tt: "▶", li: "💼" }[prefix] || "▶";
+  function renderPostList(targetSel, posts) {
+    const tbody = document.querySelector(`${targetSel} tbody`);
+    if (!tbody) return;
+    function buildTagPills(tags) {
+      if (!tags || !tags.length) return '<span style="color:#bbb;font-size:11px;">—</span>';
+      return tags.map((t, i) => {
+        const isPrimary = i === 0;
+        const bg = isPrimary ? color + "33" : "#f0ece2";
+        const txtColor = isPrimary ? color : "#6a6a6a";
+        const border = isPrimary ? `1px solid ${color}66` : "1px solid #e0d9c8";
+        return `<span style="display:inline-block; padding:2px 8px; margin:1px 4px 1px 0; border-radius:12px; font-size:10px; font-weight:600; background:${bg}; color:${txtColor}; border:${border}; text-transform:capitalize; white-space:nowrap;">${t}</span>`;
+      }).join("");
+    }
+    posts.forEach(p => {
+      const tr = document.createElement("tr");
+      const thumb = p.media_url
+        ? `<img class="post-thumb" src="${p.media_url}" loading="lazy" decoding="async" fetchpriority="low" referrerpolicy="no-referrer" onerror="this.outerHTML='<div class=\'post-thumb-placeholder\'>${platformIcon}</div>'">`
+        : `<div class="post-thumb-placeholder">${platformIcon}</div>`;
+      const tagsTd = `<td style="min-width:130px">${buildTagPills(p.tags)}</td>`;
+      const cols = prefix === "tt"
+        ? `<td style="width:130px">${thumb}</td><td>${p.fecha}</td><td>${p.caption}</td>${tagsTd}<td>${fmt(p.likes)}</td><td>${fmt(p.comentarios)}</td><td><strong>${fmt(p.engagement)}</strong></td><td><a href="${p.url}" target="_blank">ver →</a></td>`
+        : prefix === "fb"
+        ? `<td style="width:130px">${thumb}</td><td>${p.fecha || "—"}</td><td><span class="pill">${prettyType(p.tipo)}</span></td><td>${p.caption}</td>${tagsTd}<td>${fmt(p.likes)}</td><td>—</td><td><strong>${fmt(p.engagement)}</strong></td><td><a href="${p.url}" target="_blank">ver →</a></td>`
+        : prefix === "li"
+        ? `<td style="width:130px">${thumb}</td><td>${p.fecha}</td><td>${p.caption}</td>${tagsTd}<td>${fmt(p.likes)}</td><td>${fmt(p.comentarios)}</td><td><strong>${fmt(p.engagement)}</strong></td><td><a href="${p.url}" target="_blank">ver →</a></td>`
+        : `<td style="width:130px">${thumb}</td><td>${p.fecha}</td><td><span class="pill">${prettyType(p.tipo)}</span></td><td>${p.caption}</td>${tagsTd}<td>${fmt(p.likes)}</td><td>${fmt(p.comentarios)}</td><td><strong>${fmt(p.engagement)}</strong></td><td><a href="${p.url}" target="_blank">ver →</a></td>`;
+      tr.innerHTML = cols;
+      tbody.appendChild(tr);
+    });
+  }
+
+  // 1) Atipicos (solo si existen)
+  const atipicos = data.atipicos || [];
+  if (atipicos.length > 0) {
+    const titleEl = document.getElementById(`h-${prefix}-atipicos-title`);
+    const cardEl  = document.getElementById(`card-${prefix}-atipicos`);
+    if (titleEl) titleEl.style.display = "block";
+    if (cardEl)  cardEl.style.display  = "block";
+    renderPostList(`#t-${prefix}-atipicos`, atipicos);
+  }
+
+  // 2) Top 5 (sin atipicos)
+  renderPostList(`#t-${prefix}-top`, data.top5 || []);
+
+  // 3) Peores 5 (solo si hay posts distintos del top)
+  const worstList = data.worst5 || [];
+  if (worstList.length > 0) {
+    renderPostList(`#t-${prefix}-worst`, worstList);
+  } else {
+    // Ocultar seccion completa (h3 + card) cuando no hay peores separados
+    const worstCard = document.querySelector(`#t-${prefix}-worst`)?.closest(".chart-card");
+    if (worstCard) {
+      worstCard.style.display = "none";
+      // ocultar tambien el h3 previo
+      const prev = worstCard.previousElementSibling;
+      if (prev && prev.tagName === "H3") prev.style.display = "none";
+    }
+  }
+
+  // === Charts de TAGS (mix de contenido + engagement por categoria) ===
+  if (data.tag_summary && Object.keys(data.tag_summary).length) {
+    const tagsSorted = Object.entries(data.tag_summary).sort((a, b) => b[1] - a[1]);
+    const tagLabels = tagsSorted.map(e => e[0].charAt(0).toUpperCase() + e[0].slice(1));
+    const tagCounts = tagsSorted.map(e => e[1]);
+    const tagEngs   = tagsSorted.map(e => (data.tag_engagement && data.tag_engagement[e[0]]) || 0);
+
+    // Mix de contenido — barras horizontales
+    const cMix = document.getElementById(`c-${prefix}-tagmix`);
+    if (cMix) {
+      new Chart(cMix, {
+        type: "bar",
+        data: { labels: tagLabels,
+          datasets: [{ data: tagCounts, backgroundColor: color + "aa", borderRadius: 2 }] },
+        options: { indexAxis: "y", plugins: { legend: { display: false } }, maintainAspectRatio: false,
+          scales: { x: { beginAtZero: true, grid: { color: "#f0f0f0" } }, y: { grid: { display: false } } } }
+      });
+      const top1 = tagsSorted[0];
+      const totalT = tagCounts.reduce((a,b)=>a+b, 0);
+      const pct = totalT > 0 ? Math.round(top1[1] / totalT * 100) : 0;
+      learn(`l-${prefix}-tagmix`,
+        `<strong>${top1[0].charAt(0).toUpperCase() + top1[0].slice(1)}</strong> es la categoria dominante: ${pct}% del contenido del periodo. ${tagsSorted.length} categorias en uso de las 12 posibles.`);
+    }
+
+    // Engagement por categoria — barras horizontales
+    const cEng = document.getElementById(`c-${prefix}-tageng`);
+    if (cEng) {
+      const sortedByEng = tagsSorted.slice().sort((a, b) => (data.tag_engagement[b[0]] || 0) - (data.tag_engagement[a[0]] || 0));
+      const engLabels = sortedByEng.map(e => e[0].charAt(0).toUpperCase() + e[0].slice(1));
+      const engVals   = sortedByEng.map(e => (data.tag_engagement[e[0]] || 0));
+      new Chart(cEng, {
+        type: "bar",
+        data: { labels: engLabels,
+          datasets: [{ data: engVals, backgroundColor: "#1a1a1a99", borderRadius: 2 }] },
+        options: { indexAxis: "y", plugins: { legend: { display: false } }, maintainAspectRatio: false,
+          scales: { x: { beginAtZero: true, grid: { color: "#f0f0f0" } }, y: { grid: { display: false } } } }
+      });
+      const winnerCat = sortedByEng[0];
+      const loserCat  = sortedByEng[sortedByEng.length - 1];
+      if (winnerCat && loserCat && winnerCat[0] !== loserCat[0]) {
+        const wv = data.tag_engagement[winnerCat[0]] || 0;
+        const lv = data.tag_engagement[loserCat[0]] || 0;
+        const ratio = lv > 0 ? Math.round(wv / lv) : "—";
+        learn(`l-${prefix}-tageng`,
+          `<strong>${winnerCat[0].charAt(0).toUpperCase() + winnerCat[0].slice(1)}</strong> es la categoria de mejor desempeño (${fmt(Math.round(wv))} eng. promedio por post)${ratio !== "—" ? `, ${ratio}× sobre <strong>${loserCat[0]}</strong> (${fmt(Math.round(lv))})` : ""}. Considerar subir cadencia de esa categoria.`);
+      }
+    }
+  }
+
+}
+
+buildPlatform("ig", "instagram", COLORS.ig);
+buildPlatform("fb", "facebook", COLORS.fb);
+buildPlatform("tt", "tiktok", COLORS.tt);
+buildPlatform("li", "linkedin", COLORS.li);
+
+// =================================================================
+// === ANÁLISIS POR CATEGORÍAS (5 sub-secciones cross-platform) ===
+// =================================================================
+(function renderCategoryAnalysis() {
+  const ca = (typeof DATA !== "undefined") ? DATA.category_analysis : null;
+  const nCats = ca && ca.mix_global ? ca.mix_global.length : 0;
+  // Ocultar el tab entero cuando no hay data suficiente (< 3 categorias distintas)
+  if (nCats < 3) {
+    document.querySelectorAll('[data-tab="categorias"]').forEach(b => b.style.display = "none");
+    const sec = document.getElementById("tab-categorias");
+    if (sec) sec.style.display = "none";
+    return;
+  }
+
+  const palette = ["#DB0632", "#F5DA6C", "#FFBC7D", "#5BAC47", "#19AAB2",
+                   "#1a1a1a", "#8a8a8a", "#e1306c", "#1877f2", "#000000", "#0a66c2", "#F8E0E5"];
+  const cap = s => (s || "").charAt(0).toUpperCase() + (s || "").slice(1);
+
+  // A) Mix de contenido (barras horizontales con %)
+  const mix = ca.mix_global;
+  const cMix = document.getElementById("c-cat-mix");
+  if (cMix) {
+    new Chart(cMix, {
+      type: "bar",
+      data: {
+        labels: mix.map(m => cap(m.category)),
+        datasets: [{
+          data: mix.map(m => m.pct),
+          backgroundColor: mix.map((_, i) => palette[i % palette.length] + "cc"),
+          borderRadius: 3,
+        }]
+      },
+      options: {
+        indexAxis: "y", maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: ctx => `${ctx.parsed.x}% (${mix[ctx.dataIndex].count} posts)` } }
+        },
+        scales: {
+          x: { beginAtZero: true, ticks: { callback: v => v + "%" }, grid: { color: "#f0f0f0" } },
+          y: { grid: { display: false } }
+        }
+      }
+    });
+    const top1 = mix[0]; const top2 = mix[1];
+    document.getElementById("l-cat-mix").innerHTML =
+      `<strong>${cap(top1.category)}</strong> domina con <strong>${top1.pct}%</strong> del mix (${top1.count} posts). ` +
+      (top2 ? `Le sigue <strong>${cap(top2.category)}</strong> con ${top2.pct}%. ` : "") +
+      `${mix.length} de las 12 categorías están en uso.`;
+  }
+
+  // B) Performance por categoría (barras con promedio + tooltip de mediana/p75)
+  const perf = ca.performance;
+  const cPerf = document.getElementById("c-cat-perf");
+  if (cPerf) {
+    new Chart(cPerf, {
+      type: "bar",
+      data: {
+        labels: perf.map(p => cap(p.category)),
+        datasets: [{
+          label: "Engagement promedio",
+          data: perf.map(p => p.mean),
+          backgroundColor: "#DB0632aa",
+          borderRadius: 3,
+        }, {
+          label: "Mediana",
+          data: perf.map(p => p.median),
+          backgroundColor: "#1a1a1a99",
+          borderRadius: 3,
+        }]
+      },
+      options: {
+        indexAxis: "y", maintainAspectRatio: false,
+        plugins: {
+          legend: { position: "bottom", labels: { font: { size: 10 } } },
+          tooltip: { callbacks: {
+            afterBody: items => {
+              const i = items[0].dataIndex;
+              return [`n = ${perf[i].n} posts`, `p75 = ${perf[i].p75}`];
+            }
+          }}
+        },
+        scales: {
+          x: { beginAtZero: true, grid: { color: "#f0f0f0" } },
+          y: { grid: { display: false } }
+        }
+      }
+    });
+    const winner = perf[0]; const loser = perf[perf.length - 1];
+    const ratio = loser.mean > 0 ? Math.round(winner.mean / loser.mean) : "—";
+    document.getElementById("l-cat-perf").innerHTML =
+      `<strong>${cap(winner.category)}</strong> es la categoría con mejor engagement promedio (${fmt(Math.round(winner.mean))}). ` +
+      (ratio !== "—" && ratio > 2 ? `${ratio}× sobre <strong>${cap(loser.category)}</strong> (${fmt(Math.round(loser.mean))}). ` : "") +
+      `Diferencias grandes entre mediana y promedio (ej. ${cap(winner.category)}: med ${winner.median} vs prom ${Math.round(winner.mean)}) indican alta variabilidad — pocos hits muy grandes.`;
+  }
+
+  // C) Heatmap Categoria x Red
+  function drawHeatmap(hostId, learnId, mat, rowLabels, colLabels, label) {
+    const host = document.getElementById(hostId);
+    if (!host || !mat || !mat.matrix) return;
+    const m = mat.matrix; let maxV = 0;
+    m.forEach(row => row.forEach(v => { if (v > maxV) maxV = v; }));
+    const rows = mat.categories; const cols = mat[colLabels];
+    let html = `<div class="hm-grid" style="grid-template-columns: 120px repeat(${cols.length}, 1fr);">`;
+    html += '<div class="hm-cell hm-corner"></div>';
+    cols.forEach(c => { html += `<div class="hm-cell hm-h" style="text-transform:capitalize">${c}</div>`; });
+    rows.forEach((r, i) => {
+      html += `<div class="hm-cell hm-d" style="text-transform:capitalize">${r}</div>`;
+      for (let j = 0; j < cols.length; j++) {
+        const v = m[i][j];
+        const intensity = maxV > 0 ? Math.min(1, v / maxV) : 0;
+        const alpha = intensity > 0 ? (0.15 + intensity * 0.85) : 0;
+        const title = v > 0 ? `${r} en ${cols[j]} → ${v} eng. prom.` : `${r} en ${cols[j]} → sin posts`;
+        html += `<div class="hm-cell hm-v" style="background:rgba(219,6,50,${alpha})" title="${title}">${v > 0 ? Math.round(v) : ''}</div>`;
+      }
+    });
+    html += '</div>';
+    host.innerHTML = html;
+    // hallazgo: best combination
+    let bi = 0, bj = 0, bv = 0;
+    for (let i = 0; i < rows.length; i++) {
+      for (let j = 0; j < cols.length; j++) {
+        if (m[i][j] > bv) { bv = m[i][j]; bi = i; bj = j; }
+      }
+    }
+    const learn = document.getElementById(learnId);
+    if (learn && bv > 0) {
+      learn.innerHTML = `Mejor combinación: <strong>${cap(rows[bi])}</strong> en <strong>${cap(cols[bj])}</strong> con ${fmt(Math.round(bv))} interacciones promedio.`;
+    }
+  }
+  drawHeatmap("h-cat-plat", "l-cat-plat", ca.by_platform, "categories", "platforms");
+  drawHeatmap("h-cat-type", "l-cat-type", ca.by_type, "categories", "types");
+
+  // E) Gaps estratégicos — tabla
+  const gapsHost = document.getElementById("tbl-cat-gaps");
+  if (gapsHost) {
+    if (!ca.gaps || !ca.gaps.length) {
+      gapsHost.innerHTML = '<p style="padding:20px; color:#6a6a6a;">No se detectaron gaps significativos: las categorías sub-utilizadas no superan el promedio global.</p>';
+    } else {
+      let html = '<table style="width:100%; margin:0; border-collapse:collapse"><thead><tr style="background:#FBFAF7"><th style="text-align:left; padding:10px;">Categoría</th><th style="text-align:right; padding:10px;">% del mix</th><th style="text-align:right; padding:10px;">Posts</th><th style="text-align:right; padding:10px;">Eng. prom.</th><th style="text-align:right; padding:10px;">vs Global</th></tr></thead><tbody>';
+      ca.gaps.forEach(g => {
+        html += `<tr><td style="padding:10px; text-transform:capitalize"><strong>${cap(g.category)}</strong></td><td style="text-align:right; padding:10px;">${g.pct_of_mix}%</td><td style="text-align:right; padding:10px;">${g.count}</td><td style="text-align:right; padding:10px;">${fmt(Math.round(g.avg_engagement))}</td><td style="text-align:right; padding:10px; color:#5BAC47; font-weight:700;">${g.vs_global}×</td></tr>`;
+      });
+      html += '</tbody></table>';
+      gapsHost.innerHTML = html;
+    }
+  }
+})();
+
+
+// IG hashtags
+const igh = document.getElementById("ig-hashtags");
+if (DATA.instagram.top_hashtags.length === 0) {
+  igh.innerHTML = `<span style="color:var(--muted)">Comapan no usa hashtags de forma sistemática en Instagram. Esta es una palanca SEO sin explotar.</span>`;
+} else {
+  DATA.instagram.top_hashtags.forEach(([h, n]) => {
+    igh.innerHTML += `<span class="ht">${h}<strong>${n}</strong></span>`;
+  });
+}
+
+// ── HALLAZGOS ──
+const findings = [];
+
+// Hallazgo de formato en IG — lenguaje publicitario
+const igTypeAvg = ig.by_type.engagement_promedio;
+const igTypeLabels = ig.by_type.labels;
+if (igTypeAvg.length >= 2) {
+  const positives = igTypeAvg.filter(x => x > 0);
+  if (positives.length >= 2) {
+    const bestIdx = igTypeAvg.indexOf(Math.max(...positives));
+    const worstIdx = igTypeAvg.indexOf(Math.min(...positives));
+    const ratio = igTypeAvg[bestIdx] / Math.max(igTypeAvg[worstIdx], 1);
+    const best = prettyType(igTypeLabels[bestIdx]).toLowerCase();
+    const worst = prettyType(igTypeLabels[worstIdx]).toLowerCase();
+    if (ratio >= 1.3) {
+      findings.push({
+        title: `Las ${best}s mueven mucho más a la audiencia que los ${worst}s`,
+        body: `Cada <strong>${best}</strong> recibe en promedio <strong>${fmt(igTypeAvg[bestIdx])} interacciones</strong> (likes y comentarios), frente a <strong>${fmt(igTypeAvg[worstIdx])}</strong> de cada ${worst} — casi <strong>${ratio.toFixed(1)} veces más</strong>. Recomendación: bajar la frecuencia de ${worst}s y publicar más ${best}s en su lugar.`,
+        impact: "alto"
+      });
+    } else {
+      findings.push({
+        title: `El formato no es lo que decide en Instagram`,
+        body: `Fotos, carruseles y reels reciben un número parecido de interacciones (entre ${fmt(igTypeAvg[worstIdx])} y ${fmt(igTypeAvg[bestIdx])} en promedio). Lo que separa un buen post de uno regular no es el formato sino el tema, el copy y el momento — la conversación creativa debería moverse hacia ahí.`,
+        impact: "medio"
+      });
+    }
+  }
+}
+
+// LinkedIn subutilizado
+findings.push({
+  title: `LinkedIn está casi en pausa`,
+  body: `En Ene-May 2026 Comapan publicó <strong>${li.n_posts} veces</strong> en LinkedIn — apenas <strong>${(li.n_posts/13).toFixed(1)} por semana</strong>. Con 75 años de marca, este es el canal natural para hablarle a empleados, distribuidores y clientes del canal HORECA. Está sin trabajar.`,
+  impact: "alto"
+});
+
+// IG vs FB
+if (ratioIgFb >= 1.5) {
+  findings.push({
+    title: `Instagram es donde está la audiencia que reacciona`,
+    body: `Aunque Facebook tiene una página enorme (${fmt(parseInt(DATA.accounts.Facebook?.seguidores||DATA.accounts.Facebook?.page_likes||0))} seguidores), cada post en Instagram recibe <strong>${ratioIgFb}x más interacciones</strong> que uno en Facebook (${fmt(ig.engagement_promedio)} vs ${fmt(fb.engagement_promedio)}). La gente que consume Comapan en redes está en IG; FB se mantiene por inercia.`,
+    impact: "alto"
+  });
+}
+
+// Hashtags bajo uso
+if (ig.top_hashtags.length === 0 || (ig.top_hashtags[0] && ig.top_hashtags[0][1] < 5)) {
+  findings.push({
+    title: `Comapan casi no usa hashtags en Instagram`,
+    body: `Ningún hashtag aparece de forma sistemática en los posts del periodo. Los hashtags son la forma en que la gente descubre marcas sin pagar pauta. Una propuesta: definir 4-6 etiquetas fijas (como #ComapanEnCasa, #DesayunoColombiano, #PanchiRecomienda) y usarlas en todos los posts del mes.`,
+    impact: "medio"
+  });
+}
+
+// Mejor día IG
+if (ig.by_day.labels.length) {
+  const bestIdx = ig.by_day.engagement_promedio.indexOf(Math.max(...ig.by_day.engagement_promedio));
+  findings.push({
+    title: `Los ${ig.by_day.labels[bestIdx].toLowerCase()}s funcionan mejor que el resto de la semana`,
+    body: `Los posts de los <strong>${ig.by_day.labels[bestIdx].toLowerCase()}s</strong> reciben en promedio <strong>${fmt(ig.by_day.engagement_promedio[bestIdx])} interacciones</strong>, por encima del promedio de los demás días. Vale la pena ajustar el calendario para que las piezas más importantes salgan ese día.`,
+    impact: "medio"
+  });
+}
+
+// TikTok cadencia
+findings.push({
+  title: `Hay espacio para crecer en TikTok sin producir nuevo contenido`,
+  body: `TikTok solo recibe <strong>${(tt.n_posts/13).toFixed(1)} videos por semana</strong>, menos de la mitad que Instagram. Cada reel de IG se puede adaptar a TikTok cambiando música y duración — duplicar la frecuencia ahí sería un esfuerzo bajo de producción y abre una audiencia que IG no captura.`,
+  impact: "medio"
+});
+
+const findingsEl = document.getElementById("findings");
+findings.forEach((f, i) => {
+  const impactLabel = { alto: "Alto impacto", medio: "Medio impacto", bajo: "Bajo impacto" }[f.impact];
+  findingsEl.innerHTML += `
+    <div class="finding">
+      <div class="num">${String(i+1).padStart(2,'0')}</div>
+      <div class="body">
+        <h4>${f.title}</h4>
+        <p>${f.body}</p>
+        <span class="impact ${f.impact}">${impactLabel}</span>
+      </div>
+    </div>`;
+});
+
+// ── RECOMENDACIONES ──
+/* Recomendaciones dinámicas del período (DATA.hallazgos_llm.recomendaciones) */
+const recos = (DATA.hallazgos_llm && Array.isArray(DATA.hallazgos_llm.recomendaciones))
+  ? DATA.hallazgos_llm.recomendaciones : [];
+const recosEl = document.getElementById("recos");
+if (!recos.length && recosEl) {
+  recosEl.style.display = "none";
+  var _rprev = recosEl.previousElementSibling;
+  if (_rprev && _rprev.tagName === "H3") _rprev.style.display = "none";
+}
+recos.forEach((r, i) => {
+  recosEl.innerHTML += `
+    <div class="reco">
+      <div class="num">${i+1}</div>
+      <div>
+        <h4>${r.title}</h4>
+        <p>${r.body}</p>
+        <div class="tags">${r.tags.map(t => `<span class="tag">${t}</span>`).join("")}</div>
+      </div>
+    </div>`;
+});
+</script>
+
+
+<script>
+/* FIX-PDF-PRINT-2026: redibujar charts antes de imprimir para que el PDF salga bien */
+(function () {
+  function resizeAllCharts() {
+    document.querySelectorAll("canvas").forEach(function (cv) {
+      try {
+        var ch = (window.Chart && Chart.getChart) ? Chart.getChart(cv) : null;
+        if (ch) { ch.resize(); ch.update("none"); }
+      } catch (e) {}
+    });
+  }
+  function showAllTabs() {
+    document.querySelectorAll(".tab").forEach(function (t) { t.style.display = "block"; });
+  }
+  function restoreTabs() {
+    document.querySelectorAll(".tab").forEach(function (t) { t.style.display = ""; });
+  }
+  window.addEventListener("beforeprint", function () {
+    showAllTabs();
+    resizeAllCharts();   // sincrono: lee el layout de impresion ya aplicado
+  });
+  window.addEventListener("afterprint", function () {
+    restoreTabs();
+    resizeAllCharts();
+  });
+  // Safari / algunos navegadores usan matchMedia en vez de los eventos
+  if (window.matchMedia) {
+    try {
+      window.matchMedia("print").addListener(function (m) {
+        if (m.matches) { showAllTabs(); resizeAllCharts(); }
+        else { restoreTabs(); resizeAllCharts(); }
+      });
+    } catch (e) {}
+  }
+})();
+</script>
+<!-- ===== BLOQUE PDF: pegar ANTES de </body>. Ordena la impresión y oculta Evolución en los reportes mensuales (en el diagnóstico se mantiene). ===== -->
+<style>
+  @media print {
+    @page { size: A4 landscape; margin: 0.8cm; }
+    html, body { background:#fff !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    body { font-size: 10.5px !important; }
+
+    .menu-toggle, .menu-drawer, .menu-backdrop, .period-selector, .pdf-btn,
+    nav.tabs, .info-icon, .global-tooltip { display:none !important; }
+
+    /* Cada RED social arranca en página nueva */
+    section.tab { display:block !important; page-break-before: always; break-before: page; padding-top: 2px !important; }
+    section.tab:first-of-type { page-break-before: avoid; break-before: avoid; }
+
+    /* Sin hueco entre Resumen ejecutivo y Panorama */
+    .resumen-corp { margin: 0 0 8px !important; padding: 14px 18px !important; }
+    .hero { margin: 2px 0 8px !important; }
+    .hero h1 { font-size: 20px !important; line-height: 1.12 !important; margin: 4px 0 6px !important; }
+    .hero .lead { font-size: 11px !important; margin: 0 0 6px !important; }
+    .eyebrow { margin: 2px 0 !important; }
+    .kpi-grid { margin: 8px 0 !important; gap: 8px !important; }
+
+    /* Página 1 termina tras los KPIs del panorama → Ranking + Vista comparada quedan JUNTOS en la página 2 */
+    #kpi-hero { break-after: page !important; page-break-after: always !important; }
+    /* Tras la tabla comparada, salto de página (en el diagnóstico separa la Evolución; en mensual ya no hay) */
+    .chart-card:has(table) { break-after: page !important; page-break-after: always !important; }
+
+    /* Encabezados nunca huérfanos */
+    .section-head { margin: 0 0 8px !important; break-after: avoid !important; page-break-after: avoid !important; }
+    .section-head h2 { font-size: 15px !important; margin: 2px 0 !important; }
+    .section-head .desc { font-size: 10px !important; margin-top: 2px !important; }
+    h1, h2, h3 { break-after: avoid !important; page-break-after: avoid !important; }
+
+    /* Encabezado grande y diferenciado por red social */
+    .platform-header {
+      display:flex !important; align-items:center !important; gap:10px !important;
+      background:#F4F5F7 !important; border:1px solid #E3E3E6 !important; border-left:6px solid #999 !important;
+      padding:10px 14px !important; margin:0 0 10px !important; border-radius:4px !important;
+      break-after: avoid !important; page-break-after: avoid !important;
+    }
+    .platform-header h2 { font-size:20px !important; margin:0 !important; }
+    .platform-header .meta { font-size:11px !important; color:#6a6a6a !important; }
+    #tab-instagram .platform-header { border-left-color:#E1306C !important; }
+    #tab-facebook  .platform-header { border-left-color:#1877F2 !important; }
+    #tab-tiktok    .platform-header { border-left-color:#111111 !important; }
+    #tab-linkedin  .platform-header { border-left-color:#0A66C2 !important; }
+    .platform-header + .kpi-grid { margin-top: 10px !important; }
+
+    /* Unidades que NUNCA se parten */
+    .kpi-grid, .ranking, .chart-card, table, .net-card, .finding, .reco-card {
+      break-inside: avoid !important; page-break-inside: avoid !important;
+    }
+    .ranking { gap: 8px !important; margin: 6px 0 !important; }
+
+    /* Gráficos: cuadrícula 2 por fila + altura fija */
+    .chart-grid { display:grid !important; grid-template-columns: 1fr 1fr !important; gap: 10px !important; margin-top: 12px !important; }
+    .chart-card { margin: 0 0 8px !important; padding: 10px !important; }
+    .chart-wrap { height: 165px !important; max-height: 165px !important; }
+    canvas { max-width: 100% !important; max-height: 165px !important; }
+
+    table { font-size: 9px !important; }
+    table th, table td { padding: 4px 6px !important; }
+    .post-thumb, .post-thumb-placeholder { width: 54px !important; height: 54px !important; }
+    .hm-cell { font-size: 7px !important; min-height: 15px !important; }
+
+    .topbar { padding: 6px 0 10px !important; border-bottom: 2px solid var(--comapan-red) !important; }
+    [data-tip]::after, [data-tip]::before { display:none !important; }
+    main::after {
+      content: "Datalítica Colombia S.A.S. · Generado para Catorce Días — Comapan · Documento confidencial";
+      display:block; margin-top:14px; padding-top:10px; border-top:1px solid var(--line);
+      font-size:9px; color:var(--muted); text-align:center;
+    }
+  }
+</style>
+</body>
+</html>
