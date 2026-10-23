@@ -19,7 +19,9 @@ Los datos crudos, los CSVs, los JSONs intermedios y los scripts con credenciales
 
 ```
 .
-├── index.html              ⬅ deploy actual (mes 1, Ene–May 2026)
+├── index.html              ⬅ página inicial (copia del diagnóstico Ene–May 2026)
+├── diagnostico/            ⬅ diagnóstico Ene–May 2026 (index.html + reporte.pdf)
+├── 2026-MM/                ⬅ un informe por mes (index.html + reporte.pdf)
 ├── CNAME, robots.txt       ⬅ configuración GitHub Pages
 ├── assets/                 ⬅ logos, favicons, thumbnails de top posts
 │
@@ -50,24 +52,24 @@ Los datos crudos, los CSVs, los JSONs intermedios y los scripts con credenciales
 
 ## Cómo se actualiza el reporte
 
-Cadencia: **quincenal** (días 1 y 15 de cada mes a las 06:00 hora Bogotá).
+Cadencia: **semanal**, todos los martes a las 21:00 hora Bogotá (miércoles 02:00 UTC), por el cron de `ingest_monthly.yml`.
 
-Flujo automático cuando el cron de Apify dispara:
+Flujo automático (cada workflow arranca solo si el anterior terminó OK, vía `workflow_run`):
 
 ```
-Apify Schedules → corre los 6 actores en paralelo
-              → webhook a GitHub Actions
-GitHub Action → pipeline.extract:   descarga datasets
-              → pipeline.transform: normaliza + agrega + top5
-              → pipeline.load:      guarda data/YYYY-MM-DD.json (gitignored)
-                                    + descarga thumbs a assets/thumbs/
-              → pipeline.render:    template + DATA → index.html
-              → pipeline.publish:   git commit && push
-              → GitHub Pages republica automático
-              → pipeline.notify:    email al equipo
+Ingest mensual        → corre los actores de Apify (IG, FB, TT, LI) del mes en curso
+                      → inserta/actualiza posts en Supabase
+                      → commit de miniaturas en assets/thumbs/
+Build diagnóstico     → lee Supabase, recalcula agregados, Gemini taggea posts nuevos
+                      → regenera diagnostico/, 2026-MM/ e index.html
+                      → actualiza la evolución mes a mes
+                      → commit && push + smoke test del mes actual (HTTP 200)
+Render PDF            → Playwright genera <periodo>/reporte.pdf
+                      → commit && push
+GitHub Pages          → republica automático
 ```
 
-Tiempo total: **5–8 minutos** entre el inicio del cron y el sitio actualizado.
+Tiempo total aproximado: **10–15 minutos** entre el inicio de la ingesta y los PDF publicados.
 
 ## Cliente y cuentas analizadas
 
@@ -112,19 +114,21 @@ comercial@datalitica.com.co
 
 ## Workflows disponibles
 
-El repo tiene 3 workflows activos, todos manuales (`workflow_dispatch`) excepto el keepalive que corre semanalmente por cron.
+El repo tiene 4 workflows. Todos se pueden disparar a mano (`workflow_dispatch`); además, la ingesta y el keepalive corren por cron, y el build y el PDF se encadenan solos al terminar el paso anterior.
 
-| Workflow | Cuándo dispararlo | Qué hace |
+| Workflow | Cuándo corre | Qué hace |
 |---|---|---|
-| **`ingest_monthly.yml`** | Cuando quieres traer data fresca al mes actual | Corre los actores de Apify (IG, FB pages, FB posts, **TikTok profile únicamente**, LinkedIn), filtra al mes en curso (Bogotá), inserta/actualiza posts en Supabase, descarga miniaturas y hace commit |
-| **`build_diagnostico_extendido.yml`** | Después de una ingesta, o cuando cambias código del build | Lee Supabase, recomputa agregados y heatmaps filtrando al período, corre Gemini para taggear posts nuevos, regenera hallazgos + resumen y publica en `comapan.datalitica.com.co/<periodo>/` |
+| **`ingest_monthly.yml`** | Cron martes 21:00 Bogotá, o manual (período `YYYY-MM`, vacío = mes actual) | Corre los actores de Apify (IG, FB pages, FB posts, **TikTok profile únicamente**, LinkedIn), filtra al mes (Bogotá), inserta/actualiza posts en Supabase, descarga miniaturas y hace commit |
+| **`build_diagnostico_extendido.yml`** | Automático al terminar OK la ingesta, o manual (`all` por defecto) | Lee Supabase, recomputa agregados y heatmaps filtrando al período, corre Gemini para taggear posts nuevos, regenera hallazgos + resumen y publica en `comapan.datalitica.com.co/<periodo>/` |
+| **`render_pdf.yml`** | Automático al terminar OK el build, o manual (períodos separados por espacio, vacío = todos) | Sirve el sitio localmente, renderiza `<periodo>/reporte.pdf` con Playwright (A4 horizontal) y hace commit |
 | **`keepalive_supabase.yml`** | Automático (cron lunes 06:00 Bogotá) | Ping simple a Supabase para que no se pause por inactividad (plan free) |
 
-### Flujo típico para actualizar el dashboard
+### Flujo típico para actualizar el dashboard a mano
 
 1. Actions → **Ingest mensual** → Run workflow (~3 min)
-2. Actions → **Build diagnóstico extendido HTML** → Run workflow (~3 min)
-3. Verificar en `https://comapan.datalitica.com.co/<mes-actual>/`
+2. El **Build diagnóstico extendido HTML** arranca solo al terminar (~3 min)
+3. El **Render PDF de informes** arranca solo al terminar el build
+4. Verificar en `https://comapan.datalitica.com.co/<mes-actual>/` (recarga forzada: Ctrl+Shift+R)
 
 ### Nota TikTok
 
