@@ -100,7 +100,7 @@ jobs:
               cu  += (r.get("stats") or {}).get("computeUnits", 0) or 0
               usd += r.get("usageTotalUsd", 0) or 0
               n   += 1
-          ruta = pathlib.Path("documentacion/consumo_apify.md")
+          ruta = pathlib.Path("docs/consumo_apify.md")
           ruta.parent.mkdir(parents=True, exist_ok=True)
           nuevo = not ruta.exists()
           with ruta.open("a", encoding="utf-8") as out:
@@ -110,7 +110,7 @@ jobs:
                   out.write("| Fecha (UTC) | Período | Runs | Compute units | Costo USD |\n")
                   out.write("|---|---|---|---|---|\n")
               out.write(f"| {hoy} | {os.environ.get('PERIOD','')} | {n} | {cu:.3f} | ${usd:.4f} |\n")
-          print(f"Registrado en documentacion/consumo_apify.md → {hoy} · {n} runs · {cu:.3f} CU · ${usd:.4f}")
+          print(f"Registrado en docs/consumo_apify.md → {hoy} · {n} runs · {cu:.3f} CU · ${usd:.4f}")
           PY
 
       - name: Commit del registro de consumo
@@ -118,7 +118,7 @@ jobs:
         run: |
           git config user.email "bot@datalitica.com.co"
           git config user.name "Datalitica Bot"
-          git add documentacion/consumo_apify.md || true
+          git add docs/consumo_apify.md || true
           git diff --quiet --cached && echo "Sin cambios en el registro de consumo" && exit 0
           git commit -m "Registro consumo Apify ${{ steps.p.outputs.period }}"
           git pull --rebase origin main || true
