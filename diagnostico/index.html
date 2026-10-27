@@ -1481,13 +1481,16 @@ function buildPlatform(prefix, key, color) {
   // - IG/FB/LI: Seguidores
   // - TikTok: Views totales (el actor no entrega followers)
   const audiencePct = (DATA.deltas && DATA.deltas[key]) ? DATA.deltas[key].audience_pct : undefined;
+  // FB: seguidores exactos; si faltan o vienen redondeados a miles ("119K"), los 'me gusta' de la página
+  const fbAudiencia = (acc.seguidores && Number(acc.seguidores) % 1000 !== 0)
+    ? acc.seguidores : (acc.page_likes || acc.seguidores);
   const kpiPrincipal = prefix === "tt"
     ? kpi("Posts publicados", fmt(data.n_posts), "en el periodo", false,
         "Número de videos publicados por @comapanco en el periodo analizado. TikTok no expone seguidores en su API pública.",
         (DATA.deltas && DATA.deltas[key]) ? DATA.deltas[key].n_posts_pct : undefined)
     : prefix === "fb"
-    ? kpi("Seguidores", fmt(acc.page_likes), "audiencia FB", false,
-        "Personas que dieron 'me gusta' a la página de Facebook. Históricamente equivale al concepto de seguidores.",
+    ? kpi("Seguidores", fmt(fbAudiencia), "audiencia FB", false,
+        "Personas que siguen la página de Facebook. Si el periodo no tiene el dato de seguidores, se usan los 'me gusta' de la página.",
         audiencePct)
     : kpi("Seguidores", fmt(acc.seguidores), "", false,
         "Personas que siguen la cuenta y reciben sus publicaciones en su feed.",
