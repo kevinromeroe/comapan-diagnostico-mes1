@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       period:
-        description: "Mes a ingestar (YYYY-MM). Déjalo vacío = mes actual (Bogotá)."
+        description: "Mes(es) a ingestar (YYYY-MM, separados por espacio). Vacío = mes actual (Bogotá) + mes anterior si estamos en los primeros 7 días."
         required: false
         default: ""
   schedule:
@@ -19,7 +19,7 @@ concurrency:
 jobs:
   ingest:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 40
     permissions:
       contents: write
     env:
@@ -35,25 +35,39 @@ jobs:
       - name: Install deps
         run: pip install -r requirements.txt
 
-      - name: Resolver período (mes actual de Bogotá si viene vacío)
+      # CIERRE DE MES: en los primeros 7 días también se reingiere el mes anterior,
+      # para no perder lo publicado después del último martes del mes.
+      # Se mira la fecha de hace 12 h para absorber los retrasos del cron de GitHub
+      # (un martes 21:00 que arranca el miércoles de madrugada cuenta como martes).
+      - name: Resolver período(s) (mes actual de Bogotá + cierre del anterior si viene vacío)
         id: p
         run: |
           P="${{ github.event.inputs.period }}"
-          if [ -z "$P" ]; then P="$(TZ=America/Bogota date +%Y-%m)"; fi
+          if [ -z "$P" ]; then
+            REF="$(TZ=America/Bogota date -d '12 hours ago' +%Y-%m-%d)"
+            P="${REF:0:7}"
+            if [ "$((10#${REF:8:2}))" -le 7 ]; then
+              PREV="$(date -d "${REF:0:7}-01 -1 month" +%Y-%m)"
+              P="$PREV $P"
+            fi
+          fi
           echo "period=$P" >> "$GITHUB_OUTPUT"
-          echo "Período a ingestar: $P"
+          echo "Período(s) a ingestar: $P"
 
       - name: Run full ingester (IG, FB, TT, LI) con reintentos
         run: |
-          P="${{ steps.p.outputs.period }}"
-          ok=0
-          for i in 1 2 3; do
-            echo "== Intento $i de ingesta para $P =="
-            if python scripts/ingest_monthly.py --period "$P"; then ok=1; break; fi
-            echo "Ingesta falló (intento $i). Reintento en 60s… (útil para el cache de TikTok)"
-            sleep 60
+          fallidos=""
+          for P in ${{ steps.p.outputs.period }}; do
+            ok=0
+            for i in 1 2 3; do
+              echo "== Intento $i de ingesta para $P =="
+              if python scripts/ingest_monthly.py --period "$P"; then ok=1; break; fi
+              echo "Ingesta falló (intento $i). Reintento en 60s… (útil para el cache de TikTok)"
+              sleep 60
+            done
+            [ "$ok" = "1" ] || fallidos="$fallidos $P"
           done
-          [ "$ok" = "1" ] || { echo "::error::Ingesta falló tras 3 intentos"; exit 1; }
+          [ -z "$fallidos" ] || { echo "::error::Ingesta falló tras 3 intentos en:$fallidos (Supabase no se modificó para esos meses)"; exit 1; }
 
       - name: Commit thumbnails al repo (persistir imágenes descargadas)
         run: |

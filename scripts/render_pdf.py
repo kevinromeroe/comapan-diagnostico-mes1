@@ -5,14 +5,15 @@ Genera el PDF del período indicado (ej. 2026-08/reporte.pdf) con los gráficos
 ya dibujados, todas las pestañas desplegadas, en A4 horizontal y con colores.
 Resuelve el "PDF deforme" que produce el diálogo de impresión del navegador.
 
-Por defecto renderiza SOLO el mes actual (zona Bogotá). Se pueden pasar
-períodos explícitos para regenerar meses viejos puntualmente.
+Por defecto renderiza el mes actual (zona Bogotá) y, en los primeros 7 días
+del mes, también el anterior (cierre de mes). Se pueden pasar períodos
+explícitos para regenerar meses viejos puntualmente.
 
 Requiere un servidor HTTP sirviendo la raíz del repo en localhost:8000
 (el workflow lo levanta con `python -m http.server 8000`).
 
 Uso:
-    python scripts/render_pdf.py            # AUTO: solo el mes actual (Bogotá)
+    python scripts/render_pdf.py            # AUTO: mes actual (+ anterior los días 1–7)
     python scripts/render_pdf.py 2026-07    # un mes específico
     python scripts/render_pdf.py 2026-06 2026-07 diagnostico   # varios (backfill)
 """
@@ -25,9 +26,19 @@ from playwright.sync_api import sync_playwright
 BASE = "http://localhost:8000"
 
 
-def mes_actual_bogota():
+def periodos_auto():
+    """Mes actual (Bogotá) + el anterior si estamos en los primeros 7 días.
+
+    Mismo criterio que la ingesta (cierre de mes), con la fecha de hace 12 h
+    para absorber los retrasos del cron de GitHub.
+    """
     tz = datetime.timezone(datetime.timedelta(hours=-5))  # America/Bogota, sin DST
-    return datetime.datetime.now(tz).strftime("%Y-%m")
+    ref = datetime.datetime.now(tz) - datetime.timedelta(hours=12)
+    periods = [ref.strftime("%Y-%m")]
+    if ref.day <= 7:
+        prev = ref.replace(day=1) - datetime.timedelta(days=1)
+        periods.insert(0, prev.strftime("%Y-%m"))
+    return periods
 
 
 def render(periods):
@@ -81,7 +92,7 @@ def render(periods):
 
 
 def main():
-    periods = sys.argv[1:] or [mes_actual_bogota()]
+    periods = sys.argv[1:] or periodos_auto()
     print(f"Períodos a renderizar: {periods}")
     render(periods)
     print("\n[DONE] PDF(s) generado(s).")

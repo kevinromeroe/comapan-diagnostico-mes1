@@ -175,14 +175,6 @@ def main() -> int:
     # El periodo DEBE existir en 'periods' antes de persistir cuentas (FK).
     ensure_period(sb, PERIOD_ID, start, end)
 
-    # Idempotencia: borrar lo viejo del periodo antes
-    print(f"\n→ Limpiando registros previos de {PERIOD_ID}…")
-    for table in ("accounts", "aggregates", "posts"):
-        try:
-            sb.delete(table, f"client_id=eq.{CLIENT_ID}&period_id=eq.{PERIOD_ID}")
-        except Exception as exc:
-            log.warning("delete_failed", extra={"table": table, "err": str(exc)})
-
     platforms_data: dict[str, dict] = {}
 
     # ── Instagram ──
@@ -279,6 +271,27 @@ def main() -> int:
         li_run["data"]["posts"] = _filter_window(li_run["data"]["posts"], start, end)
         platforms_data["linkedin"] = li_run["data"]
         print(f"  Posts en el periodo: {len(li_run['data']['posts'])}")
+
+    # FIX 2026-10-27: si falla cualquier actor, NO tocar Supabase y salir con error.
+    # Antes se borraba el periodo primero y el script salía 0 aunque faltara una red,
+    # así que el build en cadena publicaba el dashboard incompleto. Ahora los datos
+    # anteriores quedan intactos y el workflow reintenta / corta la cadena.
+    fallidos = [label for label, run in (
+        ("instagram", ig_run), ("facebook page", fb_page_run), ("facebook posts", fb_posts_run),
+        ("tiktok", tt_prof_run), ("linkedin", li_run),
+    ) if not run["ok"]]
+    if fallidos:
+        print(f"\n✗ Ingesta {PERIOD_ID} INCOMPLETA — fallaron: {', '.join(fallidos)}")
+        print("  No se modificó Supabase: el dashboard conserva los datos anteriores.")
+        return 1
+
+    # Idempotencia: borrar lo viejo del periodo solo cuando las 4 redes respondieron
+    print(f"\n→ Limpiando registros previos de {PERIOD_ID}…")
+    for table in ("accounts", "aggregates", "posts"):
+        try:
+            sb.delete(table, f"client_id=eq.{CLIENT_ID}&period_id=eq.{PERIOD_ID}")
+        except Exception as exc:
+            log.warning("delete_failed", extra={"table": table, "err": str(exc)})
 
     # ── Persistir a Supabase ──
     print(f"\n═══════════════════════════════════════════════")

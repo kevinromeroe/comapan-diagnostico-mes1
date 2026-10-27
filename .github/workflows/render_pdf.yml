@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       periods:
-        description: "Períodos separados por espacio (vacío = todos: diagnostico + meses)"
+        description: "Períodos separados por espacio (vacío = mes actual + el anterior en los primeros 7 días)"
         required: false
         default: ""
   # CADENA: se ejecuta al terminar el build (que a su vez viene de la ingesta)
