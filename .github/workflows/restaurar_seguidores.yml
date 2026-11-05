@@ -1,0 +1,30 @@
+name: Restaurar seguidores de un mes
+
+# Uso puntual: devuelve a Supabase los seguidores de un mes tal como quedaron
+# publicados en un commit anterior. Después correr "Build diagnóstico extendido HTML".
+on:
+  workflow_dispatch:
+    inputs:
+      period:
+        description: "Mes a restaurar (YYYY-MM)"
+        required: true
+      ref:
+        description: "Commit con la versión publicada correcta (ej. 9630c9d)"
+        required: true
+
+jobs:
+  restaurar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      SUPABASE_URL:          ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_KEY:  ${{ secrets.SUPABASE_SERVICE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: main, fetch-depth: 0 }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11", cache: pip }
+      - name: Install deps
+        run: pip install -r requirements.txt
+      - name: Restaurar seguidores
+        run: python scripts/restaurar_seguidores.py --period "${{ github.event.inputs.period }}" --ref "${{ github.event.inputs.ref }}"

@@ -285,9 +285,21 @@ def main() -> int:
         print("  No se modificó Supabase: el dashboard conserva los datos anteriores.")
         return 1
 
+    # FIX 2026-11-05: al reingerir un mes YA TERMINADO (cierre de mes) no se tocan los
+    # seguidores: el snapshot de hoy no es de ese mes y dejaba la variación del mes
+    # siguiente en 0 %. Se conserva el último snapshot tomado dentro del mes; solo se
+    # guarda el de hoy si esa red no tiene ninguno.
+    mes_cerrado = datetime.now(timezone.utc) > end
+    accounts_previos: set[str] = set()
+    if mes_cerrado:
+        accounts_previos = {a["platform"] for a in sb.select("accounts",
+            filter=f"client_id=eq.{CLIENT_ID}&period_id=eq.{PERIOD_ID}", columns="platform")}
+        print(f"\n→ {PERIOD_ID} ya terminó: se conservan los seguidores guardados "
+              f"({', '.join(sorted(accounts_previos)) or 'ninguno'})")
+
     # Idempotencia: borrar lo viejo del periodo solo cuando las 4 redes respondieron
     print(f"\n→ Limpiando registros previos de {PERIOD_ID}…")
-    for table in ("accounts", "aggregates", "posts"):
+    for table in (("aggregates", "posts") if mes_cerrado else ("accounts", "aggregates", "posts")):
         try:
             sb.delete(table, f"client_id=eq.{CLIENT_ID}&period_id=eq.{PERIOD_ID}")
         except Exception as exc:
@@ -299,7 +311,9 @@ def main() -> int:
     print(f"═══════════════════════════════════════════════")
 
     for platform, block in platforms_data.items():
-        if block.get("account"):
+        if platform in accounts_previos:
+            print(f"  · {platform}: account del mes conservado (mes cerrado)")
+        elif block.get("account"):
             sb.upsert("accounts", [_account_row(block["account"], PERIOD_ID, platform)],
                       on_conflict="client_id,period_id,platform")
             print(f"  ✓ {platform}: account upserted")
