@@ -127,3 +127,6 @@ Thumbs.db
 *.swp
 *.swo
 *~
+
+# Contador de visitas (GoatCounter)
+!/gc.js
