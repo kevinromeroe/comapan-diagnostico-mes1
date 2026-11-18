@@ -52,7 +52,7 @@ Los datos crudos, los CSVs, los JSONs intermedios y los scripts con credenciales
 
 ## Cómo se actualiza el reporte
 
-Cadencia: **semanal**, todos los martes a las 21:00 hora Bogotá (miércoles 02:00 UTC), por el cron de `ingest_monthly.yml`.
+Cadencia: **cada 2-3 días** (desde el 18-nov-2026), domingos, martes y jueves a las 21:00 hora Bogotá (lunes, miércoles y viernes 02:00 UTC), por el cron de `ingest_monthly.yml`.
 
 Flujo automático (cada workflow arranca solo si el anterior terminó OK, vía `workflow_run`):
 
