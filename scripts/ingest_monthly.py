@@ -21,6 +21,7 @@ Uso (en workflow):
 from __future__ import annotations
 
 import sys
+from urllib.parse import quote
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -95,6 +96,28 @@ CAPS = {
     "tiktok_posts":   0.30,
     "linkedin":       0.50,
 }
+
+
+def _quitar_borrados(sb, platform: str, posts: list[dict]) -> None:
+    """Quita de Supabase los posts de esta red que la marca borró (FIX 2026-11-18).
+    Solo mira el rango [post más viejo, post más nuevo] que trajo el scraper en esta corrida:
+    si un post guardado cae ahí y no vino, ya no existe en la red."""
+    fechas = [x["timestamp"] for x in posts if isinstance(x.get("timestamp"), datetime)]
+    if not fechas:
+        return
+    utc = lambda d: d.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    vigentes = {str(x["id"]) for x in posts}
+    try:
+        guardados = sb.select("posts", columns="id,url,posted_at",
+            filter=f"client_id=eq.{CLIENT_ID}&platform=eq.{platform}"
+                   f"&posted_at=gte.{utc(min(fechas))}&posted_at=lte.{utc(max(fechas))}")
+        for g in guardados:
+            if str(g["id"]) in vigentes:
+                continue
+            sb.delete("posts", f"id=eq.{quote(str(g['id']), safe='')}")
+            print(f"    └ borrado en la red, se quita: {g['posted_at']} {g['url']}")
+    except Exception as exc:
+        log.warning("limpieza_borrados_fallo", extra={"platform": platform, "err": str(exc)})
 
 
 def month_window(period: str) -> tuple[datetime, datetime]:
@@ -299,7 +322,8 @@ def main() -> int:
 
     # Idempotencia: borrar lo viejo del periodo solo cuando las 4 redes respondieron
     print(f"\n→ Limpiando registros previos de {PERIOD_ID}…")
-    for table in (("aggregates", "posts") if mes_cerrado else ("accounts", "aggregates", "posts")):
+    # posts NO se borra aquí: no tiene period_id y perdería tags/miniaturas; ver _quitar_borrados()
+    for table in (("aggregates",) if mes_cerrado else ("accounts", "aggregates")):
         try:
             sb.delete(table, f"client_id=eq.{CLIENT_ID}&period_id=eq.{PERIOD_ID}")
         except Exception as exc:
@@ -343,6 +367,7 @@ def main() -> int:
                 else:
                     dl_fail += 1
             print(f"    └ thumbnails: ✓{dl_ok}  ✗{dl_fail}")
+            _quitar_borrados(sb, platform, posts)
         else:
             print(f"  ⚠ {platform}: sin posts en junio (cuenta sí guardada si existe)")
 
